@@ -12,6 +12,7 @@ import { EmployeeManagement } from "@/components/employees/employee-management";
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard";
 import { ReportsDashboard } from "@/components/reports/reports-dashboard";
 import { ExcelManagement } from "@/components/excel/excel-management";
+import { RealtimeDashboard } from "@/components/monitoring/realtime-dashboard";
 
 export type TabType = 
   | "dashboard" 
@@ -21,7 +22,8 @@ export type TabType =
   | "analytics" 
   | "ai" 
   | "regional" 
-  | "excel";
+  | "excel"
+  | "monitoring";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
@@ -55,6 +57,8 @@ export default function Dashboard() {
         return <PosMap />;
       case "excel":
         return <ExcelManagement />;
+      case "monitoring":
+        return <RealtimeDashboard />;
       default:
         return <ReportsDashboard />;
     }

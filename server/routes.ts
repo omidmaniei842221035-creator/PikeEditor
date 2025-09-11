@@ -1,8 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema } from "@shared/schema";
+import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema } from "@shared/schema";
 import { z } from "zod";
+
+// WebSocket connection management
+const wsClients = new Set<any>();
+let deviceStatusSimulation: NodeJS.Timeout | null = null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -470,5 +475,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server for real-time monitoring
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/ws/monitoring'
+  });
+
+  wss.on('connection', (ws) => {
+    console.log('🔗 Client connected to real-time monitoring. Total clients:', wsClients.size + 1);
+    wsClients.add(ws);
+
+    // Send initial device status
+    ws.send(JSON.stringify({
+      type: 'initial_status',
+      timestamp: new Date().toISOString(),
+      message: 'Connected to POS monitoring system'
+    }));
+
+    // Handle client disconnect
+    ws.on('close', () => {
+      wsClients.delete(ws);
+      console.log('Client disconnected from monitoring');
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      wsClients.delete(ws);
+    });
+  });
+
+  // Broadcast updates to all connected clients
+  const broadcastUpdate = (data: any) => {
+    const message = JSON.stringify(data);
+    wsClients.forEach((client) => {
+      if (client.readyState === 1) { // WebSocket.OPEN
+        try {
+          client.send(message);
+        } catch (error) {
+          console.error('Error sending WebSocket message:', error);
+          wsClients.delete(client);
+        }
+      }
+    });
+  };
+
+  // Start real-time device status simulation
+  const startDeviceStatusSimulation = () => {
+    if (deviceStatusSimulation) {
+      clearInterval(deviceStatusSimulation);
+    }
+
+    deviceStatusSimulation = setInterval(async () => {
+      try {
+        const devices = await storage.getAllPosDevices();
+        console.log(`📊 Device simulation tick: checking ${devices.length} devices, ${wsClients.size} connected clients`);
+        
+        // Simulate random device status changes
+        for (const device of devices) {
+          const shouldUpdate = Math.random() < 0.1; // 10% chance of status change
+          
+          if (shouldUpdate) {
+            const currentStatus = device.status;
+            let newStatus = currentStatus;
+            
+            // Random status transitions
+            if (currentStatus === 'active') {
+              newStatus = Math.random() < 0.8 ? 'active' : (Math.random() < 0.5 ? 'offline' : 'maintenance');
+            } else if (currentStatus === 'offline') {
+              newStatus = Math.random() < 0.6 ? 'active' : 'offline';
+            } else if (currentStatus === 'maintenance') {
+              newStatus = Math.random() < 0.7 ? 'active' : 'maintenance';
+            }
+
+            if (newStatus !== currentStatus) {
+              // Update device status in database
+              await storage.updatePosDevice(device.id, {
+                status: newStatus,
+                lastConnection: newStatus === 'offline' ? device.lastConnection : new Date()
+              });
+
+              // Broadcast real-time update
+              broadcastUpdate({
+                type: 'device_status_change',
+                deviceId: device.id,
+                customerId: device.customerId,
+                deviceCode: device.deviceCode,
+                oldStatus: currentStatus,
+                newStatus: newStatus,
+                timestamp: new Date().toISOString()
+              });
+
+              // Create alert for critical status changes
+              if (newStatus === 'offline' && currentStatus === 'active') {
+                const customer = await storage.getCustomer(device.customerId || '');
+                const alertTitle = `دستگاه ${device.deviceCode} آفلاین شد`;
+                const alertMessage = customer 
+                  ? `دستگاه POS ${customer.shopName} (${device.deviceCode}) از شبکه قطع شده است`
+                  : `دستگاه POS ${device.deviceCode} از شبکه قطع شده است`;
+
+                const alert = await storage.createAlert({
+                  title: alertTitle,
+                  message: alertMessage,
+                  type: 'error',
+                  priority: 'high',
+                  customerId: device.customerId
+                });
+
+                // Broadcast new alert
+                broadcastUpdate({
+                  type: 'new_alert',
+                  alert: alert,
+                  timestamp: new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error in device status simulation:', error);
+      }
+    }, 5000); // Update every 5 seconds
+  };
+
+  // Start the simulation when server starts  
+  console.log('🔄 Starting real-time POS device monitoring simulation...');
+  startDeviceStatusSimulation();
+  console.log('✅ WebSocket server and device simulation initialized');
+
   return httpServer;
 }
