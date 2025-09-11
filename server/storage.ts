@@ -5,9 +5,11 @@ import {
   type Customer, type InsertCustomer,
   type PosDevice, type InsertPosDevice,
   type Transaction, type InsertTransaction,
-  type Alert, type InsertAlert
+  type Alert, type InsertAlert,
+  users, branches, employees, customers, posDevices, transactions, alerts
 } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and, gte, lte, ilike, or, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -62,390 +64,210 @@ export interface IStorage {
   markAlertAsRead(id: string): Promise<Alert | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users = new Map<string, User>();
-  private branches = new Map<string, Branch>();
-  private employees = new Map<string, Employee>();
-  private customers = new Map<string, Customer>();
-  private posDevices = new Map<string, PosDevice>();
-  private transactions = new Map<string, Transaction>();
-  private alerts = new Map<string, Alert>();
-
-  constructor() {
-    this.initializeData();
-  }
-
-  private initializeData() {
-    // Initialize with sample branches
-    const tabrizBranch: Branch = {
-      id: randomUUID(),
-      name: "شعبه تبریز مرکزی",
-      code: "TBZ-001",
-      type: "شعبه",
-      manager: "علی احمدی",
-      phone: "041-12345678",
-      address: "تبریز، میدان ساعت، ساختمان مرکزی",
-      latitude: "38.0800",
-      longitude: "46.2919",
-      coverageRadius: 5,
-      monthlyTarget: 1000,
-      performance: 85,
-      createdAt: new Date(),
-    };
-
-    const tehranBranch: Branch = {
-      id: randomUUID(),
-      name: "شعبه تهران",
-      code: "THR-001",
-      type: "شعبه",
-      manager: "مریم صادقی",
-      phone: "021-87654321",
-      address: "تهران، میدان آزادی، برج تجارت",
-      latitude: "35.6892",
-      longitude: "51.3890",
-      coverageRadius: 8,
-      monthlyTarget: 1500,
-      performance: 92,
-      createdAt: new Date(),
-    };
-
-    const isfahanBranch: Branch = {
-      id: randomUUID(),
-      name: "شعبه اصفهان",
-      code: "ISF-001",
-      type: "شعبه",
-      manager: "حسن رحیمی",
-      phone: "031-11223344",
-      address: "اصفهان، میدان نقش جهان، مجتمع تجاری",
-      latitude: "32.6546",
-      longitude: "51.6680",
-      coverageRadius: 6,
-      monthlyTarget: 800,
-      performance: 76,
-      createdAt: new Date(),
-    };
-
-    this.branches.set(tabrizBranch.id, tabrizBranch);
-    this.branches.set(tehranBranch.id, tehranBranch);
-    this.branches.set(isfahanBranch.id, isfahanBranch);
-
-    // Initialize with sample employees
-    const employee1: Employee = {
-      id: randomUUID(),
-      employeeCode: "EMP001",
-      name: "علی احمدی",
-      position: "مدیر فروش",
-      phone: "09123456789",
-      email: "ali.ahmadi@pos.ir",
-      branchId: tabrizBranch.id,
-      salary: 25000000,
-      hireDate: new Date("2024-01-15"),
-      isActive: true,
-      createdAt: new Date(),
-    };
-
-    const employee2: Employee = {
-      id: randomUUID(),
-      employeeCode: "EMP002",
-      name: "زهرا کریمی",
-      position: "کارشناس بازاریابی",
-      phone: "09123456788",
-      email: "zahra.karimi@pos.ir",
-      branchId: tehranBranch.id,
-      salary: 20000000,
-      hireDate: new Date("2024-03-10"),
-      isActive: true,
-      createdAt: new Date(),
-    };
-
-    const employee3: Employee = {
-      id: randomUUID(),
-      employeeCode: "EMP003",
-      name: "محمد رضایی",
-      position: "کارشناس فنی",
-      phone: "09123456787",
-      email: "mohammad.rezaei@pos.ir",
-      branchId: isfahanBranch.id,
-      salary: 18000000,
-      hireDate: new Date("2024-05-20"),
-      isActive: true,
-      createdAt: new Date(),
-    };
-
-    this.employees.set(employee1.id, employee1);
-    this.employees.set(employee2.id, employee2);
-    this.employees.set(employee3.id, employee3);
-
-    // Initialize sample alerts
-    const alert1: Alert = {
-      id: randomUUID(),
-      title: "اتصال POS قطع شده",
-      message: "سوپرمارکت آریا - ۵ دقیقه پیش",
-      type: "error",
-      priority: "high",
-      isRead: false,
-      customerId: null,
-      createdAt: new Date(),
-    };
-
-    const alert2: Alert = {
-      id: randomUUID(),
-      title: "کاهش ناگهانی فروش",
-      message: "شعبه تهران - ۱۵ دقیقه پیش",
-      type: "warning",
-      priority: "medium",
-      isRead: false,
-      customerId: null,
-      createdAt: new Date(),
-    };
-
-    const alert3: Alert = {
-      id: randomUUID(),
-      title: "بروزرسانی سیستم",
-      message: "برنامه‌ریزی شده - امشب ۲۳:۰۰",
-      type: "info",
-      priority: "low",
-      isRead: false,
-      customerId: null,
-      createdAt: new Date(),
-    };
-
-    this.alerts.set(alert1.id, alert1);
-    this.alerts.set(alert2.id, alert2);
-    this.alerts.set(alert3.id, alert3);
-  }
-
+export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const user: User = {
-      ...insertUser,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.users.set(user.id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   // Branch methods
   async getAllBranches(): Promise<Branch[]> {
-    return Array.from(this.branches.values());
+    return await db.select().from(branches);
   }
 
   async getBranch(id: string): Promise<Branch | undefined> {
-    return this.branches.get(id);
+    const [branch] = await db.select().from(branches).where(eq(branches.id, id));
+    return branch;
   }
 
   async createBranch(insertBranch: InsertBranch): Promise<Branch> {
-    const branch: Branch = {
-      ...insertBranch,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.branches.set(branch.id, branch);
+    const [branch] = await db.insert(branches).values(insertBranch).returning();
     return branch;
   }
 
   async updateBranch(id: string, updateData: Partial<InsertBranch>): Promise<Branch | undefined> {
-    const branch = this.branches.get(id);
-    if (!branch) return undefined;
-
-    const updatedBranch = { ...branch, ...updateData };
-    this.branches.set(id, updatedBranch);
-    return updatedBranch;
+    const [branch] = await db.update(branches)
+      .set(updateData)
+      .where(eq(branches.id, id))
+      .returning();
+    return branch;
   }
 
   async deleteBranch(id: string): Promise<boolean> {
-    return this.branches.delete(id);
+    const result = await db.delete(branches).where(eq(branches.id, id));
+    return result.rowCount > 0;
   }
 
   // Employee methods
   async getAllEmployees(): Promise<Employee[]> {
-    return Array.from(this.employees.values());
+    return await db.select().from(employees);
   }
 
   async getEmployee(id: string): Promise<Employee | undefined> {
-    return this.employees.get(id);
+    const [employee] = await db.select().from(employees).where(eq(employees.id, id));
+    return employee;
   }
 
   async getEmployeesByBranch(branchId: string): Promise<Employee[]> {
-    return Array.from(this.employees.values()).filter(emp => emp.branchId === branchId);
+    return await db.select().from(employees).where(eq(employees.branchId, branchId));
   }
 
   async createEmployee(insertEmployee: InsertEmployee): Promise<Employee> {
-    const employee: Employee = {
-      ...insertEmployee,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.employees.set(employee.id, employee);
+    const [employee] = await db.insert(employees).values(insertEmployee).returning();
     return employee;
   }
 
   async updateEmployee(id: string, updateData: Partial<InsertEmployee>): Promise<Employee | undefined> {
-    const employee = this.employees.get(id);
-    if (!employee) return undefined;
-
-    const updatedEmployee = { ...employee, ...updateData };
-    this.employees.set(id, updatedEmployee);
-    return updatedEmployee;
+    const [employee] = await db.update(employees)
+      .set(updateData)
+      .where(eq(employees.id, id))
+      .returning();
+    return employee;
   }
 
   async deleteEmployee(id: string): Promise<boolean> {
-    return this.employees.delete(id);
+    const result = await db.delete(employees).where(eq(employees.id, id));
+    return result.rowCount > 0;
   }
 
   // Customer methods
   async getAllCustomers(): Promise<Customer[]> {
-    return Array.from(this.customers.values());
+    return await db.select().from(customers);
   }
 
   async getCustomer(id: string): Promise<Customer | undefined> {
-    return this.customers.get(id);
+    const [customer] = await db.select().from(customers).where(eq(customers.id, id));
+    return customer;
   }
 
   async getCustomersByBranch(branchId: string): Promise<Customer[]> {
-    return Array.from(this.customers.values()).filter(customer => customer.branchId === branchId);
+    return await db.select().from(customers).where(eq(customers.branchId, branchId));
   }
 
   async getCustomersByStatus(status: string): Promise<Customer[]> {
-    return Array.from(this.customers.values()).filter(customer => customer.status === status);
+    return await db.select().from(customers).where(eq(customers.status, status));
   }
 
   async getCustomersByBusinessType(businessType: string): Promise<Customer[]> {
-    return Array.from(this.customers.values()).filter(customer => customer.businessType === businessType);
+    return await db.select().from(customers).where(eq(customers.businessType, businessType));
   }
 
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
-    const customer: Customer = {
-      ...insertCustomer,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.customers.set(customer.id, customer);
+    const [customer] = await db.insert(customers).values(insertCustomer).returning();
     return customer;
   }
 
   async updateCustomer(id: string, updateData: Partial<InsertCustomer>): Promise<Customer | undefined> {
-    const customer = this.customers.get(id);
-    if (!customer) return undefined;
-
-    const updatedCustomer = { ...customer, ...updateData };
-    this.customers.set(id, updatedCustomer);
-    return updatedCustomer;
+    const [customer] = await db.update(customers)
+      .set(updateData)
+      .where(eq(customers.id, id))
+      .returning();
+    return customer;
   }
 
   async deleteCustomer(id: string): Promise<boolean> {
-    return this.customers.delete(id);
+    const result = await db.delete(customers).where(eq(customers.id, id));
+    return result.rowCount > 0;
   }
 
   async searchCustomers(query: string): Promise<Customer[]> {
-    const searchTerm = query.toLowerCase();
-    return Array.from(this.customers.values()).filter(customer =>
-      customer.shopName.toLowerCase().includes(searchTerm) ||
-      customer.ownerName.toLowerCase().includes(searchTerm) ||
-      customer.phone.includes(searchTerm)
+    const searchTerm = `%${query.toLowerCase()}%`;
+    return await db.select().from(customers).where(
+      or(
+        ilike(customers.shopName, searchTerm),
+        ilike(customers.ownerName, searchTerm),
+        ilike(customers.phone, searchTerm)
+      )
     );
   }
 
   // POS Device methods
   async getAllPosDevices(): Promise<PosDevice[]> {
-    return Array.from(this.posDevices.values());
+    return await db.select().from(posDevices);
   }
 
   async getPosDevice(id: string): Promise<PosDevice | undefined> {
-    return this.posDevices.get(id);
+    const [device] = await db.select().from(posDevices).where(eq(posDevices.id, id));
+    return device;
   }
 
   async getPosDevicesByCustomer(customerId: string): Promise<PosDevice[]> {
-    return Array.from(this.posDevices.values()).filter(device => device.customerId === customerId);
+    return await db.select().from(posDevices).where(eq(posDevices.customerId, customerId));
   }
 
   async createPosDevice(insertDevice: InsertPosDevice): Promise<PosDevice> {
-    const device: PosDevice = {
-      ...insertDevice,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.posDevices.set(device.id, device);
+    const [device] = await db.insert(posDevices).values(insertDevice).returning();
     return device;
   }
 
   async updatePosDevice(id: string, updateData: Partial<InsertPosDevice>): Promise<PosDevice | undefined> {
-    const device = this.posDevices.get(id);
-    if (!device) return undefined;
-
-    const updatedDevice = { ...device, ...updateData };
-    this.posDevices.set(id, updatedDevice);
-    return updatedDevice;
+    const [device] = await db.update(posDevices)
+      .set(updateData)
+      .where(eq(posDevices.id, id))
+      .returning();
+    return device;
   }
 
   // Transaction methods
   async getAllTransactions(): Promise<Transaction[]> {
-    return Array.from(this.transactions.values());
+    return await db.select().from(transactions);
   }
 
   async getTransactionsByDevice(deviceId: string): Promise<Transaction[]> {
-    return Array.from(this.transactions.values()).filter(transaction => transaction.posDeviceId === deviceId);
+    return await db.select().from(transactions).where(eq(transactions.posDeviceId, deviceId));
   }
 
   async getTransactionsByDateRange(startDate: Date, endDate: Date): Promise<Transaction[]> {
-    return Array.from(this.transactions.values()).filter(transaction => {
-      const transDate = new Date(transaction.transactionDate!);
-      return transDate >= startDate && transDate <= endDate;
-    });
+    return await db.select().from(transactions).where(
+      and(
+        gte(transactions.transactionDate, startDate),
+        lte(transactions.transactionDate, endDate)
+      )
+    );
   }
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
-    const transaction: Transaction = {
-      ...insertTransaction,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.transactions.set(transaction.id, transaction);
+    const [transaction] = await db.insert(transactions).values(insertTransaction).returning();
     return transaction;
   }
 
   // Alert methods
   async getAllAlerts(): Promise<Alert[]> {
-    return Array.from(this.alerts.values()).sort((a, b) => 
-      new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
-    );
+    return await db.select().from(alerts).orderBy(desc(alerts.createdAt));
   }
 
   async getUnreadAlerts(): Promise<Alert[]> {
-    return Array.from(this.alerts.values()).filter(alert => !alert.isRead);
+    return await db.select().from(alerts).where(eq(alerts.isRead, false)).orderBy(desc(alerts.createdAt));
   }
 
   async getAlert(id: string): Promise<Alert | undefined> {
-    return this.alerts.get(id);
+    const [alert] = await db.select().from(alerts).where(eq(alerts.id, id));
+    return alert;
   }
 
   async createAlert(insertAlert: InsertAlert): Promise<Alert> {
-    const alert: Alert = {
-      ...insertAlert,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.alerts.set(alert.id, alert);
+    const [alert] = await db.insert(alerts).values(insertAlert).returning();
     return alert;
   }
 
   async markAlertAsRead(id: string): Promise<Alert | undefined> {
-    const alert = this.alerts.get(id);
-    if (!alert) return undefined;
-
-    const updatedAlert = { ...alert, isRead: true };
-    this.alerts.set(id, updatedAlert);
-    return updatedAlert;
+    const [alert] = await db.update(alerts)
+      .set({ isRead: true })
+      .where(eq(alerts.id, id))
+      .returning();
+    return alert;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
