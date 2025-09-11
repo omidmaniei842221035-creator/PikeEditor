@@ -11,6 +11,7 @@ export function PosMap() {
   const [mapType, setMapType] = useState("density");
   const [businessFilter, setBusinessFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [mapReady, setMapReady] = useState(false);
 
   const { data: customers = [] } = useQuery({
     queryKey: ["/api/customers"],
@@ -21,12 +22,26 @@ export function PosMap() {
   });
 
   useEffect(() => {
-    if (mapRef.current && !mapInstanceRef.current) {
-      mapInstanceRef.current = initializeMap(mapRef.current);
-    }
+    let mounted = true;
+    
+    const initMap = async () => {
+      if (mapRef.current && !mapInstanceRef.current && mounted) {
+        try {
+          mapInstanceRef.current = await initializeMap(mapRef.current);
+          if (mounted && mapInstanceRef.current?.map) {
+            setMapReady(true);
+          }
+        } catch (error) {
+          console.error('Failed to initialize map:', error);
+        }
+      }
+    };
+
+    initMap();
 
     return () => {
-      if (mapInstanceRef.current) {
+      mounted = false;
+      if (mapInstanceRef.current && mapInstanceRef.current.map) {
         mapInstanceRef.current.map.remove();
         mapInstanceRef.current = null;
       }
@@ -34,7 +49,7 @@ export function PosMap() {
   }, []);
 
   useEffect(() => {
-    if (mapInstanceRef.current && customers.length > 0) {
+    if (mapReady && mapInstanceRef.current?.map && customers.length > 0) {
       // Clear existing markers
       mapInstanceRef.current.markers.forEach(marker => marker.remove());
       mapInstanceRef.current.markers = [];
@@ -58,7 +73,7 @@ export function PosMap() {
         }
       });
     }
-  }, [customers, businessFilter, statusFilter]);
+  }, [mapReady, customers, businessFilter, statusFilter]);
 
   const mapStats = {
     visible: customers.filter((c: any) => {

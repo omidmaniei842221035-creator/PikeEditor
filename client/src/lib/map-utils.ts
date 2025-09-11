@@ -3,10 +3,36 @@ export interface MapInstance {
   markers: any[];
 }
 
-export function initializeMap(container: HTMLElement): MapInstance {
-  // Check if Leaflet is available
-  if (typeof window !== 'undefined' && (window as any).L) {
-    const L = (window as any).L;
+// Function to wait for Leaflet to be available
+function waitForLeaflet(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if (typeof window !== 'undefined' && (window as any).L) {
+      resolve((window as any).L);
+      return;
+    }
+    
+    // Poll for Leaflet every 100ms, timeout after 10 seconds
+    let attempts = 0;
+    const maxAttempts = 100;
+    
+    const checkLeaflet = () => {
+      attempts++;
+      if (typeof window !== 'undefined' && (window as any).L) {
+        resolve((window as any).L);
+      } else if (attempts >= maxAttempts) {
+        reject(new Error('Leaflet failed to load within timeout period'));
+      } else {
+        setTimeout(checkLeaflet, 100);
+      }
+    };
+    
+    checkLeaflet();
+  });
+}
+
+export async function initializeMap(container: HTMLElement): Promise<MapInstance> {
+  try {
+    const L = await waitForLeaflet();
     
     // Initialize map centered on Tabriz, Iran
     const map = L.map(container, {
@@ -22,13 +48,16 @@ export function initializeMap(container: HTMLElement): MapInstance {
       maxZoom: 19,
     }).addTo(map);
 
+    // Configure RTL controls positioning
+    map.zoomControl.setPosition('topright');
+    map.attributionControl.setPosition('bottomright');
+
     return {
       map,
       markers: [],
     };
-  } else {
-    // Fallback when Leaflet is not available
-    console.warn('Leaflet library not loaded');
+  } catch (error) {
+    console.warn('Failed to initialize map:', error);
     return {
       map: null,
       markers: [],
@@ -121,56 +150,93 @@ export function addCustomerMarker(
   // Create marker
   const marker = L.marker([lat, lng], { icon: customIcon });
 
-  // Create popup content
-  const popupContent = `
-    <div dir="rtl" style="font-family: 'Vazirmatn', sans-serif; min-width: 200px;">
-      <h3 style="margin: 0 0 8px 0; font-weight: bold; color: #1f2937;">
-        ${customer.shopName}
-      </h3>
-      <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">
-        <strong>مالک:</strong> ${customer.ownerName}
-      </p>
-      <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">
-        <strong>نوع کسب‌وکار:</strong> ${customer.businessType}
-      </p>
-      <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">
-        <strong>تلفن:</strong> <span dir="ltr">${customer.phone}</span>
-      </p>
-      ${customer.monthlyProfit ? `
-        <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">
-          <strong>سود ماهانه:</strong> ${Math.round(customer.monthlyProfit / 1000000)}M تومان
-        </p>
-      ` : ''}
-      <p style="margin: 8px 0 4px 0; font-size: 14px;">
-        <span style="
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          background: ${markerColor === 'green' ? '#dcfce7' : 
-                       markerColor === 'yellow' ? '#fef3c7' :
-                       markerColor === 'red' ? '#fee2e2' :
-                       markerColor === 'blue' ? '#dbeafe' : '#f3f4f6'};
-          color: ${markerColor === 'green' ? '#166534' : 
-                   markerColor === 'yellow' ? '#92400e' :
-                   markerColor === 'red' ? '#dc2626' :
-                   markerColor === 'blue' ? '#2563eb' : '#374151'};
-        ">
-          ${customer.status === 'active' ? '✅ کارآمد' :
-            customer.status === 'marketing' ? '📢 بازاریابی' :
-            customer.status === 'loss' ? '❌ زیان‌ده' :
-            customer.status === 'inactive' ? '⏸️ غیرفعال' :
-            customer.status === 'collected' ? '📦 جمع‌آوری شده' : customer.status}
-        </span>
-      </p>
-      ${customer.address ? `
-        <p style="margin: 8px 0 4px 0; color: #6b7280; font-size: 12px;">
-          <strong>آدرس:</strong> ${customer.address}
-        </p>
-      ` : ''}
-    </div>
-  `;
+  // Create popup content safely using DOM methods to prevent XSS
+  const popupContainer = document.createElement('div');
+  popupContainer.dir = 'rtl';
+  popupContainer.style.cssText = "font-family: 'Vazirmatn', sans-serif; min-width: 200px;";
 
-  marker.bindPopup(popupContent);
+  // Shop name (title)
+  const title = document.createElement('h3');
+  title.style.cssText = 'margin: 0 0 8px 0; font-weight: bold; color: #1f2937;';
+  title.textContent = customer.shopName || '';
+  popupContainer.appendChild(title);
+
+  // Owner name
+  const ownerP = document.createElement('p');
+  ownerP.style.cssText = 'margin: 4px 0; color: #6b7280; font-size: 14px;';
+  const ownerStrong = document.createElement('strong');
+  ownerStrong.textContent = 'مالک: ';
+  ownerP.appendChild(ownerStrong);
+  ownerP.appendChild(document.createTextNode(customer.ownerName || ''));
+  popupContainer.appendChild(ownerP);
+
+  // Business type
+  const businessP = document.createElement('p');
+  businessP.style.cssText = 'margin: 4px 0; color: #6b7280; font-size: 14px;';
+  const businessStrong = document.createElement('strong');
+  businessStrong.textContent = 'نوع کسب‌وکار: ';
+  businessP.appendChild(businessStrong);
+  businessP.appendChild(document.createTextNode(customer.businessType || ''));
+  popupContainer.appendChild(businessP);
+
+  // Phone
+  const phoneP = document.createElement('p');
+  phoneP.style.cssText = 'margin: 4px 0; color: #6b7280; font-size: 14px;';
+  const phoneStrong = document.createElement('strong');
+  phoneStrong.textContent = 'تلفن: ';
+  phoneP.appendChild(phoneStrong);
+  const phoneSpan = document.createElement('span');
+  phoneSpan.dir = 'ltr';
+  phoneSpan.textContent = customer.phone || '';
+  phoneP.appendChild(phoneSpan);
+  popupContainer.appendChild(phoneP);
+
+  // Monthly profit (if available)
+  if (customer.monthlyProfit) {
+    const profitP = document.createElement('p');
+    profitP.style.cssText = 'margin: 4px 0; color: #6b7280; font-size: 14px;';
+    const profitStrong = document.createElement('strong');
+    profitStrong.textContent = 'سود ماهانه: ';
+    profitP.appendChild(profitStrong);
+    profitP.appendChild(document.createTextNode(`${Math.round(customer.monthlyProfit / 1000000)}M تومان`));
+    popupContainer.appendChild(profitP);
+  }
+
+  // Status badge
+  const statusP = document.createElement('p');
+  statusP.style.cssText = 'margin: 8px 0 4px 0; font-size: 14px;';
+  const statusSpan = document.createElement('span');
+  const statusColors = {
+    green: { bg: '#dcfce7', color: '#166534' },
+    yellow: { bg: '#fef3c7', color: '#92400e' },
+    red: { bg: '#fee2e2', color: '#dc2626' },
+    blue: { bg: '#dbeafe', color: '#2563eb' },
+    gray: { bg: '#f3f4f6', color: '#374151' }
+  };
+  const colors = statusColors[markerColor as keyof typeof statusColors] || statusColors.gray;
+  statusSpan.style.cssText = `padding: 4px 8px; border-radius: 12px; font-size: 12px; background: ${colors.bg}; color: ${colors.color};`;
+  
+  const statusText = customer.status === 'active' ? '✅ کارآمد' :
+                    customer.status === 'marketing' ? '📢 بازاریابی' :
+                    customer.status === 'loss' ? '❌ زیان‌ده' :
+                    customer.status === 'inactive' ? '⏸️ غیرفعال' :
+                    customer.status === 'collected' ? '📦 جمع‌آوری شده' : customer.status;
+  statusSpan.textContent = statusText || '';
+  statusP.appendChild(statusSpan);
+  popupContainer.appendChild(statusP);
+
+  // Address (if available)
+  if (customer.address) {
+    const addressP = document.createElement('p');
+    addressP.style.cssText = 'margin: 8px 0 4px 0; color: #6b7280; font-size: 12px;';
+    const addressStrong = document.createElement('strong');
+    addressStrong.textContent = 'آدرس: ';
+    addressP.appendChild(addressStrong);
+    addressP.appendChild(document.createTextNode(customer.address));
+    popupContainer.appendChild(addressP);
+  }
+
+  marker.bindPopup(popupContainer);
 
   // Add marker to map and store reference
   marker.addTo(mapInstance.map);
