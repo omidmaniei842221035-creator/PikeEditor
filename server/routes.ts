@@ -273,32 +273,199 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Excel routes
   app.post("/api/excel/upload", async (req, res) => {
-    // This would typically handle file upload and parsing
-    // For now, return a mock response
-    res.json({
-      success: 0,
-      errors: 0,
-      total: 0,
-      errorsList: []
-    });
+    try {
+      // In a real implementation, this would handle multipart file upload
+      // For now, we return a success response since the Excel parsing 
+      // happens on the client side for better user experience
+      res.json({
+        message: "Excel file processing completed on client side",
+        success: true
+      });
+    } catch (error) {
+      console.error("Excel upload error:", error);
+      res.status(500).json({
+        error: "خطا در پردازش فایل Excel",
+        success: false
+      });
+    }
+  });
+
+  // Secure bulk import endpoint for validated customer data
+  app.post("/api/excel/import", async (req, res) => {
+    try {
+      const { customers } = req.body;
+      
+      // Validate request structure
+      if (!Array.isArray(customers)) {
+        return res.status(400).json({
+          error: "فرمت درخواست نامعتبر است",
+          success: false
+        });
+      }
+
+      // Limit number of customers per batch to prevent DoS
+      const MAX_BATCH_SIZE = 1000;
+      if (customers.length > MAX_BATCH_SIZE) {
+        return res.status(400).json({
+          error: `حداکثر ${MAX_BATCH_SIZE} مشتری در هر بار قابل پردازش است`,
+          success: false
+        });
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: Array<{ row: number; message: string }> = [];
+
+      // Get all branches for validation
+      const branches = await storage.getAllBranches();
+      const defaultBranch = branches.find(b => b.code === 'TBR-001') || branches[0];
+
+      if (!defaultBranch) {
+        return res.status(500).json({
+          error: "هیچ شعبه‌ای در سیستم یافت نشد",
+          success: false
+        });
+      }
+
+      // Process customers in batches
+      for (let i = 0; i < customers.length; i++) {
+        const customerData = customers[i];
+        
+        try {
+          // Find matching branch if specified
+          let branchId = defaultBranch.id;
+          if (customerData.branch) {
+            const matchingBranch = branches.find(b => 
+              b.name === customerData.branch || b.code === customerData.branch
+            );
+            if (matchingBranch) {
+              branchId = matchingBranch.id;
+            } else {
+              throw new Error(`شعبه "${customerData.branch}" یافت نشد`);
+            }
+          }
+
+          // Validate customer data against schema
+          const validatedData = insertCustomerSchema.parse({
+            shopName: customerData.shopName,
+            ownerName: customerData.ownerName,
+            phone: customerData.phone,
+            businessType: customerData.businessType || 'سایر',
+            address: customerData.address || '',
+            monthlyProfit: customerData.monthlyProfit || 0,
+            status: customerData.status || 'active',
+            branchId: branchId,
+            supportEmployeeId: null // TODO: Add employee validation in future
+          });
+
+          // Create customer in database
+          await storage.createCustomer(validatedData);
+          successCount++;
+
+        } catch (validationError) {
+          errorCount++;
+          errors.push({
+            row: i + 1,
+            message: validationError instanceof Error ? 
+              validationError.message : 
+              'خطا در اعتبارسنجی داده‌ها'
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        summary: {
+          total: customers.length,
+          success: successCount,
+          errors: errorCount,
+          errorDetails: errors.slice(0, 100) // Limit error details to prevent large responses
+        }
+      });
+
+    } catch (error) {
+      console.error("Excel import error:", error);
+      res.status(500).json({
+        error: "خطا در پردازش داده‌های Excel",
+        success: false
+      });
+    }
   });
 
   app.get("/api/excel/sample", async (req, res) => {
-    // Return sample Excel file structure
+    try {
+      // Return sample Excel file structure for documentation
+      res.json({
+        fields: [
+          {
+            name: "نام فروشگاه",
+            required: true,
+            type: "text",
+            description: "نام کامل فروشگاه یا مغازه"
+          },
+          {
+            name: "نام مالک", 
+            required: true,
+            type: "text",
+            description: "نام و نام خانوادگی مالک کسب‌وکار"
+          },
+          {
+            name: "شماره تماس",
+            required: true,
+            type: "text", 
+            description: "شماره موبایل (11 رقم، شروع با 09)"
+          },
+          {
+            name: "نوع کسب‌وکار",
+            required: false,
+            type: "text",
+            description: "مانند: سوپرمارکت، داروخانه، رستوران و ..."
+          },
+          {
+            name: "آدرس",
+            required: false,
+            type: "text",
+            description: "آدرس کامل محل کسب‌وکار"
+          },
+          {
+            name: "سود ماهانه",
+            required: false,
+            type: "number",
+            description: "مقدار سود ماهانه به تومان"
+          },
+          {
+            name: "وضعیت",
+            required: false,
+            type: "text",
+            description: "یکی از: active، inactive، marketing، loss، collected"
+          },
+          {
+            name: "شعبه",
+            required: false,
+            type: "text", 
+            description: "نام شعبه مربوطه"
+          },
+          {
+            name: "کارمند پشتیبان",
+            required: false,
+            type: "text",
+            description: "نام کارمند پشتیبان"
+          }
+        ],
+        sampleDownloadUrl: "/api/excel/sample-download"
+      });
+    } catch (error) {
+      console.error("Excel sample error:", error);
+      res.status(500).json({
+        error: "خطا در دریافت نمونه فایل Excel"
+      });
+    }
+  });
+
+  // New endpoint for sample file download (optional - client handles this)
+  app.get("/api/excel/sample-download", async (req, res) => {
     res.json({
-      fields: [
-        "کد ملی",
-        "نام مشتری",
-        "نام شرکت",
-        "شعبه",
-        "موبایل",
-        "آدرس",
-        "سود و زیان",
-        "وضعیت",
-        "تاریخ نصب",
-        "نام پشتیبان",
-        "عنوان صنف"
-      ]
+      message: "Sample Excel file download is handled on the client side for better performance"
     });
   });
 
