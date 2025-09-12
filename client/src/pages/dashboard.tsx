@@ -23,7 +23,8 @@ export type TabType =
   | "ai" 
   | "regional" 
   | "excel"
-  | "monitoring";
+  | "monitoring"
+  | "reports";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
@@ -59,8 +60,37 @@ export default function Dashboard() {
         return <ExcelManagement />;
       case "monitoring":
         return <RealtimeDashboard />;
-      default:
+      case "reports":
         return <ReportsDashboard />;
+      case "ai":
+        return <AIAnalytics />;
+      case "branches":
+        return (
+          <div className="space-y-6">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold">مدیریت واحدهای بانکی</h3>
+              <p className="text-muted-foreground">مدیریت شعب و واحدهای بانکی در سراسر تبریز</p>
+            </div>
+            <ReportsDashboard />
+          </div>
+        );
+      default:
+        return (
+          <div className="space-y-6">
+            <OverviewStats />
+            <BusinessCategories />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <PosMap />
+              </div>
+              <div className="space-y-6">
+                <AlertsPanel />
+                <BranchPerformance />
+              </div>
+            </div>
+            <AIAnalytics />
+          </div>
+        );
     }
   };
 

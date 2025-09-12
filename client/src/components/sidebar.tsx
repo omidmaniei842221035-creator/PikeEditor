@@ -12,8 +12,9 @@ const menuItems = [
   { id: "employees" as TabType, label: "مدیریت کارمندان", icon: "👨‍💼" },
   { id: "branches" as TabType, label: "واحدهای بانکی", icon: "🏢" },
   { id: "analytics" as TabType, label: "تحلیل و گزارش", icon: "📈" },
-  { id: "monitoring" as TabType, label: "مانیتورینگ زنده", icon: "📡" },
+  { id: "reports" as TabType, label: "گزارش‌گیری پیشرفته", icon: "📋" },
   { id: "ai" as TabType, label: "هوش مصنوعی", icon: "🤖" },
+  { id: "monitoring" as TabType, label: "مانیتورینگ زنده", icon: "📡" },
   { id: "regional" as TabType, label: "تحلیل منطقه‌ای", icon: "🗺️" },
   { id: "excel" as TabType, label: "بارگزاری اکسل", icon: "📋" },
 ];

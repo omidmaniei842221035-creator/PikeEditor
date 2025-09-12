@@ -14,7 +14,7 @@ export function CustomerManagement() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
 
-  const { data: customers = [] } = useQuery({
+  const { data: customers = [] } = useQuery<any[]>({
     queryKey: ["/api/customers", { 
       search: searchQuery,
       businessType: businessTypeFilter === "all" ? undefined : businessTypeFilter,
@@ -23,7 +23,7 @@ export function CustomerManagement() {
     }],
   });
 
-  const { data: branches = [] } = useQuery({
+  const { data: branches = [] } = useQuery<any[]>({
     queryKey: ["/api/branches"],
   });
 

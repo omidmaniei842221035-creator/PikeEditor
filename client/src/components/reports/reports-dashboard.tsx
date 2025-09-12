@@ -8,17 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { exportToExcel } from "@/lib/excel-utils";
 
 export function ReportsDashboard() {
-  const [branchFilter, setBranchFilter] = useState("");
-  const [employeeFilter, setEmployeeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [businessTypeFilter, setBusinessTypeFilter] = useState("");
+  const [branchFilter, setBranchFilter] = useState("all");
+  const [employeeFilter, setEmployeeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [businessTypeFilter, setBusinessTypeFilter] = useState("all");
   const [reportData, setReportData] = useState<any>(null);
 
-  const { data: branches = [] } = useQuery({
+  const { data: branches = [] } = useQuery<any[]>({
     queryKey: ["/api/branches"],
   });
 
-  const { data: employees = [] } = useQuery({
+  const { data: employees = [] } = useQuery<any[]>({
     queryKey: ["/api/employees"],
   });
 
@@ -33,10 +33,10 @@ export function ReportsDashboard() {
 
   const handleGenerateReport = () => {
     const filters = {
-      branchId: branchFilter || undefined,
-      employeeId: employeeFilter || undefined,
-      status: statusFilter || undefined,
-      businessType: businessTypeFilter || undefined,
+      branchId: branchFilter === "all" ? undefined : branchFilter,
+      employeeId: employeeFilter === "all" ? undefined : employeeFilter,
+      status: statusFilter === "all" ? undefined : statusFilter,
+      businessType: businessTypeFilter === "all" ? undefined : businessTypeFilter,
     };
     
     generateReportMutation.mutate(filters);
@@ -108,7 +108,7 @@ export function ReportsDashboard() {
                   <SelectValue placeholder="همه شعب" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">همه شعب</SelectItem>
+                  <SelectItem value="all">همه شعب</SelectItem>
                   {branches.map((branch: any) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       {branch.name}
@@ -125,7 +125,7 @@ export function ReportsDashboard() {
                   <SelectValue placeholder="همه کارمندان" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">همه کارمندان</SelectItem>
+                  <SelectItem value="all">همه کارمندان</SelectItem>
                   {employees.map((employee: any) => (
                     <SelectItem key={employee.id} value={employee.id}>
                       {employee.name}
@@ -142,7 +142,7 @@ export function ReportsDashboard() {
                   <SelectValue placeholder="همه وضعیت‌ها" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">همه وضعیت‌ها</SelectItem>
+                  <SelectItem value="all">همه وضعیت‌ها</SelectItem>
                   <SelectItem value="active">کارآمد</SelectItem>
                   <SelectItem value="marketing">در حال بازاریابی</SelectItem>
                   <SelectItem value="loss">زیان‌ده</SelectItem>
@@ -159,7 +159,7 @@ export function ReportsDashboard() {
                   <SelectValue placeholder="همه انواع" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">همه انواع</SelectItem>
+                  <SelectItem value="all">همه انواع</SelectItem>
                   {businessTypes.map((type) => (
                     <SelectItem key={type} value={type}>
                       {type}
