@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { runAIAnalytics } from "@/lib/ai-analytics";
 import type { Customer, Transaction } from "@shared/schema";
 
@@ -18,44 +18,67 @@ export function AIAnalytics() {
     queryKey: ["/api/transactions"],
   });
 
+  // Memoize customer and transaction data to prevent infinite loops
+  const customerData = useMemo(() => {
+    return customers.map((c: any) => ({
+      id: c.id,
+      shopName: c.shopName,
+      monthlyProfit: c.monthlyProfit || 0,
+      status: c.status,
+      businessType: c.businessType,
+      createdAt: (c.createdAt ? c.createdAt.toString() : new Date().toISOString())
+    }));
+  }, [customers]);
+
+  const transactionData = useMemo(() => {
+    return transactions.map((t: any) => ({
+      id: t.id,
+      amount: t.amount,
+      customerId: t.customerId,
+      date: t.createdAt?.toString() || t.date || new Date().toISOString(),
+      posDeviceId: t.posDeviceId || 'pos-1'
+    }));
+  }, [transactions]);
+
+  // Track if we've already processed this data set
+  const lastProcessedRef = useRef<string>('');
+  const abortRef = useRef<boolean>(false);
+
   // Run AI analysis when data is available
   useEffect(() => {
-    if (customers.length > 0) {
+    // Create a snapshot of the current data to avoid re-processing
+    const dataSnapshot = `${customers.length}-${transactions.length}`;
+    
+    // Only run analysis if data has changed and we have customers
+    if (customers.length > 0 && dataSnapshot !== lastProcessedRef.current && !isAnalyzing) {
+      lastProcessedRef.current = dataSnapshot;
       setIsAnalyzing(true);
-      
-      // Convert customer data to proper format for AI analysis
-      const customerData = customers.map(c => ({
-        id: c.id,
-        shopName: c.shopName,
-        monthlyProfit: c.monthlyProfit || 0, // Handle null values
-        status: c.status,
-        businessType: c.businessType,
-        createdAt: (c.createdAt ? c.createdAt.toString() : new Date().toISOString())
-      }));
-      
-      // Convert transaction data to proper format (only use real transactions)
-      const transactionData = transactions.map((t: any) => ({
-        id: t.id,
-        amount: t.amount,
-        customerId: t.customerId,
-        date: t.createdAt?.toString() || t.date || new Date().toISOString(),
-        posDeviceId: t.posDeviceId || 'pos-1'
-      }));
+      abortRef.current = false;
       
       runAIAnalytics(customerData, transactionData)
         .then(results => {
-          setAiResults(results);
-          setIsAnalyzing(false);
+          if (!abortRef.current) {
+            setAiResults(results);
+            setIsAnalyzing(false);
+          }
         })
         .catch(error => {
           console.error('AI Analysis error:', error);
-          setIsAnalyzing(false);
+          if (!abortRef.current) {
+            setIsAnalyzing(false);
+          }
         });
-    } else {
+    } else if (customers.length === 0 && isAnalyzing) {
       setIsAnalyzing(false);
       setAiResults(null);
+      lastProcessedRef.current = '';
     }
-  }, [customers, transactions]);
+
+    // Cleanup function
+    return () => {
+      abortRef.current = true;
+    };
+  }, [customers.length, transactions.length, customerData, transactionData, isAnalyzing]);
 
   if (isAnalyzing) {
     return (
