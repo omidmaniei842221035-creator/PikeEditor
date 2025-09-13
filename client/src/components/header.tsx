@@ -6,29 +6,33 @@ interface HeaderProps {
 }
 
 const tabTitles: Record<TabType, string> = {
-  dashboard: "داشبورد اصناف",
+  dashboard: "سامانه مانیتورینگ هوشمند POS",
   customers: "مدیریت مشتریان",
   employees: "مدیریت کارمندان",
   branches: "واحدهای بانکی",
-  analytics: "تحلیل و آمار",
-  ai: "هوش مصنوعی پیشرفته",
+  analytics: "تحلیل و گزارش",
+  ai: "هوش مصنوعی",
   regional: "تحلیل منطقه‌ای",
   excel: "بارگزاری اکسل",
+  monitoring: "مانیتورینگ لحظه‌ای",
+  reports: "گزارش‌گیری پیشرفته",
 };
 
 const tabDescriptions: Record<TabType, string> = {
-  dashboard: "تحلیل و مانیتورینگ انواع کسب‌وکار و POS تبریز",
-  customers: "لیست کامل مشتریان و جزئیات آن‌ها",
-  employees: "کارمندان، دسترسی‌ها و عملکرد",
-  branches: "ثبت و مدیریت شعب، باجه‌ها، گیشه‌ها و پیشخوان‌های شهرنت",
+  dashboard: "سامانه مانیتورینگ هوشمند پایانه های فروشگاهی - تبریز",
+  customers: "مدیریت کامل مشتریان و 170+ نوع کسب‌وکار",
+  employees: "کارمندان، دسترسی‌ها و بارگذاری Excel",
+  branches: "شعب، باجه‌ها، گیشه‌ها و پیشخوان‌های شهرنت",
   analytics: "آمار تفصیلی عملکرد و گزارش‌های مالی",
   ai: "سیستم‌های یادگیری ماشین و تحلیل رفتاری",
-  regional: "تحلیل پوشش جغرافیایی، شناسایی مناطق کم‌بازاریابی و پیشنهادات توسعه",
-  excel: "آپلود و مدیریت اطلاعات مشتریان از فایل اکسل",
+  regional: "تحلیل پوشش جغرافیایی و شناسایی مناطق توسعه",
+  excel: "بارگذاری اکسل کارمندان و مشتریان",
+  monitoring: "مانیتورینگ لحظه‌ای وضعیت POS و تراکنش‌ها",
+  reports: "گزارش‌گیری پیشرفته و تحلیل روند",
 };
 
 export function Header({ activeTab }: HeaderProps) {
-  const { data: unreadAlerts } = useQuery({
+  const { data: unreadAlerts } = useQuery<any[]>({
     queryKey: ["/api/alerts/unread"],
   });
 
@@ -64,12 +68,12 @@ export function Header({ activeTab }: HeaderProps) {
             data-testid="notifications-button"
           >
             <span className="text-xl">🔔</span>
-            {unreadAlerts && unreadAlerts.length > 0 && (
+            {unreadAlerts && Array.isArray(unreadAlerts) && unreadAlerts.length > 0 && (
               <span 
                 className="absolute -top-1 -left-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center"
                 data-testid="notification-count"
               >
-                {unreadAlerts.length}
+                {Array.isArray(unreadAlerts) ? unreadAlerts.length : 0}
               </span>
             )}
           </button>
