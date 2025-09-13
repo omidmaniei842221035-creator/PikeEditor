@@ -89,7 +89,7 @@ export function addCustomerMarker(
       case 'marketing': // در حال بازاریابی (طوسی)
         return 'gray';
       case 'collected': // جمع‌آوری شده (خاکستری تیره)
-        return 'dark-gray';
+        return 'darkgray';
       default:
         return 'gray';
     }
@@ -183,7 +183,7 @@ export function addCustomerMarker(
         background: ${markerColor === 'green' ? '#22c55e' : 
                      markerColor === 'yellow' ? '#eab308' :
                      markerColor === 'red' ? '#ef4444' :
-                     markerColor === 'dark-gray' ? '#374151' :
+                     markerColor === 'darkgray' ? '#374151' :
                      markerColor === 'gray' ? '#9ca3af' : '#6b7280'};
         width: 40px;
         height: 40px;

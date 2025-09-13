@@ -254,6 +254,31 @@ export function CustomerFormModal({ open, onOpenChange }: CustomerFormModalProps
             
             <FormField
               control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>وضعیت POS</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="status-select">
+                        <SelectValue placeholder="انتخاب وضعیت" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">✅ کارآمد</SelectItem>
+                      <SelectItem value="normal">🟡 معمولی</SelectItem>
+                      <SelectItem value="marketing">📢 بازاریابی</SelectItem>
+                      <SelectItem value="loss">❌ زیان‌ده</SelectItem>
+                      <SelectItem value="collected">📦 جمع‌آوری شده</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
               name="address"
               render={({ field }) => (
                 <FormItem>

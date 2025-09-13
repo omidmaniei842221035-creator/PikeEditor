@@ -52,7 +52,7 @@ export const customers = pgTable("customers", {
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
   monthlyProfit: integer("monthly_profit").default(0), // تومان
-  status: text("status").notNull().default("active"), // active, inactive, marketing, collected, loss
+  status: text("status").notNull().default("active"), // active, normal, marketing, collected, loss
   branchId: varchar("branch_id").references(() => branches.id),
   supportEmployeeId: varchar("support_employee_id").references(() => employees.id),
   installDate: timestamp("install_date"),

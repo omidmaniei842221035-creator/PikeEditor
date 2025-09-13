@@ -117,7 +117,7 @@ async function seedDatabase() {
     }
   ]).returning();
 
-  // Create sample customers
+  // Create sample customers with different statuses for testing 5-color system
   const sampleCustomers = await db.insert(customers).values([
     {
       id: "cust-1",
@@ -140,7 +140,7 @@ async function seedDatabase() {
       phone: "041-33890123",
       address: "تبریز، خیابان امام، پلاک ۱۸۹",
       businessType: "سوپرمارکت",
-      status: "active", 
+      status: "normal", 
       installDate: new Date("2023-07-15"),
       latitude: "38.07500000",
       longitude: "46.28800000"
@@ -153,7 +153,7 @@ async function seedDatabase() {
       phone: "041-33901234",
       address: "تبریز، خیابان فردوسی، پلاک ۷۸",
       businessType: "کافه",
-      status: "active",
+      status: "marketing",
       installDate: new Date("2023-08-20"),
       latitude: "38.07900000",
       longitude: "46.30200000"
@@ -166,7 +166,7 @@ async function seedDatabase() {
       phone: "041-34012345",
       address: "تبریز، پاساژ بازار، طبقه دوم",
       businessType: "پوشاک",
-      status: "active",
+      status: "loss",
       installDate: new Date("2023-09-10"),
       latitude: "38.07400000",
       longitude: "46.29400000"
@@ -179,7 +179,7 @@ async function seedDatabase() {
       phone: "041-34123456",
       address: "تبریز، شهرک صنعتی، بلوار اصلی",
       businessType: "داروخانه",
-      status: "active",
+      status: "collected",
       installDate: new Date("2023-10-05"),
       latitude: "38.09200000",
       longitude: "46.31200000"

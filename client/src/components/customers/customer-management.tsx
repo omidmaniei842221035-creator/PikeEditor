@@ -34,22 +34,22 @@ export function CustomerManagement() {
   const getStatusBadge = (status: string) => {
     const styles = {
       active: "bg-green-100 text-green-800",
-      inactive: "bg-gray-100 text-gray-800", 
-      marketing: "bg-yellow-100 text-yellow-800",
+      normal: "bg-yellow-100 text-yellow-800", 
+      marketing: "bg-gray-100 text-gray-600",
       loss: "bg-red-100 text-red-800",
-      collected: "bg-blue-100 text-blue-800",
+      collected: "bg-slate-200 text-slate-700",
     };
     
     const labels = {
-      active: "✅ کارآمد",
-      inactive: "⏸️ غیرفعال",
+      active: "✅ کارآمد", 
+      normal: "🟡 معمولی",
       marketing: "📢 بازاریابی",
-      loss: "❌ زیان‌ده",
+      loss: "❌ زیان‌ده", 
       collected: "📦 جمع‌آوری شده",
     };
 
     return (
-      <Badge className={styles[status as keyof typeof styles] || styles.inactive}>
+      <Badge className={styles[status as keyof typeof styles] || styles.marketing}>
         {labels[status as keyof typeof labels] || status}
       </Badge>
     );
@@ -173,8 +173,10 @@ export function CustomerManagement() {
                 <SelectContent>
                   <SelectItem value="all">همه وضعیت‌ها</SelectItem>
                   <SelectItem value="active">✅ کارآمد</SelectItem>
+                  <SelectItem value="normal">🟡 معمولی</SelectItem>
                   <SelectItem value="marketing">📢 بازاریابی</SelectItem>
                   <SelectItem value="loss">❌ زیان‌ده</SelectItem>
+                  <SelectItem value="collected">📦 جمع‌آوری شده</SelectItem>
                 </SelectContent>
               </Select>
             </div>
