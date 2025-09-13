@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmployeeFormModal } from "./employee-form-modal";
+import { EmployeeExcelImportModal } from "./employee-excel-import-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -22,6 +23,7 @@ import {
 
 export function EmployeeManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showExcelImportModal, setShowExcelImportModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [positionFilter, setPositionFilter] = useState("all");
@@ -31,11 +33,11 @@ export function EmployeeManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: employees = [] } = useQuery({
+  const { data: employees = [] } = useQuery<any[]>({
     queryKey: ["/api/employees"],
   });
 
-  const { data: branches = [] } = useQuery({
+  const { data: branches = [] } = useQuery<any[]>({
     queryKey: ["/api/branches"],
   });
 
@@ -105,12 +107,21 @@ export function EmployeeManagement() {
           <h3 className="text-2xl font-bold">مدیریت کارمندان</h3>
           <p className="text-muted-foreground">کارمندان، دسترسی‌ها و عملکرد</p>
         </div>
-        <Button 
-          onClick={() => setShowAddModal(true)}
-          data-testid="add-employee-button"
-        >
-          ➕ افزودن کارمند جدید
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowAddModal(true)}
+            data-testid="add-employee-button"
+          >
+            ➕ افزودن کارمند جدید
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => setShowExcelImportModal(true)}
+            data-testid="excel-import-button"
+          >
+            📄 بارگذاری Excel
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -348,6 +359,15 @@ export function EmployeeManagement() {
           }
         }}
         employee={editingEmployee}
+      />
+
+      <EmployeeExcelImportModal
+        open={showExcelImportModal}
+        onOpenChange={setShowExcelImportModal}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+          setShowExcelImportModal(false);
+        }}
       />
     </div>
   );

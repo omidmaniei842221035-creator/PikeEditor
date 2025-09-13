@@ -72,6 +72,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk import employees - MUST come before :id routes
+  app.post("/api/employees/bulk-import", async (req, res) => {
+    try {
+      const { employees } = req.body;
+      
+      if (!Array.isArray(employees)) {
+        return res.status(400).json({ error: "employees must be an array" });
+      }
+
+      const MAX_BATCH_SIZE = 1000;
+      if (employees.length > MAX_BATCH_SIZE) {
+        return res.status(400).json({ 
+          error: `Batch size exceeds maximum allowed (${MAX_BATCH_SIZE})` 
+        });
+      }
+
+      const validEmployees = [];
+      const errors = [];
+
+      // Validate each employee
+      for (let i = 0; i < employees.length; i++) {
+        try {
+          const employeeData = insertEmployeeSchema.parse(employees[i]);
+          validEmployees.push(employeeData);
+        } catch (error: any) {
+          errors.push(`Row ${i + 1}: ${error.message}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        return res.status(400).json({ 
+          error: "Validation errors", 
+          details: errors 
+        });
+      }
+
+      // Bulk import valid employees
+      const importedEmployees = await storage.bulkCreateEmployees(validEmployees);
+      
+      res.json({ 
+        success: true,
+        imported: importedEmployees.length,
+        employees: importedEmployees
+      });
+      
+    } catch (error) {
+      res.status(500).json({ error: "Bulk import failed" });
+    }
+  });
+
   app.get("/api/employees/:id", async (req, res) => {
     const employee = await storage.getEmployee(req.params.id);
     if (!employee) {

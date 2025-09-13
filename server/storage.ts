@@ -31,6 +31,7 @@ export interface IStorage {
   createEmployee(employee: InsertEmployee): Promise<Employee>;
   updateEmployee(id: string, employee: Partial<InsertEmployee>): Promise<Employee | undefined>;
   deleteEmployee(id: string): Promise<boolean>;
+  bulkCreateEmployees(employees: InsertEmployee[]): Promise<Employee[]>;
 
   // Customers
   getAllCustomers(): Promise<Customer[]>;
@@ -139,6 +140,11 @@ export class DatabaseStorage implements IStorage {
   async deleteEmployee(id: string): Promise<boolean> {
     const result = await db.delete(employees).where(eq(employees.id, id));
     return result.rowCount > 0;
+  }
+
+  async bulkCreateEmployees(insertEmployees: InsertEmployee[]): Promise<Employee[]> {
+    const createdEmployees = await db.insert(employees).values(insertEmployees).returning();
+    return createdEmployees;
   }
 
   // Customer methods
