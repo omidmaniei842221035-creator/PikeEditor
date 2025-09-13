@@ -1,4 +1,4 @@
-# Persian POS Management Dashboard
+# سامانه مانیتورینگ هوشمند پایانه های فروشگاهی
 
 ## Overview
 

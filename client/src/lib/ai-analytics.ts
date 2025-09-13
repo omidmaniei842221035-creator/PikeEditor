@@ -1,4 +1,4 @@
-// AI Analytics Engine for Persian POS Management Dashboard
+// AI Analytics Engine for سامانه مانیتورینگ هوشمند پایانه های فروشگاهی
 // Implements actual machine learning algorithms for sales forecasting, customer analysis, and business intelligence
 
 interface CustomerData {
@@ -421,7 +421,7 @@ export function predictCustomerChurn(customers: CustomerData[], transactions: Tr
 
 // Pricing Optimization using elasticity analysis
 export function optimizePricing(customers: CustomerData[], transactions: TransactionData[]): PricingOptimizationResult {
-  const businessTypes = [...new Set(customers.map(c => c.businessType))];
+  const businessTypes = Array.from(new Set(customers.map(c => c.businessType)));
   const recommendations = [];
   
   for (const businessType of businessTypes) {
@@ -474,7 +474,7 @@ export function optimizePricing(customers: CustomerData[], transactions: Transac
 
 // Demand Forecasting using seasonal analysis
 export function forecastDemand(customers: CustomerData[], transactions: TransactionData[]): DemandForecastResult {
-  const businessTypes = [...new Set(customers.map(c => c.businessType))];
+  const businessTypes = Array.from(new Set(customers.map(c => c.businessType)));
   const predictions = [];
   
   for (const businessType of businessTypes) {
