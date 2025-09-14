@@ -107,7 +107,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBranch(id: string): Promise<boolean> {
     const result = await db.delete(branches).where(eq(branches.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Employee methods
@@ -139,7 +139,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEmployee(id: string): Promise<boolean> {
     const result = await db.delete(employees).where(eq(employees.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async bulkCreateEmployees(insertEmployees: InsertEmployee[]): Promise<Employee[]> {
@@ -184,7 +184,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCustomer(id: string): Promise<boolean> {
     const result = await db.delete(customers).where(eq(customers.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async searchCustomers(query: string): Promise<Customer[]> {

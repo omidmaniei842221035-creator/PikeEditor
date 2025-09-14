@@ -6,7 +6,7 @@ interface HeaderProps {
 }
 
 const tabTitles: Record<TabType, string> = {
-  dashboard: "سامانه مانیتورینگ هوشمند POS",
+  dashboard: "سامانه مانیتورینگ هوشمند پایانه های فروشگاهی",
   customers: "مدیریت مشتریان",
   employees: "مدیریت کارمندان",
   branches: "واحدهای بانکی",
