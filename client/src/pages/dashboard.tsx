@@ -13,6 +13,7 @@ import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard";
 import { ReportsDashboard } from "@/components/reports/reports-dashboard";
 import { ExcelManagement } from "@/components/excel/excel-management";
 import { RealtimeDashboard } from "@/components/monitoring/realtime-dashboard";
+import { BranchManagement } from "@/components/branches/branch-management";
 
 export type TabType = 
   | "dashboard" 
@@ -65,15 +66,7 @@ export default function Dashboard() {
       case "ai":
         return <AIAnalytics />;
       case "branches":
-        return (
-          <div className="space-y-6">
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold">مدیریت واحدهای بانکی</h3>
-              <p className="text-muted-foreground">مدیریت شعب و واحدهای بانکی در سراسر تبریز</p>
-            </div>
-            <ReportsDashboard />
-          </div>
-        );
+        return <BranchManagement />;
       default:
         return (
           <div className="space-y-6">

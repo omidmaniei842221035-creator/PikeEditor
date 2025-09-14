@@ -23,6 +23,7 @@ export interface IStorage {
   createBranch(branch: InsertBranch): Promise<Branch>;
   updateBranch(id: string, branch: Partial<InsertBranch>): Promise<Branch | undefined>;
   deleteBranch(id: string): Promise<boolean>;
+  bulkCreateBranches(branches: InsertBranch[]): Promise<Branch[]>;
 
   // Employees
   getAllEmployees(): Promise<Employee[]>;
@@ -145,6 +146,11 @@ export class DatabaseStorage implements IStorage {
   async bulkCreateEmployees(insertEmployees: InsertEmployee[]): Promise<Employee[]> {
     const createdEmployees = await db.insert(employees).values(insertEmployees).returning();
     return createdEmployees;
+  }
+
+  async bulkCreateBranches(insertBranches: InsertBranch[]): Promise<Branch[]> {
+    const createdBranches = await db.insert(branches).values(insertBranches).returning();
+    return createdBranches;
   }
 
   // Customer methods

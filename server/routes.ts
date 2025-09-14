@@ -56,6 +56,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   });
 
+  // Bulk import branches
+  app.post("/api/branches/bulk-import", async (req, res) => {
+    try {
+      const { branches } = req.body;
+      
+      if (!Array.isArray(branches)) {
+        return res.status(400).json({ error: "branches must be an array" });
+      }
+
+      const MAX_BATCH_SIZE = 1000;
+      if (branches.length > MAX_BATCH_SIZE) {
+        return res.status(400).json({ 
+          error: `Batch size exceeds maximum allowed (${MAX_BATCH_SIZE})` 
+        });
+      }
+
+      const validBranches = [];
+      const errors = [];
+
+      // Validate each branch
+      for (let i = 0; i < branches.length; i++) {
+        try {
+          const branchData = insertBranchSchema.parse(branches[i]);
+          validBranches.push(branchData);
+        } catch (error: any) {
+          errors.push(`Row ${i + 1}: ${error.message}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        return res.status(400).json({ 
+          error: "Validation errors", 
+          details: errors.slice(0, 100) // Limit to first 100 errors
+        });
+      }
+
+      // Bulk import valid branches
+      const importedBranches = await storage.bulkCreateBranches(validBranches);
+      
+      res.json({ 
+        success: true,
+        imported: importedBranches.length,
+        branches: importedBranches
+      });
+      
+    } catch (error) {
+      res.status(500).json({ error: "Bulk import failed" });
+    }
+  });
+
   // Employees routes
   app.get("/api/employees", async (req, res) => {
     const employees = await storage.getAllEmployees();
