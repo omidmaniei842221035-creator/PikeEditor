@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { PosStatsTrends } from "@/components/pos-stats/pos-stats-trends";
 
 export function AnalyticsDashboard() {
   const { data: analytics } = useQuery({
@@ -287,6 +288,9 @@ export function AnalyticsDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* POS Trends Analysis */}
+      <PosStatsTrends />
     </div>
   );
 }
