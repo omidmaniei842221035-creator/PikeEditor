@@ -4,12 +4,12 @@ import { users, branches, employees, customers, posDevices, transactions, alerts
 async function seedDatabase() {
   console.log("🌱 Seeding database with sample data...");
 
-  // Clear existing data
+  // Clear existing data (order matters for foreign keys)
   await db.delete(alerts);
   await db.delete(transactions);
   await db.delete(posDevices);
-  await db.delete(employees);
   await db.delete(customers);
+  await db.delete(employees);
   await db.delete(branches);
   await db.delete(users);
 
@@ -324,6 +324,119 @@ async function seedDatabase() {
       installDate: new Date("2024-09-01"),
       latitude: "38.09500000",
       longitude: "46.32000000"
+    },
+    // مشتریان جدید اضافی برای نقشه
+    {
+      id: "cust-16",
+      branchId: "branch-1",
+      shopName: "بانک پارسیان شعبه تبریز",
+      ownerName: "مدیر شعبه حسام پور",
+      phone: "041-33111222",
+      address: "تبریز، خیابان امام خمینی، برج کوثر",
+      businessType: "بانک",
+      status: "active",
+      monthlyProfit: 250000000,
+      installDate: new Date("2024-02-01"),
+      latitude: "38.08700000",
+      longitude: "46.29000000"
+    },
+    {
+      id: "cust-17",
+      branchId: "branch-2",
+      shopName: "فست‌فود برگر کینگ",
+      ownerName: "شهریار امینی",
+      phone: "041-33222333",
+      address: "تبریز، خیابان آبرسان، مقابل پارک بعثت",
+      businessType: "فست‌فود",
+      status: "normal",
+      monthlyProfit: 120000000,
+      installDate: new Date("2024-03-15"),
+      latitude: "38.07300000",
+      longitude: "46.30800000"
+    },
+    {
+      id: "cust-18",
+      branchId: "branch-3",
+      shopName: "آژانس مسافربری آذرخش",
+      ownerName: "ابراهیم قاسمی",
+      phone: "041-34333444",
+      address: "تبریز، ترمینال، طبقه دوم",
+      businessType: "آژانس مسافربری",
+      status: "marketing",
+      monthlyProfit: 60000000,
+      installDate: new Date("2024-04-20"),
+      latitude: "38.06900000",
+      longitude: "46.32500000"
+    },
+    {
+      id: "cust-19",
+      branchId: "branch-1",
+      shopName: "کلینیک دندانپزشکی نگین",
+      ownerName: "دکتر مریم صادقی",
+      phone: "041-33444555",
+      address: "تبریز، خیابان مطهری، ساختمان پزشکان",
+      businessType: "کلینیک دندانپزشکی",
+      status: "loss",
+      monthlyProfit: -30000000,
+      installDate: new Date("2024-05-10"),
+      latitude: "38.08900000",
+      longitude: "46.30600000"
+    },
+    {
+      id: "cust-20",
+      branchId: "branch-2",
+      shopName: "پیتزا و فست‌فود رویال",
+      ownerName: "مسعود کریمی",
+      phone: "041-33555666",
+      address: "تبریز، خیابان جمهوری، نرسیده به پل آبی",
+      businessType: "پیتزا و فست‌فود",
+      status: "collected",
+      monthlyProfit: 0,
+      installDate: new Date("2024-06-05"),
+      latitude: "38.07800000",
+      longitude: "46.29200000"
+    },
+    {
+      id: "cust-21",
+      branchId: "branch-3",
+      shopName: "فروشگاه طلا و جواهر آرین",
+      ownerName: "حسین جواهری",
+      phone: "041-34666777",
+      address: "تبریز، بازار تبریز، راسته طلافروشان",
+      businessType: "طلا و جواهرفروشی",
+      status: "active",
+      monthlyProfit: 180000000,
+      installDate: new Date("2024-07-01"),
+      latitude: "38.08000000",
+      longitude: "46.29400000"
+    },
+    {
+      id: "cust-22",
+      branchId: "branch-1",
+      shopName: "سوپرمارکت هایپر اسپید",
+      ownerName: "فرهاد احمدی",
+      phone: "041-33777888",
+      address: "تبریز، کوی استاد شهریار، مجتمع تجاری",
+      businessType: "هایپرمارکت",
+      status: "normal",
+      monthlyProfit: 340000000,
+      installDate: new Date("2024-08-10"),
+      latitude: "38.08200000",
+      longitude: "46.31400000"
+    },
+    {
+      id: "cust-23",
+      branchId: "branch-2",
+      shopName: "مرکز تعمیرات موبایل تک",
+      ownerName: "امیرحسین مقدم",
+      phone: "041-33888999",
+      address: "تبریز، پاساژ کوثر، طبقه همکف",
+      businessType: "تعمیرات موبایل",
+      status: "marketing",
+      monthlyProfit: 25000000,
+      installDate: new Date("2024-09-15"),
+      latitude: "38.08400000",
+      longitude: "46.29800000"
     }
   ]).returning();
 
