@@ -6,7 +6,8 @@ import {
   type PosDevice, type InsertPosDevice,
   type Transaction, type InsertTransaction,
   type Alert, type InsertAlert,
-  users, branches, employees, customers, posDevices, transactions, alerts
+  type PosMonthlyStats, type InsertPosMonthlyStats,
+  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, ilike, or, desc } from "drizzle-orm";
@@ -64,6 +65,17 @@ export interface IStorage {
   getAlert(id: string): Promise<Alert | undefined>;
   createAlert(alert: InsertAlert): Promise<Alert>;
   markAlertAsRead(id: string): Promise<Alert | undefined>;
+
+  // POS Monthly Stats
+  getAllPosMonthlyStats(): Promise<PosMonthlyStats[]>;
+  getPosMonthlyStats(id: string): Promise<PosMonthlyStats | undefined>;
+  getPosMonthlyStatsByCustomer(customerId: string): Promise<PosMonthlyStats[]>;
+  getPosMonthlyStatsByBranch(branchId: string): Promise<PosMonthlyStats[]>;
+  getPosMonthlyStatsByDateRange(year: number, startMonth: number, endMonth: number): Promise<PosMonthlyStats[]>;
+  createPosMonthlyStats(stats: InsertPosMonthlyStats): Promise<PosMonthlyStats>;
+  updatePosMonthlyStats(id: string, stats: Partial<InsertPosMonthlyStats>): Promise<PosMonthlyStats | undefined>;
+  deletePosMonthlyStats(id: string): Promise<boolean>;
+  bulkCreatePosMonthlyStats(stats: InsertPosMonthlyStats[]): Promise<PosMonthlyStats[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -279,6 +291,61 @@ export class DatabaseStorage implements IStorage {
       .where(eq(alerts.id, id))
       .returning();
     return alert;
+  }
+
+  // POS Monthly Stats methods
+  async getAllPosMonthlyStats(): Promise<PosMonthlyStats[]> {
+    return await db.select().from(posMonthlyStats).orderBy(desc(posMonthlyStats.year), desc(posMonthlyStats.month));
+  }
+
+  async getPosMonthlyStats(id: string): Promise<PosMonthlyStats | undefined> {
+    const [stats] = await db.select().from(posMonthlyStats).where(eq(posMonthlyStats.id, id));
+    return stats;
+  }
+
+  async getPosMonthlyStatsByCustomer(customerId: string): Promise<PosMonthlyStats[]> {
+    return await db.select().from(posMonthlyStats)
+      .where(eq(posMonthlyStats.customerId, customerId))
+      .orderBy(desc(posMonthlyStats.year), desc(posMonthlyStats.month));
+  }
+
+  async getPosMonthlyStatsByBranch(branchId: string): Promise<PosMonthlyStats[]> {
+    return await db.select().from(posMonthlyStats)
+      .where(eq(posMonthlyStats.branchId, branchId))
+      .orderBy(desc(posMonthlyStats.year), desc(posMonthlyStats.month));
+  }
+
+  async getPosMonthlyStatsByDateRange(year: number, startMonth: number, endMonth: number): Promise<PosMonthlyStats[]> {
+    return await db.select().from(posMonthlyStats).where(
+      and(
+        eq(posMonthlyStats.year, year),
+        gte(posMonthlyStats.month, startMonth),
+        lte(posMonthlyStats.month, endMonth)
+      )
+    ).orderBy(desc(posMonthlyStats.month));
+  }
+
+  async createPosMonthlyStats(insertStats: InsertPosMonthlyStats): Promise<PosMonthlyStats> {
+    const [stats] = await db.insert(posMonthlyStats).values(insertStats).returning();
+    return stats;
+  }
+
+  async updatePosMonthlyStats(id: string, updateData: Partial<InsertPosMonthlyStats>): Promise<PosMonthlyStats | undefined> {
+    const [stats] = await db.update(posMonthlyStats)
+      .set(updateData)
+      .where(eq(posMonthlyStats.id, id))
+      .returning();
+    return stats;
+  }
+
+  async deletePosMonthlyStats(id: string): Promise<boolean> {
+    const result = await db.delete(posMonthlyStats).where(eq(posMonthlyStats.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async bulkCreatePosMonthlyStats(insertStatsArray: InsertPosMonthlyStats[]): Promise<PosMonthlyStats[]> {
+    const createdStats = await db.insert(posMonthlyStats).values(insertStatsArray).returning();
+    return createdStats;
   }
 }
 

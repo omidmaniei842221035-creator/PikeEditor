@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema } from "@shared/schema";
+import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema } from "@shared/schema";
 import { z } from "zod";
 
 // WebSocket connection management
@@ -339,6 +339,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
       businessTypes,
       statusCounts,
     });
+  });
+
+  // POS Monthly Stats routes
+  app.get("/api/pos-stats", async (req, res) => {
+    const stats = await storage.getAllPosMonthlyStats();
+    res.json(stats);
+  });
+
+  app.post("/api/pos-stats", async (req, res) => {
+    try {
+      const statsData = insertPosMonthlyStatsSchema.parse(req.body);
+      const stats = await storage.createPosMonthlyStats(statsData);
+      res.json(stats);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid POS stats data" });
+    }
+  });
+
+  app.get("/api/pos-stats/:id", async (req, res) => {
+    const stats = await storage.getPosMonthlyStats(req.params.id);
+    if (!stats) {
+      return res.status(404).json({ error: "POS stats not found" });
+    }
+    res.json(stats);
+  });
+
+  app.put("/api/pos-stats/:id", async (req, res) => {
+    try {
+      const updateData = insertPosMonthlyStatsSchema.partial().parse(req.body);
+      const stats = await storage.updatePosMonthlyStats(req.params.id, updateData);
+      if (!stats) {
+        return res.status(404).json({ error: "POS stats not found" });
+      }
+      res.json(stats);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid POS stats data" });
+    }
+  });
+
+  app.delete("/api/pos-stats/:id", async (req, res) => {
+    const deleted = await storage.deletePosMonthlyStats(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "POS stats not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // Get POS stats by customer
+  app.get("/api/pos-stats/customer/:customerId", async (req, res) => {
+    const stats = await storage.getPosMonthlyStatsByCustomer(req.params.customerId);
+    res.json(stats);
+  });
+
+  // Get POS stats by branch
+  app.get("/api/pos-stats/branch/:branchId", async (req, res) => {
+    const stats = await storage.getPosMonthlyStatsByBranch(req.params.branchId);
+    res.json(stats);
+  });
+
+  // Get POS stats by date range
+  app.get("/api/pos-stats/date/:year/:startMonth/:endMonth", async (req, res) => {
+    const year = parseInt(req.params.year);
+    const startMonth = parseInt(req.params.startMonth);
+    const endMonth = parseInt(req.params.endMonth);
+    
+    if (isNaN(year) || isNaN(startMonth) || isNaN(endMonth)) {
+      return res.status(400).json({ error: "Invalid date parameters" });
+    }
+    
+    const stats = await storage.getPosMonthlyStatsByDateRange(year, startMonth, endMonth);
+    res.json(stats);
+  });
+
+  // Bulk import POS monthly stats
+  app.post("/api/pos-stats/bulk-import", async (req, res) => {
+    try {
+      const { stats } = req.body;
+      
+      if (!Array.isArray(stats)) {
+        return res.status(400).json({ error: "stats must be an array" });
+      }
+
+      const MAX_BATCH_SIZE = 1000;
+      if (stats.length > MAX_BATCH_SIZE) {
+        return res.status(400).json({ 
+          error: `Batch size exceeds maximum allowed (${MAX_BATCH_SIZE})` 
+        });
+      }
+
+      const validStats = [];
+      const errors = [];
+
+      // Validate each stat entry
+      for (let i = 0; i < stats.length; i++) {
+        try {
+          const statsData = insertPosMonthlyStatsSchema.parse(stats[i]);
+          validStats.push(statsData);
+        } catch (error: any) {
+          errors.push(`Row ${i + 1}: ${error.message}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        return res.status(400).json({ 
+          error: "Validation errors", 
+          details: errors.slice(0, 100) // Limit to first 100 errors
+        });
+      }
+
+      // Bulk import valid stats
+      const importedStats = await storage.bulkCreatePosMonthlyStats(validStats);
+      
+      res.json({ 
+        success: true,
+        imported: importedStats.length,
+        stats: importedStats
+      });
+      
+    } catch (error) {
+      res.status(500).json({ error: "Bulk import failed" });
+    }
   });
 
   // Reports routes

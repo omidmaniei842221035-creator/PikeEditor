@@ -87,6 +87,21 @@ export const alerts = pgTable("alerts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const posMonthlyStats = pgTable("pos_monthly_stats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").references(() => customers.id),
+  branchId: varchar("branch_id").references(() => branches.id),
+  year: integer("year").notNull(),
+  month: integer("month").notNull(), // 1-12
+  totalTransactions: integer("total_transactions").default(0),
+  totalAmount: integer("total_amount").default(0), // تومان
+  revenue: integer("revenue").default(0), // درآمد
+  profit: integer("profit").default(0), // سود
+  status: text("status").notNull().default("active"), // active, normal, marketing, collected, loss
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -123,6 +138,11 @@ export const insertAlertSchema = createInsertSchema(alerts).omit({
   createdAt: true,
 });
 
+export const insertPosMonthlyStatsSchema = createInsertSchema(posMonthlyStats).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -144,3 +164,6 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 export type Alert = typeof alerts.$inferSelect;
 export type InsertAlert = z.infer<typeof insertAlertSchema>;
+
+export type PosMonthlyStats = typeof posMonthlyStats.$inferSelect;
+export type InsertPosMonthlyStats = z.infer<typeof insertPosMonthlyStatsSchema>;

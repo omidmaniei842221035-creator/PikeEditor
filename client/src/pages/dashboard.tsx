@@ -14,6 +14,7 @@ import { ReportsDashboard } from "@/components/reports/reports-dashboard";
 import { ExcelManagement } from "@/components/excel/excel-management";
 import { RealtimeDashboard } from "@/components/monitoring/realtime-dashboard";
 import { BranchManagement } from "@/components/branches/branch-management";
+import { PosStatsManagement } from "@/components/pos-stats/pos-stats-management";
 
 export type TabType = 
   | "dashboard" 
@@ -25,7 +26,8 @@ export type TabType =
   | "regional" 
   | "excel"
   | "monitoring"
-  | "reports";
+  | "reports"
+  | "pos-stats";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
@@ -67,6 +69,8 @@ export default function Dashboard() {
         return <AIAnalytics />;
       case "branches":
         return <BranchManagement />;
+      case "pos-stats":
+        return <PosStatsManagement />;
       default:
         return (
           <div className="space-y-6">
