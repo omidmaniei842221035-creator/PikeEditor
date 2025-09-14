@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RefreshCw } from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
 import { initializeMap, addCustomerMarker, type MapInstance } from "@/lib/map-utils";
 
 export function PosMap() {
@@ -13,8 +15,12 @@ export function PosMap() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [mapReady, setMapReady] = useState(false);
 
-  const { data: customers = [] } = useQuery({
+  const { data: customers = [], isLoading: customersLoading } = useQuery({
     queryKey: ["/api/customers"],
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    refetchInterval: 30000,
   });
 
   const { data: analytics } = useQuery({
@@ -55,7 +61,7 @@ export function PosMap() {
       mapInstanceRef.current.markers = [];
 
       // Filter customers based on selected filters
-      const filteredCustomers = customers.filter((customer: any) => {
+      const filteredCustomers = (customers as any[]).filter((customer: any) => {
         const businessMatch = businessFilter === "all" || customer.businessType === businessFilter;
         const statusMatch = statusFilter === "all" || customer.status === statusFilter;
         return businessMatch && statusMatch;
@@ -76,14 +82,14 @@ export function PosMap() {
   }, [mapReady, customers, businessFilter, statusFilter]);
 
   const mapStats = {
-    visible: customers.filter((c: any) => {
+    visible: (customers as any[]).filter((c: any) => {
       const businessMatch = businessFilter === "all" || c.businessType === businessFilter;
       const statusMatch = statusFilter === "all" || c.status === statusFilter;
       return businessMatch && statusMatch;
     }).length,
-    avgRevenue: analytics?.avgProfit ? (analytics.avgProfit / 1000000).toFixed(1) + "M" : "0M",
-    efficiency: analytics?.totalCustomers > 0 
-      ? Math.round((analytics.activeCustomers / analytics.totalCustomers) * 100) + "%"
+    avgRevenue: (analytics as any)?.avgProfit ? ((analytics as any).avgProfit / 1000000).toFixed(1) + "M" : "0M",
+    efficiency: (analytics as any)?.totalCustomers > 0 
+      ? Math.round(((analytics as any).activeCustomers / (analytics as any).totalCustomers) * 100) + "%"
       : "0%",
     clusters: 5, // Mock cluster count
   };
@@ -136,9 +142,11 @@ export function PosMap() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                  <SelectItem value="active">✅ کارآمد</SelectItem>
-                  <SelectItem value="inactive">❌ زیان‌ده</SelectItem>
-                  <SelectItem value="marketing">📢 در حال بازاریابی</SelectItem>
+                  <SelectItem value="active">🟢 فعال</SelectItem>
+                  <SelectItem value="normal">🔵 عادی</SelectItem>
+                  <SelectItem value="marketing">🟡 بازاریابی</SelectItem>
+                  <SelectItem value="loss">🔴 زیان‌ده</SelectItem>
+                  <SelectItem value="collected">⚫ جمع‌آوری شده</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -172,17 +180,32 @@ export function PosMap() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold">🗺️ نقشه تعاملی POS تبریز</CardTitle>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span data-testid="active-devices-count">{analytics?.activeCustomers || 0}</span> فعال
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                <span data-testid="offline-devices-count">
-                  {(analytics?.totalCustomers || 0) - (analytics?.activeCustomers || 0)}
-                </span> آفلاین
-              </span>
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={async () => {
+                  await queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+                  await queryClient.invalidateQueries({ queryKey: ['/api/analytics/overview'] });
+                }}
+                disabled={customersLoading}
+                data-testid="refresh-customers-button"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${customersLoading ? 'animate-spin' : ''}`} />
+                تازه‌سازی داده‌ها
+              </Button>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span data-testid="active-devices-count">{(analytics as any)?.activeCustomers || 0}</span> فعال
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                  <span data-testid="offline-devices-count">
+                    {((analytics as any)?.totalCustomers || 0) - ((analytics as any)?.activeCustomers || 0)}
+                  </span> آفلاین
+                </span>
+              </div>
             </div>
           </div>
         </CardHeader>
