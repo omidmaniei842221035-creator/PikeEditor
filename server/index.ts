@@ -37,6 +37,17 @@ app.use((req, res, next) => {
   next();
 });
 
+// Disable caching for all API routes to prevent stale data
+app.use('/api', (_req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
+  next();
+});
+
 // Auto-seed database if empty
 async function autoSeedIfEmpty() {
   try {

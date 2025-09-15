@@ -24,13 +24,14 @@ export function PosMap() {
   } | null>(null);
   const [pendingBranchLocation, setPendingBranchLocation] = useState<{lat: number, lng: number} | null>(null);
   const [hasActiveRegions, setHasActiveRegions] = useState(false);
+  const [dataVersion, setDataVersion] = useState(0);
   
   // Use refs to avoid stale closures
   const addBankingUnitModeRef = useRef(addBankingUnitMode);
   const regionAnalysisEnabledRef = useRef(regionAnalysisEnabled);
 
   const { data: customers = [], isLoading: customersLoading } = useQuery({
-    queryKey: ["/api/customers"],
+    queryKey: [`/api/customers?v=${dataVersion}`],
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true,
@@ -270,7 +271,8 @@ export function PosMap() {
                 variant="outline" 
                 size="sm"
                 onClick={() => {
-                  queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+                  setDataVersion(prev => prev + 1);
+                  queryClient.invalidateQueries({ queryKey: [`/api/customers?v=${dataVersion}`] });
                   queryClient.invalidateQueries({ queryKey: ["/api/analytics/overview"] });
                 }}
                 className="flex items-center gap-2"
