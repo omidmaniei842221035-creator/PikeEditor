@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { users, branches, employees, customers, posDevices, transactions, alerts } from "@shared/schema";
 
-async function seedDatabase() {
+export async function seedDatabase() {
   console.log("🌱 Seeding database with sample data...");
 
   // Clear existing data (order matters for foreign keys)

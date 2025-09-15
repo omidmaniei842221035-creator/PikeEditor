@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
 
 const app = express();
 app.use(express.json());
@@ -36,7 +37,22 @@ app.use((req, res, next) => {
   next();
 });
 
+// Auto-seed database if empty
+async function autoSeedIfEmpty() {
+  try {
+    const customers = await storage.getAllCustomers();
+    if (customers.length === 0) {
+      console.log("\u26a0\ufe0f Database is empty, running seed script...");
+      const { seedDatabase } = await import('./seed');
+      await seedDatabase();
+    }
+  } catch (error) {
+    console.error("\u274c Error checking database or seeding:", error);
+  }
+}
+
 (async () => {
+  await autoSeedIfEmpty();
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
