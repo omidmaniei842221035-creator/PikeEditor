@@ -32,6 +32,7 @@ export function PosMap() {
   const { data: customers = [], isLoading: customersLoading } = useQuery({
     queryKey: ["/api/customers"],
     staleTime: 0,
+    gcTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: 'always',
     refetchInterval: 30000,
@@ -264,6 +265,19 @@ export function PosMap() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold">🗺️ نقشه تعاملی POS تبریز</CardTitle>
             <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/analytics/overview"] });
+                }}
+                className="flex items-center gap-2"
+                data-testid="refresh-customers-button"
+              >
+                <RefreshCw className="h-4 w-4" />
+                بروزرسانی داده‌ها
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
