@@ -1,6 +1,9 @@
 export interface MapInstance {
   map: any;
   markers: any[];
+  drawnItems?: any;
+  drawControl?: any;
+  onRegionChange?: (hasRegions: boolean) => void;
 }
 
 // Function to wait for Leaflet to be available
@@ -30,7 +33,7 @@ function waitForLeaflet(): Promise<any> {
   });
 }
 
-export async function initializeMap(container: HTMLElement): Promise<MapInstance> {
+export async function initializeMap(container: HTMLElement, onRegionChange?: (hasRegions: boolean) => void): Promise<MapInstance> {
   try {
     const L = await waitForLeaflet();
     
@@ -52,9 +55,82 @@ export async function initializeMap(container: HTMLElement): Promise<MapInstance
     map.zoomControl.setPosition('topright');
     map.attributionControl.setPosition('bottomright');
 
+    // Initialize draw controls for region selection
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    const drawControl = new L.Control.Draw({
+      position: 'topleft',
+      draw: {
+        polygon: {
+          allowIntersection: false,
+          drawError: {
+            color: '#e1e100',
+            message: '<strong>خطا!</strong> شکل نمی‌تواند با خودش تداخل داشته باشد.'
+          },
+          shapeOptions: {
+            color: '#3b82f6',
+            fillColor: '#3b82f6',
+            fillOpacity: 0.2
+          }
+        },
+        rectangle: {
+          shapeOptions: {
+            color: '#3b82f6',
+            fillColor: '#3b82f6',
+            fillOpacity: 0.2
+          }
+        },
+        circle: {
+          shapeOptions: {
+            color: '#3b82f6',
+            fillColor: '#3b82f6',
+            fillOpacity: 0.2
+          }
+        },
+        marker: false,
+        circlemarker: false,
+        polyline: false
+      },
+      edit: {
+        featureGroup: drawnItems,
+        remove: true
+      }
+    });
+
+    map.addControl(drawControl);
+
+    // Add event listeners for draw operations
+    map.on('draw:created', function (event: any) {
+      const layer = event.layer;
+      drawnItems.addLayer(layer);
+      
+      // Notify that regions have changed
+      if (onRegionChange) {
+        onRegionChange(drawnItems.getLayers().length > 0);
+      }
+    });
+
+    map.on('draw:edited', function (event: any) {
+      // Notify that regions have changed
+      if (onRegionChange) {
+        onRegionChange(drawnItems.getLayers().length > 0);
+      }
+    });
+
+    map.on('draw:deleted', function (event: any) {
+      // Notify that regions have changed
+      if (onRegionChange) {
+        onRegionChange(drawnItems.getLayers().length > 0);
+      }
+    });
+
     return {
       map,
       markers: [],
+      drawnItems,
+      drawControl,
+      onRegionChange,
     };
   } catch (error) {
     console.warn('Failed to initialize map:', error);
@@ -70,7 +146,7 @@ export function addCustomerMarker(
   customer: any,
   lat: number,
   lng: number
-): void {
+): any {
   if (!mapInstance.map || typeof window === 'undefined' || !(window as any).L) {
     return;
   }
@@ -300,6 +376,8 @@ export function addCustomerMarker(
   // Add marker to map and store reference
   marker.addTo(mapInstance.map);
   mapInstance.markers.push(marker);
+  
+  return marker;
 }
 
 export function clearMarkers(mapInstance: MapInstance): void {
@@ -317,4 +395,106 @@ export function fitMarkersToView(mapInstance: MapInstance): void {
   const L = (window as any).L;
   const group = new L.featureGroup(mapInstance.markers);
   mapInstance.map.fitBounds(group.getBounds().pad(0.1));
+}
+
+// Helper function to check if a marker is inside any drawn regions
+export function isMarkerInRegion(mapInstance: MapInstance, marker: any): boolean {
+  if (!mapInstance.drawnItems || mapInstance.drawnItems.getLayers().length === 0) {
+    return true; // If no regions drawn, show all markers
+  }
+
+  const markerLatLng = marker.getLatLng();
+  const L = (window as any).L;
+  
+  // Check if marker is inside any drawn region
+  const layers = mapInstance.drawnItems.getLayers();
+  for (const layer of layers) {
+    if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+      // For polygons and rectangles, check if point is inside
+      if (isPointInPolygon(markerLatLng, layer.getLatLngs()[0])) {
+        return true;
+      }
+    } else if (layer instanceof L.Circle) {
+      // For circles, check distance from center
+      const center = layer.getLatLng();
+      const radius = layer.getRadius();
+      const distance = markerLatLng.distanceTo(center);
+      if (distance <= radius) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Point-in-polygon algorithm - FIXED: Use proper x=lng, y=lat coordinates
+function isPointInPolygon(point: any, polygon: any[]): boolean {
+  const x = point.lng, y = point.lat; // FIXED: x=longitude, y=latitude
+  let inside = false;
+  
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].lng, yi = polygon[i].lat; // FIXED: use lng/lat correctly
+    const xj = polygon[j].lng, yj = polygon[j].lat; // FIXED: use lng/lat correctly
+    
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  
+  return inside;
+}
+
+// Function to get statistics for customers within drawn regions
+export function getRegionStatistics(mapInstance: MapInstance, customers: any[]): {
+  totalInRegion: number;
+  activeInRegion: number;
+  regionRevenue: number;
+} {
+  if (!mapInstance.drawnItems || mapInstance.drawnItems.getLayers().length === 0) {
+    return {
+      totalInRegion: customers.length,
+      activeInRegion: customers.filter(c => c.status === 'active').length,
+      regionRevenue: customers.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0)
+    };
+  }
+
+  let totalInRegion = 0;
+  let activeInRegion = 0;
+  let regionRevenue = 0;
+
+  customers.forEach(customer => {
+    if (!customer.latitude || !customer.longitude) return;
+    
+    const customerLatLng = { lat: parseFloat(customer.latitude), lng: parseFloat(customer.longitude) };
+    const L = (window as any).L;
+    
+    // Check if customer is in any drawn region
+    const layers = mapInstance.drawnItems.getLayers();
+    let inRegion = false;
+    
+    for (const layer of layers) {
+      if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+        if (isPointInPolygon(customerLatLng, layer.getLatLngs()[0])) {
+          inRegion = true;
+          break;
+        }
+      } else if (layer instanceof L.Circle) {
+        const center = layer.getLatLng();
+        const radius = layer.getRadius();
+        const distance = L.latLng(customerLatLng.lat, customerLatLng.lng).distanceTo(center);
+        if (distance <= radius) {
+          inRegion = true;
+          break;
+        }
+      }
+    }
+    
+    if (inRegion) {
+      totalInRegion++;
+      if (customer.status === 'active') activeInRegion++;
+      regionRevenue += customer.monthlyProfit || 0;
+    }
+  });
+
+  return { totalInRegion, activeInRegion, regionRevenue };
 }
