@@ -41,14 +41,7 @@ app.use((req, res, next) => {
 async function autoSeedIfEmpty() {
   try {
     const customers = await storage.getAllCustomers();
-    console.log(`🔍 Found ${customers.length} customers in database`);
-    
-    // In development, always reseed to ensure we have test data
-    if (process.env.NODE_ENV === 'development') {
-      console.log("🌱 Development mode: Reseeding database with complete test data...");
-      const { seedDatabase } = await import('./seed');
-      await seedDatabase();
-    } else if (customers.length === 0) {
+    if (customers.length === 0) {
       console.log("\u26a0\ufe0f Database is empty, running seed script...");
       const { seedDatabase } = await import('./seed');
       await seedDatabase();

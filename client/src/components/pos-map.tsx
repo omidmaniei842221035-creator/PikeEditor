@@ -38,6 +38,7 @@ export function PosMap() {
     refetchInterval: 30000,
   });
 
+
   const { data: analytics } = useQuery({
     queryKey: ["/api/analytics/overview"],
   });
