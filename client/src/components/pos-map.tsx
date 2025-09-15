@@ -7,6 +7,8 @@ import { RefreshCw, Target, MapPin } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { initializeMap, addCustomerMarker, isMarkerInRegion, getRegionStatistics, type MapInstance } from "@/lib/map-utils";
 import { BankingUnitPlacementModal } from "@/components/branches/banking-unit-placement-modal";
+import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
+import type { Customer } from "@shared/schema";
 
 export function PosMap() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -25,6 +27,8 @@ export function PosMap() {
   const [pendingBranchLocation, setPendingBranchLocation] = useState<{lat: number, lng: number} | null>(null);
   const [hasActiveRegions, setHasActiveRegions] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
   
   // Use refs to avoid stale closures
   const addBankingUnitModeRef = useRef(addBankingUnitMode);
@@ -114,7 +118,11 @@ export function PosMap() {
             mapInstanceRef.current!,
             customer,
             parseFloat(customer.latitude),
-            parseFloat(customer.longitude)
+            parseFloat(customer.longitude),
+            (customer: Customer) => {
+              setSelectedCustomer(customer);
+              setShowCustomerModal(true);
+            }
           );
           
           // If region analysis is enabled, check if marker should be visible
@@ -370,6 +378,16 @@ export function PosMap() {
         isOpen={pendingBranchLocation !== null}
         onClose={() => setPendingBranchLocation(null)}
         location={pendingBranchLocation}
+      />
+
+      {/* Customer Info Modal */}
+      <CustomerInfoModal
+        open={showCustomerModal}
+        onClose={() => {
+          setShowCustomerModal(false);
+          setSelectedCustomer(null);
+        }}
+        customer={selectedCustomer}
       />
     </div>
   );

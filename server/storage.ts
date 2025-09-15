@@ -7,7 +7,8 @@ import {
   type Transaction, type InsertTransaction,
   type Alert, type InsertAlert,
   type PosMonthlyStats, type InsertPosMonthlyStats,
-  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats
+  type Visit, type InsertVisit,
+  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, ilike, or, desc } from "drizzle-orm";
@@ -76,6 +77,16 @@ export interface IStorage {
   updatePosMonthlyStats(id: string, stats: Partial<InsertPosMonthlyStats>): Promise<PosMonthlyStats | undefined>;
   deletePosMonthlyStats(id: string): Promise<boolean>;
   bulkCreatePosMonthlyStats(stats: InsertPosMonthlyStats[]): Promise<PosMonthlyStats[]>;
+
+  // Visits
+  getAllVisits(): Promise<Visit[]>;
+  getVisit(id: string): Promise<Visit | undefined>;
+  getVisitsByCustomer(customerId: string): Promise<Visit[]>;
+  getVisitsByEmployee(employeeId: string): Promise<Visit[]>;
+  getVisitsByDateRange(startDate: Date, endDate: Date): Promise<Visit[]>;
+  createVisit(visit: InsertVisit): Promise<Visit>;
+  updateVisit(id: string, visit: Partial<InsertVisit>): Promise<Visit | undefined>;
+  deleteVisit(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -346,6 +357,55 @@ export class DatabaseStorage implements IStorage {
   async bulkCreatePosMonthlyStats(insertStatsArray: InsertPosMonthlyStats[]): Promise<PosMonthlyStats[]> {
     const createdStats = await db.insert(posMonthlyStats).values(insertStatsArray).returning();
     return createdStats;
+  }
+
+  // Visit methods
+  async getAllVisits(): Promise<Visit[]> {
+    return await db.select().from(visits).orderBy(desc(visits.visitDate));
+  }
+
+  async getVisit(id: string): Promise<Visit | undefined> {
+    const [visit] = await db.select().from(visits).where(eq(visits.id, id));
+    return visit;
+  }
+
+  async getVisitsByCustomer(customerId: string): Promise<Visit[]> {
+    return await db.select().from(visits)
+      .where(eq(visits.customerId, customerId))
+      .orderBy(desc(visits.visitDate));
+  }
+
+  async getVisitsByEmployee(employeeId: string): Promise<Visit[]> {
+    return await db.select().from(visits)
+      .where(eq(visits.employeeId, employeeId))
+      .orderBy(desc(visits.visitDate));
+  }
+
+  async getVisitsByDateRange(startDate: Date, endDate: Date): Promise<Visit[]> {
+    return await db.select().from(visits).where(
+      and(
+        gte(visits.visitDate, startDate),
+        lte(visits.visitDate, endDate)
+      )
+    ).orderBy(desc(visits.visitDate));
+  }
+
+  async createVisit(insertVisit: InsertVisit): Promise<Visit> {
+    const [visit] = await db.insert(visits).values(insertVisit).returning();
+    return visit;
+  }
+
+  async updateVisit(id: string, updateData: Partial<InsertVisit>): Promise<Visit | undefined> {
+    const [visit] = await db.update(visits)
+      .set(updateData)
+      .where(eq(visits.id, id))
+      .returning();
+    return visit;
+  }
+
+  async deleteVisit(id: string): Promise<boolean> {
+    const result = await db.delete(visits).where(eq(visits.id, id));
+    return (result.rowCount || 0) > 0;
   }
 }
 

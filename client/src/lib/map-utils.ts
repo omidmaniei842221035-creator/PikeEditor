@@ -145,7 +145,8 @@ export function addCustomerMarker(
   mapInstance: MapInstance,
   customer: any,
   lat: number,
-  lng: number
+  lng: number,
+  onCustomerClick?: (customer: any) => void
 ): any {
   if (!mapInstance.map || typeof window === 'undefined' || !(window as any).L) {
     return;
@@ -372,6 +373,15 @@ export function addCustomerMarker(
   }
 
   marker.bindPopup(popupContainer);
+
+  // Add click handler for customer details modal
+  if (onCustomerClick) {
+    marker.on('click', (e: any) => {
+      // Prevent the popup from opening when customer modal is desired
+      e.originalEvent?.stopPropagation();
+      onCustomerClick(customer);
+    });
+  }
 
   // Add marker to map and store reference
   marker.addTo(mapInstance.map);

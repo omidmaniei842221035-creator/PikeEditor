@@ -44,6 +44,7 @@ export const employees = pgTable("employees", {
 
 export const customers = pgTable("customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nationalId: text("national_id"), // کد ملی
   shopName: text("shop_name").notNull(),
   ownerName: text("owner_name").notNull(),
   phone: text("phone").notNull(),
@@ -102,6 +103,18 @@ export const posMonthlyStats = pgTable("pos_monthly_stats", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const visits = pgTable("visits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").references(() => customers.id),
+  employeeId: varchar("employee_id").references(() => employees.id),
+  visitDate: timestamp("visit_date").notNull(),
+  notes: text("notes"),
+  visitType: text("visit_type").notNull().default("routine"), // routine, support, installation, maintenance
+  duration: integer("duration"), // مدت زمان ویزیت به دقیقه
+  result: text("result"), // نتیجه ویزیت
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -143,6 +156,11 @@ export const insertPosMonthlyStatsSchema = createInsertSchema(posMonthlyStats).o
   createdAt: true,
 });
 
+export const insertVisitSchema = createInsertSchema(visits).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -167,3 +185,6 @@ export type InsertAlert = z.infer<typeof insertAlertSchema>;
 
 export type PosMonthlyStats = typeof posMonthlyStats.$inferSelect;
 export type InsertPosMonthlyStats = z.infer<typeof insertPosMonthlyStatsSchema>;
+
+export type Visit = typeof visits.$inferSelect;
+export type InsertVisit = z.infer<typeof insertVisitSchema>;

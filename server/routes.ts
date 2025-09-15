@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema } from "@shared/schema";
+import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema } from "@shared/schema";
 import { z } from "zod";
 
 // WebSocket connection management
@@ -303,6 +303,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "Alert not found" });
     }
     res.json(alert);
+  });
+
+  // Visits routes
+  app.get("/api/visits", async (req, res) => {
+    const visits = await storage.getAllVisits();
+    res.json(visits);
+  });
+
+  app.get("/api/visits/customer/:customerId", async (req, res) => {
+    const visits = await storage.getVisitsByCustomer(req.params.customerId);
+    res.json(visits);
+  });
+
+  app.get("/api/visits/employee/:employeeId", async (req, res) => {
+    const visits = await storage.getVisitsByEmployee(req.params.employeeId);
+    res.json(visits);
+  });
+
+  app.post("/api/visits", async (req, res) => {
+    try {
+      const visitData = insertVisitSchema.parse(req.body);
+      const visit = await storage.createVisit(visitData);
+      res.json(visit);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid visit data" });
+    }
+  });
+
+  app.put("/api/visits/:id", async (req, res) => {
+    try {
+      const updateData = insertVisitSchema.partial().parse(req.body);
+      const visit = await storage.updateVisit(req.params.id, updateData);
+      if (!visit) {
+        return res.status(404).json({ error: "Visit not found" });
+      }
+      res.json(visit);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid visit data" });
+    }
+  });
+
+  app.delete("/api/visits/:id", async (req, res) => {
+    const deleted = await storage.deleteVisit(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Visit not found" });
+    }
+    res.json({ success: true });
   });
 
   // Analytics routes
