@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema } from "@shared/schema";
+import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema } from "@shared/schema";
 import { z } from "zod";
 
 // WebSocket connection management
@@ -379,6 +379,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(log);
     } catch (error) {
       res.status(400).json({ error: "Invalid access log data" });
+    }
+  });
+
+  // Banking Units routes
+  app.get("/api/banking-units", async (req, res) => {
+    const units = await storage.getAllBankingUnits();
+    res.json(units);
+  });
+
+  app.get("/api/banking-units/code/:code", async (req, res) => {
+    const unit = await storage.getBankingUnitByCode(req.params.code);
+    if (!unit) {
+      return res.status(404).json({ error: "Banking unit not found" });
+    }
+    res.json(unit);
+  });
+
+  app.get("/api/banking-units/:id", async (req, res) => {
+    const unit = await storage.getBankingUnit(req.params.id);
+    if (!unit) {
+      return res.status(404).json({ error: "Banking unit not found" });
+    }
+    res.json(unit);
+  });
+
+  app.post("/api/banking-units", async (req, res) => {
+    try {
+      const unitData = insertBankingUnitSchema.parse(req.body);
+      const unit = await storage.createBankingUnit(unitData);
+      res.json(unit);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid banking unit data" });
+    }
+  });
+
+  app.patch("/api/banking-units/:id", async (req, res) => {
+    try {
+      const unitData = insertBankingUnitSchema.partial().parse(req.body);
+      const unit = await storage.updateBankingUnit(req.params.id, unitData);
+      if (!unit) {
+        return res.status(404).json({ error: "Banking unit not found" });
+      }
+      res.json(unit);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid banking unit data" });
+    }
+  });
+
+  app.delete("/api/banking-units/:id", async (req, res) => {
+    const deleted = await storage.deleteBankingUnit(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Banking unit not found" });
+    }
+    res.json({ success: true });
+  });
+
+  app.post("/api/banking-units/bulk", async (req, res) => {
+    try {
+      const bulkCreateSchema = z.object({
+        units: z.array(insertBankingUnitSchema).max(100) // Limit batch size
+      });
+      const { units } = bulkCreateSchema.parse(req.body);
+      const createdUnits = await storage.bulkCreateBankingUnits(units);
+      res.json(createdUnits);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid banking units data" });
+    }
+  });
+
+  app.patch("/api/banking-units/bulk", async (req, res) => {
+    try {
+      const bulkUpdateSchema = z.object({
+        updates: z.array(z.object({
+          id: z.string().min(1),
+          data: insertBankingUnitSchema.partial()
+        })).max(100) // Limit batch size
+      });
+      const { updates } = bulkUpdateSchema.parse(req.body);
+      const updatedUnits = await storage.bulkUpdateBankingUnits(updates);
+      res.json(updatedUnits);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid banking units data" });
     }
   });
 

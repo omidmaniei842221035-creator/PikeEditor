@@ -9,7 +9,8 @@ import {
   type PosMonthlyStats, type InsertPosMonthlyStats,
   type Visit, type InsertVisit,
   type CustomerAccessLog, type InsertCustomerAccessLog,
-  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits, customerAccessLogs
+  type BankingUnit, type InsertBankingUnit,
+  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits, customerAccessLogs, bankingUnits
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, ilike, or, desc } from "drizzle-orm";
@@ -93,6 +94,16 @@ export interface IStorage {
   getAllCustomerAccessLogs(): Promise<CustomerAccessLog[]>;
   getCustomerAccessLogsByCustomer(customerId: string): Promise<CustomerAccessLog[]>;
   createCustomerAccessLog(log: InsertCustomerAccessLog): Promise<CustomerAccessLog>;
+
+  // Banking Units
+  getAllBankingUnits(): Promise<BankingUnit[]>;
+  getBankingUnit(id: string): Promise<BankingUnit | undefined>;
+  getBankingUnitByCode(code: string): Promise<BankingUnit | undefined>;
+  createBankingUnit(unit: InsertBankingUnit): Promise<BankingUnit>;
+  updateBankingUnit(id: string, unit: Partial<InsertBankingUnit>): Promise<BankingUnit | undefined>;
+  deleteBankingUnit(id: string): Promise<boolean>;
+  bulkCreateBankingUnits(units: InsertBankingUnit[]): Promise<BankingUnit[]>;
+  bulkUpdateBankingUnits(updates: Array<{ id: string; data: Partial<InsertBankingUnit> }>): Promise<BankingUnit[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -428,6 +439,52 @@ export class DatabaseStorage implements IStorage {
   async createCustomerAccessLog(insertLog: InsertCustomerAccessLog): Promise<CustomerAccessLog> {
     const [log] = await db.insert(customerAccessLogs).values(insertLog).returning();
     return log;
+  }
+
+  // Banking Units methods
+  async getAllBankingUnits(): Promise<BankingUnit[]> {
+    return await db.select().from(bankingUnits).orderBy(bankingUnits.name);
+  }
+
+  async getBankingUnit(id: string): Promise<BankingUnit | undefined> {
+    const [unit] = await db.select().from(bankingUnits).where(eq(bankingUnits.id, id));
+    return unit;
+  }
+
+  async getBankingUnitByCode(code: string): Promise<BankingUnit | undefined> {
+    const [unit] = await db.select().from(bankingUnits).where(eq(bankingUnits.code, code));
+    return unit;
+  }
+
+  async createBankingUnit(insertUnit: InsertBankingUnit): Promise<BankingUnit> {
+    const [unit] = await db.insert(bankingUnits).values(insertUnit).returning();
+    return unit;
+  }
+
+  async updateBankingUnit(id: string, insertUnit: Partial<InsertBankingUnit>): Promise<BankingUnit | undefined> {
+    const [unit] = await db.update(bankingUnits).set({
+      ...insertUnit,
+      updatedAt: new Date()
+    }).where(eq(bankingUnits.id, id)).returning();
+    return unit;
+  }
+
+  async deleteBankingUnit(id: string): Promise<boolean> {
+    const result = await db.delete(bankingUnits).where(eq(bankingUnits.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async bulkCreateBankingUnits(insertUnits: InsertBankingUnit[]): Promise<BankingUnit[]> {
+    return await db.insert(bankingUnits).values(insertUnits).returning();
+  }
+
+  async bulkUpdateBankingUnits(updates: Array<{ id: string; data: Partial<InsertBankingUnit> }>): Promise<BankingUnit[]> {
+    const results: BankingUnit[] = [];
+    for (const update of updates) {
+      const unit = await this.updateBankingUnit(update.id, update.data);
+      if (unit) results.push(unit);
+    }
+    return results;
   }
 }
 
