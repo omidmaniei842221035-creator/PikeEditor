@@ -115,6 +115,16 @@ export const visits = pgTable("visits", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const customerAccessLogs = pgTable("customer_access_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").references(() => customers.id).notNull(),
+  accessType: text("access_type").notNull().$type<'view_details' | 'add_visit'>(),
+  userAgent: text("user_agent"),
+  ipAddress: text("ip_address"),
+  customerSummary: jsonb("customer_summary"), // خلاصه مشخصات مشتری
+  accessTime: timestamp("access_time").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -161,6 +171,14 @@ export const insertVisitSchema = createInsertSchema(visits).omit({
   createdAt: true,
 });
 
+export const insertCustomerAccessLogSchema = createInsertSchema(customerAccessLogs).omit({
+  id: true,
+  accessTime: true,
+  ipAddress: true, // Server will set this
+}).extend({
+  accessType: z.enum(['view_details', 'add_visit']),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -188,3 +206,6 @@ export type InsertPosMonthlyStats = z.infer<typeof insertPosMonthlyStatsSchema>;
 
 export type Visit = typeof visits.$inferSelect;
 export type InsertVisit = z.infer<typeof insertVisitSchema>;
+
+export type CustomerAccessLog = typeof customerAccessLogs.$inferSelect;
+export type InsertCustomerAccessLog = z.infer<typeof insertCustomerAccessLogSchema>;

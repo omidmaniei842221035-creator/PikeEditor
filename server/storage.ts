@@ -8,7 +8,8 @@ import {
   type Alert, type InsertAlert,
   type PosMonthlyStats, type InsertPosMonthlyStats,
   type Visit, type InsertVisit,
-  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits
+  type CustomerAccessLog, type InsertCustomerAccessLog,
+  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits, customerAccessLogs
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, ilike, or, desc } from "drizzle-orm";
@@ -87,6 +88,11 @@ export interface IStorage {
   createVisit(visit: InsertVisit): Promise<Visit>;
   updateVisit(id: string, visit: Partial<InsertVisit>): Promise<Visit | undefined>;
   deleteVisit(id: string): Promise<boolean>;
+
+  // Customer Access Logs
+  getAllCustomerAccessLogs(): Promise<CustomerAccessLog[]>;
+  getCustomerAccessLogsByCustomer(customerId: string): Promise<CustomerAccessLog[]>;
+  createCustomerAccessLog(log: InsertCustomerAccessLog): Promise<CustomerAccessLog>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -406,6 +412,22 @@ export class DatabaseStorage implements IStorage {
   async deleteVisit(id: string): Promise<boolean> {
     const result = await db.delete(visits).where(eq(visits.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Customer Access Log methods
+  async getAllCustomerAccessLogs(): Promise<CustomerAccessLog[]> {
+    return await db.select().from(customerAccessLogs).orderBy(desc(customerAccessLogs.accessTime));
+  }
+
+  async getCustomerAccessLogsByCustomer(customerId: string): Promise<CustomerAccessLog[]> {
+    return await db.select().from(customerAccessLogs)
+      .where(eq(customerAccessLogs.customerId, customerId))
+      .orderBy(desc(customerAccessLogs.accessTime));
+  }
+
+  async createCustomerAccessLog(insertLog: InsertCustomerAccessLog): Promise<CustomerAccessLog> {
+    const [log] = await db.insert(customerAccessLogs).values(insertLog).returning();
+    return log;
   }
 }
 

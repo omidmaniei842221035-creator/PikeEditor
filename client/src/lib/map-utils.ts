@@ -6,6 +6,41 @@ export interface MapInstance {
   onRegionChange?: (hasRegions: boolean) => void;
 }
 
+// Function to log customer access
+async function logCustomerAccess(customerId: string, accessType: 'view_details' | 'add_visit', customer: any) {
+  try {
+    const customerSummary = {
+      shopName: customer.shopName,
+      ownerName: customer.ownerName,
+      businessType: customer.businessType,
+      phone: customer.phone,
+      status: customer.status,
+      monthlyProfit: customer.monthlyProfit,
+      address: customer.address,
+      accessedAt: new Date().toISOString()
+    };
+
+    const response = await fetch('/api/customer-access-logs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        customerId,
+        accessType,
+        userAgent: navigator.userAgent,
+        customerSummary
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to log customer access:', response.statusText);
+    }
+  } catch (error) {
+    console.warn('Error logging customer access:', error);
+  }
+}
+
 // Function to wait for Leaflet to be available
 function waitForLeaflet(): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -146,7 +181,8 @@ export function addCustomerMarker(
   customer: any,
   lat: number,
   lng: number,
-  onCustomerClick?: (customer: any) => void
+  onCustomerClick?: (customer: any) => void,
+  onVisitClick?: (customer: any) => void
 ): any {
   if (!mapInstance.map || typeof window === 'undefined' || !(window as any).L) {
     return;
@@ -372,11 +408,25 @@ export function addCustomerMarker(
     popupContainer.appendChild(addressP);
   }
 
-  // Add click-to-details instruction
-  const clickP = document.createElement('p');
-  clickP.style.cssText = 'margin: 8px 0 4px 0; color: #2563eb; font-size: 12px; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 8px;';
-  clickP.textContent = '🔍 برای جزئیات بیشتر کلیک کنید';
-  popupContainer.appendChild(clickP);
+  // Add action buttons section
+  const actionsDiv = document.createElement('div');
+  actionsDiv.style.cssText = 'margin: 12px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 12px; display: flex; gap: 8px; justify-content: space-between;';
+  
+  // View Details Button
+  const detailsBtn = document.createElement('button');
+  detailsBtn.textContent = '📋 مشاهدة جزئیات';
+  detailsBtn.style.cssText = 'flex: 1; padding: 8px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;';
+  detailsBtn.setAttribute('data-testid', 'button-view-details');
+  
+  // Add Visit Button  
+  const visitBtn = document.createElement('button');
+  visitBtn.textContent = '📝 ثبت ویزیت';
+  visitBtn.style.cssText = 'flex: 1; padding: 8px 12px; background: #059669; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;';
+  visitBtn.setAttribute('data-testid', 'button-add-visit');
+  
+  actionsDiv.appendChild(detailsBtn);
+  actionsDiv.appendChild(visitBtn);
+  popupContainer.appendChild(actionsDiv);
 
   marker.bindPopup(popupContainer, { 
     maxWidth: 280,
@@ -386,12 +436,28 @@ export function addCustomerMarker(
     closeOnEscapeKey: true 
   });
 
-  // Add click handler for customer details modal
+  // Add click handlers for action buttons
   if (onCustomerClick) {
-    marker.on('click', (e: any) => {
-      // Close popup before opening modal for better user experience
+    detailsBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       marker.closePopup();
+      
+      // Log the customer access
+      await logCustomerAccess(customer.id, 'view_details', customer);
+      
       onCustomerClick(customer);
+    });
+  }
+
+  if (onVisitClick) {
+    visitBtn.addEventListener('click', async (e) => {
+      e.stopPropagation(); 
+      marker.closePopup();
+      
+      // Log the customer access
+      await logCustomerAccess(customer.id, 'add_visit', customer);
+      
+      onVisitClick(customer);
     });
   }
 

@@ -8,6 +8,7 @@ import { queryClient } from "@/lib/queryClient";
 import { initializeMap, addCustomerMarker, isMarkerInRegion, getRegionStatistics, type MapInstance } from "@/lib/map-utils";
 import { BankingUnitPlacementModal } from "@/components/branches/banking-unit-placement-modal";
 import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
+import { AddVisitModal } from "@/components/customers/add-visit-modal";
 import type { Customer } from "@shared/schema";
 
 export function PosMap() {
@@ -29,6 +30,8 @@ export function PosMap() {
   const [dataVersion, setDataVersion] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [selectedCustomerForVisit, setSelectedCustomerForVisit] = useState<Customer | null>(null);
+  const [showAddVisitModal, setShowAddVisitModal] = useState(false);
   
   // Use refs to avoid stale closures
   const addBankingUnitModeRef = useRef(addBankingUnitMode);
@@ -122,6 +125,10 @@ export function PosMap() {
             (customer: Customer) => {
               setSelectedCustomer(customer);
               setShowCustomerModal(true);
+            },
+            (customer: Customer) => {
+              setSelectedCustomerForVisit(customer);
+              setShowAddVisitModal(true);
             }
           );
           
@@ -404,6 +411,21 @@ export function PosMap() {
           setSelectedCustomer(null);
         }}
         customer={selectedCustomer}
+      />
+
+      {/* Add Visit Modal */}
+      <AddVisitModal
+        customer={selectedCustomerForVisit}
+        isOpen={showAddVisitModal}
+        onClose={() => {
+          setShowAddVisitModal(false);
+          setSelectedCustomerForVisit(null);
+        }}
+        onSuccess={() => {
+          setShowAddVisitModal(false);
+          setSelectedCustomerForVisit(null);
+          setDataVersion(v => v + 1);
+        }}
       />
     </div>
   );

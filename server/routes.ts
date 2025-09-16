@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema } from "@shared/schema";
+import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema } from "@shared/schema";
 import { z } from "zod";
 
 // WebSocket connection management
@@ -350,6 +350,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "Visit not found" });
     }
     res.json({ success: true });
+  });
+
+  // Customer Access Logs routes
+  app.get("/api/customer-access-logs", async (req, res) => {
+    const logs = await storage.getAllCustomerAccessLogs();
+    res.json(logs);
+  });
+
+  app.get("/api/customer-access-logs/customer/:customerId", async (req, res) => {
+    const logs = await storage.getCustomerAccessLogsByCustomer(req.params.customerId);
+    res.json(logs);
+  });
+
+  app.post("/api/customer-access-logs", async (req, res) => {
+    try {
+      const logData = insertCustomerAccessLogSchema.parse(req.body);
+      
+      // Set IP address from request (server-side)
+      const logWithIP = {
+        ...logData,
+        ipAddress: req.ip || req.connection.remoteAddress || '',
+        // Truncate userAgent to prevent large payloads
+        userAgent: logData.userAgent?.substring(0, 500) || ''
+      };
+      
+      const log = await storage.createCustomerAccessLog(logWithIP);
+      res.json(log);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid access log data" });
+    }
   });
 
   // Analytics routes
