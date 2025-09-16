@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw, Target, MapPin } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
-import { initializeMap, addCustomerMarker, isMarkerInRegion, getRegionStatistics, type MapInstance } from "@/lib/map-utils";
+import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, type MapInstance } from "@/lib/map-utils";
 import { BankingUnitPlacementModal } from "@/components/branches/banking-unit-placement-modal";
 import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
 import { AddVisitModal } from "@/components/customers/add-visit-modal";
@@ -46,6 +46,10 @@ export function PosMap() {
     refetchInterval: 30000,
   });
 
+  const { data: bankingUnits = [], isLoading: bankingUnitsLoading } = useQuery({
+    queryKey: ['/api/banking-units'],
+    staleTime: 5 * 60 * 1000, // 5 minutes - banking units change less frequently
+  });
 
   const { data: analytics } = useQuery({
     queryKey: ["/api/analytics/overview"],
@@ -151,6 +155,33 @@ export function PosMap() {
       }
     }
   }, [mapReady, customers, businessFilter, statusFilter, regionAnalysisEnabled, hasActiveRegions]);
+
+  // Add banking units to map (permanent display)
+  useEffect(() => {
+    if (mapReady && mapInstanceRef.current?.map) {
+      // Clear existing banking unit markers
+      mapInstanceRef.current.bankingUnitMarkers.forEach(marker => marker.remove());
+      mapInstanceRef.current.bankingUnitMarkers = [];
+
+      // Add banking unit markers (they don't get filtered like customers)
+      if ((bankingUnits as any[]).length > 0) {
+        (bankingUnits as any[]).forEach((unit: any) => {
+          if (unit.latitude && unit.longitude) {
+            addBankingUnitMarker(
+              mapInstanceRef.current!,
+              unit,
+              parseFloat(unit.latitude),
+              parseFloat(unit.longitude),
+              (unit: any) => {
+                // TODO: Add banking unit details modal
+                console.log('Banking unit clicked:', unit);
+              }
+            );
+          }
+        });
+      }
+    }
+  }, [mapReady, bankingUnits]);
 
   const mapStats = {
     visible: (customers as any[]).filter((c: any) => {

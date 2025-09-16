@@ -1,6 +1,7 @@
 export interface MapInstance {
   map: any;
-  markers: any[];
+  markers: any[]; // Customer markers only
+  bankingUnitMarkers: any[]; // Banking unit markers separately
   drawnItems?: any;
   drawControl?: any;
   onRegionChange?: (hasRegions: boolean) => void;
@@ -163,6 +164,7 @@ export async function initializeMap(container: HTMLElement, onRegionChange?: (ha
     return {
       map,
       markers: [],
+      bankingUnitMarkers: [],
       drawnItems,
       drawControl,
       onRegionChange,
@@ -172,8 +174,145 @@ export async function initializeMap(container: HTMLElement, onRegionChange?: (ha
     return {
       map: null,
       markers: [],
+      bankingUnitMarkers: [],
     };
   }
+}
+
+export function addBankingUnitMarker(
+  mapInstance: MapInstance,
+  unit: any,
+  lat: number,
+  lng: number,
+  onUnitClick?: (unit: any) => void
+): any {
+  if (!mapInstance.map || typeof window === 'undefined' || !(window as any).L) {
+    return;
+  }
+
+  const L = (window as any).L;
+
+  // Choose color and icon based on unit type
+  const getUnitStyle = (unitType: string) => {
+    switch (unitType) {
+      case 'branch': // شعبه
+        return { color: '#1e40af', icon: '🏦', label: 'شعبه' };
+      case 'counter': // باجه
+        return { color: '#059669', icon: '🏪', label: 'باجه' };
+      case 'shahrbnet_kiosk': // پیشخوان شهرنت
+        return { color: '#dc2626', icon: '🏧', label: 'پیشخوان شهرنت' };
+      default:
+        return { color: '#6b7280', icon: '🏢', label: 'واحد' };
+    }
+  };
+
+  const { color, icon, label } = getUnitStyle(unit.unitType);
+
+  // Create custom banking unit icon
+  const customIcon = L.divIcon({
+    html: `
+      <div style="
+        background: ${color};
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid white;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        font-weight: bold;
+      ">
+        <span style="
+          font-size: 20px;
+          color: white;
+        ">${icon}</span>
+      </div>
+    `,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    popupAnchor: [0, -22],
+    className: 'banking-unit-marker'
+  });
+
+  // Create marker
+  const marker = L.marker([lat, lng], { icon: customIcon });
+
+  // Create popup content safely to prevent XSS
+  const escapeHtml = (text: string) => {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  };
+
+  const safeName = escapeHtml(unit.name || '');
+  const safeCode = escapeHtml(unit.code || '');
+  const safeManagerName = unit.managerName ? escapeHtml(unit.managerName) : '';
+  const safePhone = unit.phone ? escapeHtml(unit.phone) : '';
+  const safeAddress = unit.address ? escapeHtml(unit.address) : '';
+  const safeId = escapeHtml(unit.id || '');
+
+  const popupContent = `
+    <div style="min-width: 250px; font-family: Vazirmatn, sans-serif; direction: rtl;">
+      <div style="border-bottom: 2px solid ${color}; padding-bottom: 8px; margin-bottom: 12px;">
+        <h3 style="margin: 0; color: ${color}; font-size: 16px; font-weight: bold;">${safeName}</h3>
+        <p style="margin: 4px 0 0 0; color: #666; font-size: 14px;">${label} - کد: ${safeCode}</p>
+      </div>
+      
+      <div style="margin-bottom: 12px;">
+        ${safeManagerName ? `<p style="margin: 0 0 4px 0;"><strong>مسئول:</strong> ${safeManagerName}</p>` : ''}
+        ${safePhone ? `<p style="margin: 0 0 4px 0;"><strong>تلفن:</strong> ${safePhone}</p>` : ''}
+        ${safeAddress ? `<p style="margin: 0 0 4px 0;"><strong>آدرس:</strong> ${safeAddress}</p>` : ''}
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 12px;">
+        <button 
+          id="view-unit-btn-${safeId}" 
+          data-testid="button-view-unit-details"
+          style="
+            flex: 1;
+            background: ${color};
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+          "
+        >
+          📊 مشاهده جزئیات
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Bind popup
+  marker.bindPopup(popupContent, {
+    maxWidth: 300,
+    autoClose: true,
+    closeOnEscapeKey: true 
+  });
+
+  // Add click handler for view details button
+  if (onUnitClick) {
+    marker.on('popupopen', () => {
+      const viewBtn = document.getElementById(`view-unit-btn-${unit.id}`);
+      if (viewBtn) {
+        viewBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          marker.closePopup();
+          onUnitClick(unit);
+        });
+      }
+    });
+  }
+
+  // Add marker to map and store reference in separate banking unit markers array
+  marker.addTo(mapInstance.map);
+  mapInstance.bankingUnitMarkers.push(marker);
+
+  return marker;
 }
 
 export function addCustomerMarker(
