@@ -409,6 +409,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(unit);
   });
 
+  // Bulk import banking units - MUST be before :id routes
+  app.post("/api/banking-units/bulk-import", async (req, res) => {
+    try {
+      const { bankingUnits } = req.body;
+      
+      if (!Array.isArray(bankingUnits)) {
+        return res.status(400).json({ error: "bankingUnits must be an array" });
+      }
+
+      const MAX_BATCH_SIZE = 1000;
+      if (bankingUnits.length > MAX_BATCH_SIZE) {
+        return res.status(400).json({ 
+          error: `Batch size exceeds maximum allowed (${MAX_BATCH_SIZE})` 
+        });
+      }
+
+      const validBankingUnits = [];
+      const errors = [];
+
+      for (let i = 0; i < bankingUnits.length; i++) {
+        try {
+          const bankingUnitData = insertBankingUnitSchema.parse(bankingUnits[i]);
+          validBankingUnits.push(bankingUnitData);
+        } catch (error) {
+          errors.push({
+            row: i + 1,
+            error: error instanceof z.ZodError ? error.errors : String(error)
+          });
+        }
+      }
+
+      let imported = 0;
+      const importErrors = [];
+
+      for (const bankingUnitData of validBankingUnits) {
+        try {
+          await storage.createBankingUnit(bankingUnitData);
+          imported++;
+        } catch (error) {
+          importErrors.push({
+            data: bankingUnitData,
+            error: String(error)
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        imported,
+        total: bankingUnits.length,
+        validationErrors: errors,
+        importErrors
+      });
+    } catch (error) {
+      console.error("Banking units bulk import error:", error);
+      res.status(500).json({
+        error: "خطا در واردات دسته‌ای وحدات مصرفی",
+        success: false
+      });
+    }
+  });
+
   app.post("/api/banking-units", async (req, res) => {
     try {
       const unitData = insertBankingUnitSchema.parse(req.body);
@@ -679,6 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
 
   // Secure bulk import endpoint for validated customer data
   app.post("/api/excel/import", async (req, res) => {

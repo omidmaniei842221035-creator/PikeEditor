@@ -3,10 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Target, MapPin } from "lucide-react";
+import { RefreshCw, Target, MapPin, Upload } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, type MapInstance } from "@/lib/map-utils";
 import { BankingUnitPlacementModal } from "@/components/branches/banking-unit-placement-modal";
+import { BankingUnitExcelImportModal } from "@/components/branches/banking-unit-excel-import-modal";
 import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
 import { AddVisitModal } from "@/components/customers/add-visit-modal";
 import type { Customer } from "@shared/schema";
@@ -33,6 +34,7 @@ export function PosMap() {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [selectedCustomerForVisit, setSelectedCustomerForVisit] = useState<Customer | null>(null);
   const [showAddVisitModal, setShowAddVisitModal] = useState(false);
+  const [showBankingUnitExcelImport, setShowBankingUnitExcelImport] = useState(false);
   
   // Use refs to avoid stale closures
   const addBankingUnitModeRef = useRef(addBankingUnitMode);

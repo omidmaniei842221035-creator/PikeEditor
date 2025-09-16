@@ -12,6 +12,18 @@ export interface ExcelCustomerData {
   supportEmployee?: string;
 }
 
+export interface ExcelBankingUnitData {
+  code: string;
+  name: string;
+  unitType: string;
+  managerName?: string;
+  phone?: string;
+  address?: string;
+  latitude?: string;
+  longitude?: string;
+  isActive?: boolean;
+}
+
 export async function parseExcelFile(file: File): Promise<ExcelCustomerData[]> {
   return new Promise((resolve, reject) => {
     // Check if file is Excel format
@@ -37,6 +49,128 @@ export async function parseExcelFile(file: File): Promise<ExcelCustomerData[]> {
 
     reader.readAsArrayBuffer(file);
   });
+}
+
+export async function parseExcelBankingUnitsFile(file: File): Promise<ExcelBankingUnitData[]> {
+  return new Promise((resolve, reject) => {
+    // Check if file is Excel format
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      reject(new Error('فرمت فایل نامعتبر است. فقط فایل‌های Excel (.xlsx, .xls) پذیرفته می‌شود'));
+      return;
+    }
+
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const result = parseBankingUnitsExcelContent(e.target?.result);
+        resolve(result);
+      } catch (error) {
+        reject(new Error('خطا در خواندن فایل Excel: ' + (error as Error).message));
+      }
+    };
+
+    reader.onerror = () => {
+      reject(new Error('خطا در بارگذاری فایل'));
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function parseBankingUnitsExcelContent(buffer: any): ExcelBankingUnitData[] {
+  try {
+    // Parse the Excel file
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    
+    // Get the first worksheet
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error('فایل Excel خالی است');
+    }
+    
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert worksheet to JSON
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    if (jsonData.length < 2) {
+      throw new Error('فایل Excel باید حداقل شامل سر ستون‌ها و یک ردیف داده باشد');
+    }
+
+    // Get headers from first row
+    const headers = jsonData[0] as string[];
+    const dataRows = jsonData.slice(1);
+
+    // Define column mapping (Persian to English field names)
+    const columnMapping: Record<string, keyof ExcelBankingUnitData> = {
+      'کد واحد': 'code',
+      'نام واحد': 'name',
+      'نوع واحد': 'unitType',
+      'نام مسئول': 'managerName',
+      'شماره تماس': 'phone',
+      'آدرس': 'address',
+      'عرض جغرافیایی': 'latitude',
+      'طول جغرافیایی': 'longitude',
+      'وضعیت فعالیت': 'isActive'
+    };
+
+    // Find column indices
+    const columnIndices: Record<keyof ExcelBankingUnitData, number> = {} as any;
+    
+    headers.forEach((header, index) => {
+      const mappedField = columnMapping[header?.trim()];
+      if (mappedField) {
+        columnIndices[mappedField] = index;
+      }
+    });
+
+    // Check if required columns exist
+    const requiredFields: (keyof ExcelBankingUnitData)[] = ['code', 'name', 'unitType'];
+    const missingFields = requiredFields.filter(field => columnIndices[field] === undefined);
+    
+    if (missingFields.length > 0) {
+      const missingPersianFields = missingFields.map(field => {
+        return Object.keys(columnMapping).find(key => columnMapping[key] === field);
+      }).join(', ');
+      throw new Error(`ستون‌های ضروری موجود نیست: ${missingPersianFields}`);
+    }
+
+    // Parse data rows
+    const bankingUnits: ExcelBankingUnitData[] = [];
+    
+    (dataRows as any[][]).forEach((row: any[], rowIndex) => {
+      // Skip empty rows
+      if (row.every(cell => !cell || cell.toString().trim() === '')) {
+        return;
+      }
+
+      const bankingUnit: ExcelBankingUnitData = {
+        code: row[columnIndices.code]?.toString().trim() || '',
+        name: row[columnIndices.name]?.toString().trim() || '',
+        unitType: row[columnIndices.unitType]?.toString().trim() || 'branch',
+        managerName: columnIndices.managerName !== undefined ? 
+          row[columnIndices.managerName]?.toString().trim() || '' : '',
+        phone: columnIndices.phone !== undefined ? 
+          formatPhoneNumber(row[columnIndices.phone]?.toString() || '') : '',
+        address: columnIndices.address !== undefined ? 
+          row[columnIndices.address]?.toString().trim() || '' : '',
+        latitude: columnIndices.latitude !== undefined ? 
+          row[columnIndices.latitude]?.toString().trim() || '' : '',
+        longitude: columnIndices.longitude !== undefined ? 
+          row[columnIndices.longitude]?.toString().trim() || '' : '',
+        isActive: columnIndices.isActive !== undefined ? 
+          parseBooleanValue(row[columnIndices.isActive]) : true
+      };
+
+      bankingUnits.push(bankingUnit);
+    });
+
+    return bankingUnits;
+    
+  } catch (error) {
+    throw new Error('خطا در پردازش فایل Excel: ' + (error as Error).message);
+  }
 }
 
 function parseExcelContent(buffer: any): ExcelCustomerData[] {
@@ -100,7 +234,7 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
     // Parse data rows
     const customers: ExcelCustomerData[] = [];
     
-    dataRows.forEach((row: any[], rowIndex) => {
+    (dataRows as any[][]).forEach((row: any[], rowIndex) => {
       // Skip empty rows
       if (row.every(cell => !cell || cell.toString().trim() === '')) {
         return;
@@ -327,6 +461,88 @@ export function validateExcelData(data: ExcelCustomerData[]): {
   return { valid, invalid };
 }
 
+export function validateBankingUnitExcelData(data: ExcelBankingUnitData[]): {
+  valid: ExcelBankingUnitData[];
+  invalid: { row: number; errors: string[] }[];
+} {
+  const valid: ExcelBankingUnitData[] = [];
+  const invalid: { row: number; errors: string[] }[] = [];
+
+  data.forEach((row, index) => {
+    const errors: string[] = [];
+
+    // Required fields validation
+    if (!row.code || row.code.trim() === '') {
+      errors.push('کد واحد اجباری است');
+    }
+
+    if (!row.name || row.name.trim() === '') {
+      errors.push('نام واحد اجباری است');
+    }
+
+    if (!row.unitType || row.unitType.trim() === '') {
+      errors.push('نوع واحد اجباری است');
+    }
+
+    // Unit type validation
+    const validUnitTypes = ['branch', 'atm', 'pos_center', 'service_center'];
+    if (row.unitType && !validUnitTypes.includes(row.unitType)) {
+      // Try to map Persian names to English
+      const unitTypeMapping: Record<string, string> = {
+        'شعبه': 'branch',
+        'خودپرداز': 'atm', 
+        'مرکز پوز': 'pos_center',
+        'مرکز خدمات': 'service_center'
+      };
+      const mappedType = unitTypeMapping[row.unitType];
+      if (mappedType) {
+        row.unitType = mappedType;
+      } else {
+        errors.push('نوع واحد معتبر نیست (شعبه، خودپرداز، مرکز پوز، مرکز خدمات)');
+      }
+    }
+
+    // Phone validation (Iranian mobile numbers) - optional field
+    if (row.phone && row.phone.trim() !== '' && !row.phone.match(/^09\d{9}$/)) {
+      errors.push('شماره تماس معتبر نیست (باید 11 رقم و با 09 شروع شود)');
+    }
+
+    // Coordinate validation - both should be present or both empty
+    const hasLat = row.latitude && row.latitude.trim() !== '';
+    const hasLng = row.longitude && row.longitude.trim() !== '';
+    
+    if (hasLat && !hasLng) {
+      errors.push('اگر عرض جغرافیایی وارد شده، طول جغرافیایی هم باید وارد شود');
+    }
+    if (hasLng && !hasLat) {
+      errors.push('اگر طول جغرافیایی وارد شده، عرض جغرافیایی هم باید وارد شود');
+    }
+
+    // Validate coordinate values
+    if (hasLat) {
+      const lat = parseFloat(row.latitude!);
+      if (isNaN(lat) || lat < -90 || lat > 90) {
+        errors.push('عرض جغرافیایی باید عدد معتبر بین -90 تا 90 باشد');
+      }
+    }
+    
+    if (hasLng) {
+      const lng = parseFloat(row.longitude!);
+      if (isNaN(lng) || lng < -180 || lng > 180) {
+        errors.push('طول جغرافیایی باید عدد معتبر بین -180 تا 180 باشد');
+      }
+    }
+
+    if (errors.length > 0) {
+      invalid.push({ row: index + 1, errors });
+    } else {
+      valid.push(row);
+    }
+  });
+
+  return { valid, invalid };
+}
+
 // Utility function to format data for Excel export
 export function formatDataForExport(data: any[]): any[] {
   return data.map(item => ({
@@ -392,6 +608,17 @@ function normalizeDigits(text: string): string {
   }
   
   return result;
+}
+
+// Function to parse boolean values from Excel
+function parseBooleanValue(value: any): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const val = value.toLowerCase().trim();
+    return val === 'true' || val === 'فعال' || val === 'بله' || val === '1' || val === 'yes';
+  }
+  if (typeof value === 'number') return value !== 0;
+  return true; // Default to true if unknown
 }
 
 // Function to format phone numbers properly
