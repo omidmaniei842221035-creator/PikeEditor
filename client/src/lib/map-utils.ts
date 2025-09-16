@@ -289,7 +289,7 @@ export function addCustomerMarker(
   // Create popup content safely using DOM methods to prevent XSS
   const popupContainer = document.createElement('div');
   popupContainer.dir = 'rtl';
-  popupContainer.style.cssText = "font-family: 'Vazirmatn', sans-serif; min-width: 200px;";
+  popupContainer.style.cssText = "font-family: 'Vazirmatn', sans-serif; min-width: 220px; max-width: 280px; padding: 4px;";
 
   // Shop name (title)
   const title = document.createElement('h3');
@@ -372,13 +372,25 @@ export function addCustomerMarker(
     popupContainer.appendChild(addressP);
   }
 
-  marker.bindPopup(popupContainer);
+  // Add click-to-details instruction
+  const clickP = document.createElement('p');
+  clickP.style.cssText = 'margin: 8px 0 4px 0; color: #2563eb; font-size: 12px; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 8px;';
+  clickP.textContent = '🔍 برای جزئیات بیشتر کلیک کنید';
+  popupContainer.appendChild(clickP);
+
+  marker.bindPopup(popupContainer, { 
+    maxWidth: 280,
+    className: 'custom-popup',
+    closeButton: true,
+    autoClose: true,
+    closeOnEscapeKey: true 
+  });
 
   // Add click handler for customer details modal
   if (onCustomerClick) {
     marker.on('click', (e: any) => {
-      // Prevent the popup from opening when customer modal is desired
-      e.originalEvent?.stopPropagation();
+      // Close popup before opening modal for better user experience
+      marker.closePopup();
       onCustomerClick(customer);
     });
   }

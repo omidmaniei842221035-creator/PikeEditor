@@ -190,10 +190,26 @@ export function PosMap() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">همه اصناف</SelectItem>
-                  <SelectItem value="سوپرمارکت">سوپرمارکت</SelectItem>
-                  <SelectItem value="داروخانه">داروخانه</SelectItem>
-                  <SelectItem value="رستوران">رستوران</SelectItem>
-                  <SelectItem value="فروشگاه">فروشگاه</SelectItem>
+                  <SelectItem value="دندانپزشکی">🦷 دندانپزشکی</SelectItem>
+                  <SelectItem value="هواپیمایی">✈️ هواپیمایی</SelectItem>
+                  <SelectItem value="حمل‌ونقل">🚛 حمل‌ونقل</SelectItem>
+                  <SelectItem value="تولید شیرینی">🧁 تولید شیرینی</SelectItem>
+                  <SelectItem value="فیزیوتراپی">🏥 فیزیوتراپی</SelectItem>
+                  <SelectItem value="مهندسی معماری">🏗️ مهندسی معماری</SelectItem>
+                  <SelectItem value="صنایع دستی">🎨 صنایع دستی</SelectItem>
+                  <SelectItem value="باشگاه ورزشی">🏋️ باشگاه ورزشی</SelectItem>
+                  <SelectItem value="آموزش زبان">📚 آموزش زبان</SelectItem>
+                  <SelectItem value="آموزش موسیقی">🎵 آموزش موسیقی</SelectItem>
+                  <SelectItem value="صنایع چوبی">🪵 صنایع چوبی</SelectItem>
+                  <SelectItem value="آرایش و زیبایی">💄 آرایش و زیبایی</SelectItem>
+                  <SelectItem value="واردات قطعات">📦 واردات قطعات</SelectItem>
+                  <SelectItem value="پزشکی تخصصی">🏥 پزشکی تخصصی</SelectItem>
+                  <SelectItem value="صنایع غذایی">🍽️ صنایع غذایی</SelectItem>
+                  <SelectItem value="مشاوره املاک">🏠 مشاوره املاک</SelectItem>
+                  <SelectItem value="کافه‌نت">💻 کافه‌نت</SelectItem>
+                  <SelectItem value="فروش موبایل">📱 فروش موبایل</SelectItem>
+                  <SelectItem value="تعمیر کفش">👞 تعمیر کفش</SelectItem>
+                  <SelectItem value="لوازم التحریر">✏️ لوازم التحریر</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -320,7 +336,7 @@ export function PosMap() {
         <CardContent>
           <div 
             ref={mapRef} 
-            className="h-[600px] w-full rounded-lg overflow-hidden"
+            className="h-[700px] w-full rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg"
             data-testid="pos-map"
           />
         </CardContent>
