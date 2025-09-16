@@ -1,8 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 
+interface AnalyticsData {
+  totalCustomers: number;
+  activeCustomers: number;
+  businessTypes: Record<string, number>;
+  statusCounts: Record<string, number>;
+}
+
 export function OverviewStats() {
-  const { data: analytics } = useQuery({
+  const { data: analytics } = useQuery<AnalyticsData>({
     queryKey: ["/api/analytics/overview"],
   });
 
@@ -21,7 +28,7 @@ export function OverviewStats() {
     },
     {
       title: "نرخ بهره‌وری",
-      value: analytics?.totalCustomers > 0 
+      value: analytics?.totalCustomers && analytics.totalCustomers > 0 
         ? `${Math.round((analytics.activeCustomers / analytics.totalCustomers) * 100)}%`
         : "0%",
       icon: "📈",
