@@ -117,7 +117,7 @@ export function AddVisitModal({ customer, isOpen, onClose, onSuccess }: AddVisit
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>کارمند ویزیت کننده *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                       <FormControl>
                         <SelectTrigger data-testid="select-employee">
                           <SelectValue placeholder="انتخاب کارمند" />
