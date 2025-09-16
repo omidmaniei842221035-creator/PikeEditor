@@ -125,6 +125,22 @@ export const customerAccessLogs = pgTable("customer_access_logs", {
   accessTime: timestamp("access_time").defaultNow(),
 });
 
+// Banking Units - واحدهای بانکی
+export const bankingUnits = pgTable("banking_units", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).notNull().unique(), // کد واحد
+  name: varchar("name", { length: 255 }).notNull(), // نام واحد
+  unitType: text("unit_type").notNull().$type<'branch' | 'counter' | 'shahrbnet_kiosk'>(), // شعبه، باجه، پیشخوان شهرنت
+  managerName: varchar("manager_name", { length: 255 }), // نام مسئول واحد
+  phone: varchar("phone", { length: 20 }), // تلفن
+  address: text("address"), // آدرس
+  latitude: decimal("latitude", { precision: 10, scale: 8 }), // عرض جغرافیایی
+  longitude: decimal("longitude", { precision: 11, scale: 8 }), // طول جغرافیایی
+  isActive: boolean("is_active").default(true), // فعال/غیرفعال
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -179,6 +195,14 @@ export const insertCustomerAccessLogSchema = createInsertSchema(customerAccessLo
   accessType: z.enum(['view_details', 'add_visit']),
 });
 
+export const insertBankingUnitSchema = createInsertSchema(bankingUnits).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  unitType: z.enum(['branch', 'counter', 'shahrbnet_kiosk']),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -209,3 +233,6 @@ export type InsertVisit = z.infer<typeof insertVisitSchema>;
 
 export type CustomerAccessLog = typeof customerAccessLogs.$inferSelect;
 export type InsertCustomerAccessLog = z.infer<typeof insertCustomerAccessLogSchema>;
+
+export type BankingUnit = typeof bankingUnits.$inferSelect;
+export type InsertBankingUnit = z.infer<typeof insertBankingUnitSchema>;
