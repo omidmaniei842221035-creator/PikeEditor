@@ -276,6 +276,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(devices);
   });
 
+  app.get("/api/pos-devices/banking-unit/:bankingUnitId", async (req, res) => {
+    const devices = await storage.getPosDevicesByBankingUnit(req.params.bankingUnitId);
+    res.json(devices);
+  });
+
   // Alerts routes
   app.get("/api/alerts", async (req, res) => {
     const alerts = await storage.getAllAlerts();

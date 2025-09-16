@@ -55,6 +55,7 @@ export const customers = pgTable("customers", {
   monthlyProfit: integer("monthly_profit").default(0), // تومان
   status: text("status").notNull().default("active"), // active, normal, marketing, collected, loss
   branchId: varchar("branch_id").references(() => branches.id),
+  bankingUnitId: varchar("banking_unit_id").references(() => bankingUnits.id), // ربط بالوحدة المصرفية
   supportEmployeeId: varchar("support_employee_id").references(() => employees.id),
   installDate: timestamp("install_date"),
   createdAt: timestamp("created_at").defaultNow(),

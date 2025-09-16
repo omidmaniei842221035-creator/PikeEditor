@@ -17,6 +17,7 @@ export function PosMap() {
   const [mapType, setMapType] = useState("density");
   const [businessFilter, setBusinessFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [bankingUnitFilter, setBankingUnitFilter] = useState("all");
   const [mapReady, setMapReady] = useState(false);
   const [regionAnalysisEnabled, setRegionAnalysisEnabled] = useState(false);
   const [addBankingUnitMode, setAddBankingUnitMode] = useState(false);
@@ -115,7 +116,8 @@ export function PosMap() {
       const filteredCustomers = (customers as any[]).filter((customer: any) => {
         const businessMatch = businessFilter === "all" || customer.businessType === businessFilter;
         const statusMatch = statusFilter === "all" || customer.status === statusFilter;
-        return businessMatch && statusMatch;
+        const bankingUnitMatch = bankingUnitFilter === "all" || customer.bankingUnitId === bankingUnitFilter;
+        return businessMatch && statusMatch && bankingUnitMatch;
       });
 
       // Add markers for filtered customers
@@ -154,7 +156,7 @@ export function PosMap() {
         setRegionStats(null);
       }
     }
-  }, [mapReady, customers, businessFilter, statusFilter, regionAnalysisEnabled, hasActiveRegions]);
+  }, [mapReady, customers, businessFilter, statusFilter, bankingUnitFilter, regionAnalysisEnabled, hasActiveRegions]);
 
   // Add banking units to map (permanent display)
   useEffect(() => {
@@ -265,6 +267,23 @@ export function PosMap() {
                   <SelectItem value="marketing">🟡 بازاریابی</SelectItem>
                   <SelectItem value="loss">🔴 زیان‌ده</SelectItem>
                   <SelectItem value="collected">⚫ جمع‌آوری شده</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">واحد مصرفی:</label>
+              <Select value={bankingUnitFilter} onValueChange={setBankingUnitFilter}>
+                <SelectTrigger data-testid="banking-unit-filter-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه واحدها</SelectItem>
+                  {(bankingUnits as any[]).map((unit: any) => (
+                    <SelectItem key={unit.id} value={unit.id}>
+                      {unit.unitType === 'branch' ? '🏦' : unit.unitType === 'counter' ? '🏪' : '🏧'} {unit.name} ({unit.code})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

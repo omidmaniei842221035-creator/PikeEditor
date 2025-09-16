@@ -53,6 +53,7 @@ export interface IStorage {
   getAllPosDevices(): Promise<PosDevice[]>;
   getPosDevice(id: string): Promise<PosDevice | undefined>;
   getPosDevicesByCustomer(customerId: string): Promise<PosDevice[]>;
+  getPosDevicesByBankingUnit(bankingUnitId: string): Promise<PosDevice[]>;
   createPosDevice(device: InsertPosDevice): Promise<PosDevice>;
   updatePosDevice(id: string, device: Partial<InsertPosDevice>): Promise<PosDevice | undefined>;
 
@@ -256,6 +257,21 @@ export class DatabaseStorage implements IStorage {
 
   async getPosDevicesByCustomer(customerId: string): Promise<PosDevice[]> {
     return await db.select().from(posDevices).where(eq(posDevices.customerId, customerId));
+  }
+
+  async getPosDevicesByBankingUnit(bankingUnitId: string): Promise<PosDevice[]> {
+    return await db
+      .select({
+        id: posDevices.id,
+        customerId: posDevices.customerId,
+        deviceCode: posDevices.deviceCode,
+        status: posDevices.status,
+        lastConnection: posDevices.lastConnection,
+        createdAt: posDevices.createdAt,
+      })
+      .from(posDevices)
+      .innerJoin(customers, eq(posDevices.customerId, customers.id))
+      .where(eq(customers.bankingUnitId, bankingUnitId));
   }
 
   async createPosDevice(insertDevice: InsertPosDevice): Promise<PosDevice> {
