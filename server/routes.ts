@@ -536,6 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const customers = await storage.getAllCustomers();
     const employees = await storage.getAllEmployees();
     const branches = await storage.getAllBranches();
+    const bankingUnits = await storage.getAllBankingUnits();
     const alerts = await storage.getUnreadAlerts();
 
     const activeCustomers = customers.filter(c => c.status === 'active').length;
@@ -559,6 +560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       activeCustomers,
       totalEmployees: employees.length,
       totalBranches: branches.length,
+      totalBankingUnits: bankingUnits.length,
       totalRevenue,
       avgProfit,
       unreadAlerts: alerts.length,

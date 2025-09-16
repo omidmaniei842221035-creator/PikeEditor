@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 interface AnalyticsData {
   totalCustomers: number;
   activeCustomers: number;
+  totalBankingUnits: number;
   businessTypes: Record<string, number>;
   statusCounts: Record<string, number>;
 }
@@ -25,6 +26,12 @@ export function OverviewStats() {
       value: analytics?.totalCustomers || 0,
       icon: "💳",
       color: "text-secondary",
+    },
+    {
+      title: "واحدهای بانکی",
+      value: analytics?.totalBankingUnits || 0,
+      icon: "🏦",
+      color: "text-blue-600",
     },
     {
       title: "نرخ بهره‌وری",
