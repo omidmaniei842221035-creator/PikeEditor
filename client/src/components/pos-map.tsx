@@ -329,6 +329,15 @@ export function PosMap() {
                 <MapPin className="h-4 w-4 mr-2" />
                 {addBankingUnitMode ? "انتخاب مکان فعال" : "افزودن واحد بانکی"}
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowBankingUnitExcelImport(true)}
+                className="w-full"
+                data-testid="button-banking-unit-excel-import"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                وارد کردن Excel واحدهای بانکی
+              </Button>
               {regionAnalysisEnabled && (
                 <p className="text-xs text-muted-foreground text-center">
                   روی نقشه شکل بکشید تا منطقه انتخاب کنید
@@ -477,6 +486,16 @@ export function PosMap() {
           setShowAddVisitModal(false);
           setSelectedCustomerForVisit(null);
           setDataVersion(v => v + 1);
+        }}
+      />
+
+      {/* Banking Unit Excel Import Modal */}
+      <BankingUnitExcelImportModal
+        open={showBankingUnitExcelImport}
+        onOpenChange={setShowBankingUnitExcelImport}
+        onImportComplete={() => {
+          setShowBankingUnitExcelImport(false);
+          queryClient.invalidateQueries({ queryKey: ['/api/banking-units'] });
         }}
       />
     </div>
