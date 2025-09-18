@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw, Target, Maximize2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
-import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, type MapInstance } from "@/lib/map-utils";
+import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, createDensityVisualization, clearHeatLayers, type MapInstance } from "@/lib/map-utils";
 import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
 import { AddVisitModal } from "@/components/customers/add-visit-modal";
 import { PosMapFullscreen } from "@/components/pos-map-fullscreen";
@@ -143,6 +143,37 @@ export function PosMap() {
       }
     }
   }, [mapReady, customers, businessFilter, statusFilter, bankingUnitFilter, regionAnalysisEnabled, hasActiveRegions]);
+
+  // Update visualization when map type changes
+  useEffect(() => {
+    if (mapReady && mapInstanceRef.current?.map && (customers as any[]).length > 0) {
+      const filteredCustomers = (customers as any[]).filter((customer: any) => {
+        const businessMatch = businessFilter === "all" || customer.businessType === businessFilter;
+        const statusMatch = statusFilter === "all" || customer.status === statusFilter;
+        const bankingUnitMatch = bankingUnitFilter === "all" || customer.bankingUnitId === bankingUnitFilter;
+        return businessMatch && statusMatch && bankingUnitMatch;
+      });
+
+      // Show/hide regular markers based on map type
+      if (mapType === 'density' || mapType === 'transactions' || mapType === 'revenue' || mapType === 'hotspots') {
+        // Hide regular markers when showing heat map
+        mapInstanceRef.current.markers.forEach(marker => {
+          marker.setOpacity(0.3);
+        });
+        
+        // Create heat map visualization
+        createDensityVisualization(mapInstanceRef.current, filteredCustomers, mapType);
+      } else {
+        // Show regular markers for normal view
+        mapInstanceRef.current.markers.forEach(marker => {
+          marker.setOpacity(1);
+        });
+        
+        // Clear heat map layers
+        clearHeatLayers(mapInstanceRef.current);
+      }
+    }
+  }, [mapType, mapReady, customers, businessFilter, statusFilter, bankingUnitFilter]);
 
   // Add banking units to map (permanent display)
   useEffect(() => {

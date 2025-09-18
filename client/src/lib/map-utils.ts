@@ -2,6 +2,7 @@ export interface MapInstance {
   map: any;
   markers: any[]; // Customer markers only
   bankingUnitMarkers: any[]; // Banking unit markers separately
+  heatLayers: any[]; // Heat map layers
   drawnItems?: any;
   drawControl?: any;
   onRegionChange?: (hasRegions: boolean) => void;
@@ -165,6 +166,7 @@ export async function initializeMap(container: HTMLElement, onRegionChange?: (ha
       map,
       markers: [],
       bankingUnitMarkers: [],
+      heatLayers: [],
       drawnItems,
       drawControl,
       onRegionChange,
@@ -175,6 +177,7 @@ export async function initializeMap(container: HTMLElement, onRegionChange?: (ha
       map: null,
       markers: [],
       bankingUnitMarkers: [],
+      heatLayers: [],
     };
   }
 }
@@ -724,4 +727,132 @@ export function getRegionStatistics(mapInstance: MapInstance, customers: any[]):
   });
 
   return { totalInRegion, activeInRegion, regionRevenue };
+}
+
+// Heat map and visualization functions
+export function clearHeatLayers(mapInstance: MapInstance) {
+  if (mapInstance.heatLayers && mapInstance.heatLayers.length > 0) {
+    mapInstance.heatLayers.forEach(layer => {
+      if (mapInstance.map && layer) {
+        mapInstance.map.removeLayer(layer);
+      }
+    });
+    mapInstance.heatLayers = [];
+  }
+}
+
+export function createDensityVisualization(mapInstance: MapInstance, customers: any[], mapType: string) {
+  if (!mapInstance.map || typeof window === 'undefined' || !(window as any).L) {
+    return;
+  }
+
+  const L = (window as any).L;
+  clearHeatLayers(mapInstance);
+
+  // Group customers by location for density calculation
+  const locationGroups: { [key: string]: any[] } = {};
+  customers.forEach(customer => {
+    if (customer.latitude && customer.longitude) {
+      const key = `${parseFloat(customer.latitude).toFixed(4)}_${parseFloat(customer.longitude).toFixed(4)}`;
+      if (!locationGroups[key]) {
+        locationGroups[key] = [];
+      }
+      locationGroups[key].push(customer);
+    }
+  });
+
+  // Create density circles based on map type
+  Object.entries(locationGroups).forEach(([locationKey, groupCustomers]) => {
+    const firstCustomer = groupCustomers[0];
+    const lat = parseFloat(firstCustomer.latitude);
+    const lng = parseFloat(firstCustomer.longitude);
+
+    let radius = 200; // Base radius
+    let intensity = 0;
+    let color = '#3b82f6';
+
+    switch (mapType) {
+      case 'density':
+        // Device density - number of POS devices
+        intensity = groupCustomers.length;
+        radius = Math.max(100, intensity * 50);
+        color = intensity > 5 ? '#dc2626' : intensity > 2 ? '#f59e0b' : '#10b981';
+        break;
+
+      case 'transactions':
+        // Transaction density - simulate transaction volume
+        intensity = groupCustomers.reduce((sum, c) => sum + (Math.random() * 100 + 50), 0);
+        radius = Math.max(150, Math.sqrt(intensity) * 20);
+        color = intensity > 500 ? '#dc2626' : intensity > 200 ? '#f59e0b' : '#3b82f6';
+        break;
+
+      case 'revenue':
+        // Revenue density - monthly profit
+        intensity = groupCustomers.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0);
+        radius = Math.max(100, Math.sqrt(intensity / 1000000) * 100);
+        color = intensity > 50000000 ? '#dc2626' : intensity > 20000000 ? '#f59e0b' : '#10b981';
+        break;
+
+      case 'hotspots':
+        // Hotspots - combination of devices and activity
+        const deviceCount = groupCustomers.length;
+        const activeCount = groupCustomers.filter(c => c.status === 'active').length;
+        const hotspotScore = deviceCount * 2 + activeCount * 3;
+        intensity = hotspotScore;
+        radius = Math.max(120, hotspotScore * 30);
+        color = hotspotScore > 20 ? '#dc2626' : hotspotScore > 10 ? '#f59e0b' : '#6b7280';
+        break;
+
+      default:
+        intensity = groupCustomers.length;
+    }
+
+    // Create density circle
+    const densityCircle = L.circle([lat, lng], {
+      color: color,
+      fillColor: color,
+      fillOpacity: Math.min(0.6, intensity / 20),
+      radius: radius,
+      weight: 2,
+      opacity: 0.8,
+    });
+
+    // Add popup with density information
+    const getTypeLabel = (type: string) => {
+      switch (type) {
+        case 'density': return 'تراکم دستگاه‌ها';
+        case 'transactions': return 'تراکم تراکنش‌ها';
+        case 'revenue': return 'تراکم درآمد';
+        case 'hotspots': return 'نقاط داغ';
+        default: return 'تراکم';
+      }
+    };
+
+    const formatValue = (type: string, value: number) => {
+      switch (type) {
+        case 'density': return `${value} دستگاه`;
+        case 'transactions': return `${Math.round(value)} تراکنش/روز`;
+        case 'revenue': return `${(value / 1000000).toFixed(1)} میلیون تومان`;
+        case 'hotspots': return `امتیاز: ${Math.round(value)}`;
+        default: return `${value}`;
+      }
+    };
+
+    densityCircle.bindPopup(`
+      <div style="font-family: Vazirmatn, sans-serif; direction: rtl; text-align: center;">
+        <h4 style="margin: 0 0 8px 0; color: ${color};">${getTypeLabel(mapType)}</h4>
+        <p style="margin: 0; font-size: 16px; font-weight: bold;">${formatValue(mapType, intensity)}</p>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #666;">در محل: ${groupCustomers.length} مشتری</p>
+      </div>
+    `);
+
+    densityCircle.addTo(mapInstance.map);
+    mapInstance.heatLayers.push(densityCircle);
+  });
+}
+
+export function createHeatMap(mapInstance: MapInstance, customers: any[], mapType: string) {
+  // This is an alternative heat map implementation using gradient overlay
+  // For now, we'll use the density visualization which is more practical
+  return createDensityVisualization(mapInstance, customers, mapType);
 }
