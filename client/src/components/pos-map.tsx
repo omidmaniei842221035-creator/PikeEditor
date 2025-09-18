@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw, Target, Maximize2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
-import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, type MapInstance } from "@/lib/map-utils";
+import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, createDensityVisualization, type MapInstance } from "@/lib/map-utils";
 import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
 import { AddVisitModal } from "@/components/customers/add-visit-modal";
 import { PosMapFullscreen } from "@/components/pos-map-fullscreen";
@@ -170,6 +170,17 @@ export function PosMap() {
       }
     }
   }, [mapReady, bankingUnits]);
+
+  // Handle map type changes for density visualization
+  useEffect(() => {
+    if (mapReady && mapInstanceRef.current?.map && customers) {
+      createDensityVisualization(
+        mapInstanceRef.current,
+        customers as any[],
+        mapType
+      );
+    }
+  }, [mapReady, customers, mapType]);
 
   const mapStats = {
     visible: (customers as any[]).filter((c: any) => {

@@ -725,3 +725,113 @@ export function getRegionStatistics(mapInstance: MapInstance, customers: any[]):
 
   return { totalInRegion, activeInRegion, regionRevenue };
 }
+
+// Function to create density visualization
+export function createDensityVisualization(mapInstance: MapInstance, customers: any[], mapType: string): void {
+  if (!mapInstance.map || typeof window === 'undefined' || !(window as any).L) {
+    return;
+  }
+
+  const L = (window as any).L;
+
+  // Remove existing density layers
+  if ((mapInstance as any).densityLayer) {
+    mapInstance.map.removeLayer((mapInstance as any).densityLayer);
+    delete (mapInstance as any).densityLayer;
+  }
+
+  // Only proceed if we have customers with valid coordinates
+  const validCustomers = customers.filter(c => 
+    c.latitude && c.longitude && 
+    !isNaN(parseFloat(c.latitude)) && !isNaN(parseFloat(c.longitude))
+  );
+
+  if (validCustomers.length === 0) {
+    return;
+  }
+
+  // Create heat points based on map type
+  const heatPoints: any[] = [];
+
+  validCustomers.forEach(customer => {
+    const lat = parseFloat(customer.latitude);
+    const lng = parseFloat(customer.longitude);
+    
+    // Skip if coordinates are invalid
+    if (isNaN(lat) || isNaN(lng)) {
+      return;
+    }
+
+    let intensity = 1;
+    
+    switch (mapType) {
+      case 'density':
+        intensity = 1; // Each POS device counts as 1
+        break;
+      case 'transactions':
+        intensity = Math.random() * 100 + 50; // Mock transaction count
+        break;
+      case 'revenue':
+        intensity = (customer.monthlyProfit || 0) / 1000000; // Revenue in millions
+        break;
+      case 'hotspots':
+        intensity = customer.status === 'active' ? 2 : 0.5;
+        break;
+      default:
+        intensity = 1;
+    }
+
+    // Ensure intensity is a valid number
+    if (isNaN(intensity) || intensity <= 0) {
+      intensity = 0.1;
+    }
+
+    heatPoints.push([lat, lng, intensity]);
+  });
+
+  // Create circles for density visualization if we don't have heat map plugin
+  if (heatPoints.length > 0) {
+    const densityGroup = L.layerGroup();
+
+    heatPoints.forEach(([lat, lng, intensity]) => {
+      // Calculate radius based on intensity, ensuring it's never NaN
+      let radius = Math.max(100, Math.min(2000, intensity * 500));
+      
+      // Final safety check for radius
+      if (isNaN(radius) || radius <= 0) {
+        radius = 200; // Default radius
+      }
+
+      const circle = L.circle([lat, lng], {
+        radius: radius,
+        fillColor: getHeatColor(intensity, mapType),
+        color: 'transparent',
+        fillOpacity: 0.3,
+        weight: 0
+      });
+
+      densityGroup.addLayer(circle);
+    });
+
+    densityGroup.addTo(mapInstance.map);
+    (mapInstance as any).densityLayer = densityGroup;
+  }
+}
+
+// Helper function to get heat colors based on intensity and map type
+function getHeatColor(intensity: number, mapType: string): string {
+  // Normalize intensity between 0 and 1
+  const normalizedIntensity = Math.max(0, Math.min(1, intensity / 100));
+  
+  const colors = {
+    density: ['#0066cc', '#0080ff', '#3399ff', '#66b3ff', '#99ccff'],
+    transactions: ['#ff4444', '#ff6666', '#ff8888', '#ffaaaa', '#ffcccc'],
+    revenue: ['#009900', '#00bb00', '#00dd00', '#66ff66', '#99ff99'],
+    hotspots: ['#ff8800', '#ffaa00', '#ffcc00', '#ffdd66', '#ffee99']
+  };
+
+  const colorSet = colors[mapType as keyof typeof colors] || colors.density;
+  const colorIndex = Math.floor(normalizedIntensity * (colorSet.length - 1));
+  
+  return colorSet[colorIndex] || colorSet[0];
+}
