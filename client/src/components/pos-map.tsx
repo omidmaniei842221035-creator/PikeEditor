@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Target } from "lucide-react";
+import { RefreshCw, Target, Maximize2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, type MapInstance } from "@/lib/map-utils";
 import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
 import { AddVisitModal } from "@/components/customers/add-visit-modal";
+import { PosMapFullscreen } from "@/components/pos-map-fullscreen";
 import type { Customer } from "@shared/schema";
 
 export function PosMap() {
@@ -30,6 +31,7 @@ export function PosMap() {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [selectedCustomerForVisit, setSelectedCustomerForVisit] = useState<Customer | null>(null);
   const [showAddVisitModal, setShowAddVisitModal] = useState(false);
+  const [showFullscreenMap, setShowFullscreenMap] = useState(false);
   
   // Use refs to avoid stale closures
   const regionAnalysisEnabledRef = useRef(regionAnalysisEnabled);
@@ -314,6 +316,16 @@ export function PosMap() {
             <CardTitle className="text-lg font-semibold">🗺️ نقشه تعاملی POS تبریز</CardTitle>
             <div className="flex items-center gap-4">
               <Button 
+                variant="default"
+                size="sm"
+                onClick={() => setShowFullscreenMap(true)}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                data-testid="fullscreen-map-button"
+              >
+                <Maximize2 className="h-4 w-4" />
+                نمای تمام‌صفحه
+              </Button>
+              <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => {
@@ -435,6 +447,12 @@ export function PosMap() {
           setSelectedCustomerForVisit(null);
           setDataVersion(v => v + 1);
         }}
+      />
+
+      {/* Fullscreen Map Modal */}
+      <PosMapFullscreen
+        isOpen={showFullscreenMap}
+        onClose={() => setShowFullscreenMap(false)}
       />
 
     </div>
