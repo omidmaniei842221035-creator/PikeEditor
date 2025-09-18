@@ -805,15 +805,15 @@ export function BusinessCategories() {
   return (
     <div className="mb-8">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-          <Store className="w-5 h-5 text-white" />
+        <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+          <Store className="w-4 h-4 text-white" />
         </div>
         <div>
           <h3 className="text-lg font-bold text-foreground">داشبورد اصناف تجاری</h3>
           <p className="text-sm text-muted-foreground">آمار کسب و کارهای فعال</p>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {businessTypes.map((type, index) => {
           const IconComponent = type.icon;
           return (
@@ -827,21 +827,21 @@ export function BusinessCategories() {
               <Card className={`relative overflow-hidden border-0 bg-gradient-to-br ${type.gradient.gradient} ${type.gradient.shadow} shadow-xl hover:shadow-2xl ${type.gradient.glow} transition-all duration-500 hover:scale-105 cursor-pointer card-hover-effect`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
                 <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-                <CardContent className="relative p-6 text-white">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
-                      <IconComponent className="w-6 h-6 text-white drop-shadow-sm" />
+                <CardContent className="relative p-4 text-white">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2 group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
+                      <IconComponent className="w-4 h-4 text-white drop-shadow-sm" />
                     </div>
                     <div className="text-right">
-                      <h4 className="font-bold text-white text-lg drop-shadow-sm">{type.name}</h4>
+                      <h4 className="font-bold text-white text-sm drop-shadow-sm">{type.name}</h4>
                       <p className="text-white/80 text-xs">اصناف فعال</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-end justify-between mb-4">
+                  <div className="flex items-end justify-between mb-3">
                     <div>
                       <p 
-                        className="text-3xl font-bold text-white drop-shadow-sm" 
+                        className="text-2xl font-bold text-white drop-shadow-sm" 
                         data-testid={`business-type-${index}-count`}
                       >
                         {type.count}
@@ -849,7 +849,7 @@ export function BusinessCategories() {
                       <p className="text-white/70 text-xs">کسب و کار</p>
                     </div>
                     <div className="text-right">
-                      <span className="text-2xl font-bold text-white drop-shadow-sm">{type.percentage}%</span>
+                      <span className="text-lg font-bold text-white drop-shadow-sm">{type.percentage}%</span>
                       <p className="text-white/70 text-xs">سهم بازار</p>
                     </div>
                   </div>
