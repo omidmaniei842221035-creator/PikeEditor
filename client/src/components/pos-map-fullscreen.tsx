@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { queryClient } from "@/lib/queryClient";
-import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, type MapInstance } from "@/lib/map-utils";
+import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, createDensityVisualization, type MapInstance } from "@/lib/map-utils";
 import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
 import { AddVisitModal } from "@/components/customers/add-visit-modal";
 import type { Customer } from "@shared/schema";
@@ -201,6 +201,25 @@ export function PosMapFullscreen({ isOpen, onClose }: PosMapFullscreenProps) {
       }
     }
   }, [mapReady, bankingUnits]);
+
+  // Handle map type changes for density visualization
+  useEffect(() => {
+    if (mapReady && mapInstanceRef.current?.map && customers) {
+      // Filter customers based on current filters (same logic as markers)
+      const filteredCustomers = (customers as any[]).filter((customer: any) => {
+        const businessMatch = businessFilter === "all" || customer.businessType === businessFilter;
+        const statusMatch = statusFilter === "all" || customer.status === statusFilter;
+        const bankingUnitMatch = bankingUnitFilter === "all" || customer.bankingUnitId === bankingUnitFilter;
+        return businessMatch && statusMatch && bankingUnitMatch;
+      });
+
+      createDensityVisualization(
+        mapInstanceRef.current,
+        filteredCustomers,
+        mapType
+      );
+    }
+  }, [mapReady, customers, mapType, businessFilter, statusFilter, bankingUnitFilter, regionAnalysisEnabled, hasActiveRegions, timeFilter]);
 
   const mapStats = {
     visible: (customers as any[]).filter((c: any) => {

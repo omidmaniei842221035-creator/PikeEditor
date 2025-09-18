@@ -174,13 +174,21 @@ export function PosMap() {
   // Handle map type changes for density visualization
   useEffect(() => {
     if (mapReady && mapInstanceRef.current?.map && customers) {
+      // Filter customers based on current filters (same logic as markers)
+      const filteredCustomers = (customers as any[]).filter((customer: any) => {
+        const businessMatch = businessFilter === "all" || customer.businessType === businessFilter;
+        const statusMatch = statusFilter === "all" || customer.status === statusFilter;
+        const bankingUnitMatch = bankingUnitFilter === "all" || customer.bankingUnitId === bankingUnitFilter;
+        return businessMatch && statusMatch && bankingUnitMatch;
+      });
+
       createDensityVisualization(
         mapInstanceRef.current,
-        customers as any[],
+        filteredCustomers,
         mapType
       );
     }
-  }, [mapReady, customers, mapType]);
+  }, [mapReady, customers, mapType, businessFilter, statusFilter, bankingUnitFilter, regionAnalysisEnabled, hasActiveRegions]);
 
   const mapStats = {
     visible: (customers as any[]).filter((c: any) => {
