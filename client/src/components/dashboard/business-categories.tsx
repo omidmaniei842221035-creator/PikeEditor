@@ -804,16 +804,16 @@ export function BusinessCategories() {
 
   return (
     <div className="mb-8">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-6 h-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-md flex items-center justify-center">
-          <Store className="w-3 h-3 text-white" />
+      <div className="flex items-center gap-1.5 mb-3">
+        <div className="w-5 h-5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded flex items-center justify-center">
+          <Store className="w-2.5 h-2.5 text-white" />
         </div>
         <div>
-          <h3 className="text-base font-bold text-foreground">داشبورد اصناف تجاری</h3>
-          <p className="text-xs text-muted-foreground">آمار کسب و کارهای فعال</p>
+          <h3 className="text-sm font-bold text-foreground">داشبورد اصناف تجاری</h3>
+          <p className="text-[10px] text-muted-foreground">آمار کسب و کارهای فعال</p>
         </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1.5">
         {businessTypes.map((type, index) => {
           const IconComponent = type.icon;
           return (
@@ -826,31 +826,31 @@ export function BusinessCategories() {
             >
               <Card className={`relative overflow-hidden border-0 bg-gradient-to-br ${type.gradient.gradient} ${type.gradient.shadow} shadow-md hover:shadow-lg ${type.gradient.glow} transition-all duration-300 hover:scale-102 cursor-pointer`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-                <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/10 rounded-full blur-xl" />
-                <CardContent className="relative p-2 text-white">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="bg-white/20 backdrop-blur-sm rounded-md p-1 group-hover:bg-white/30 transition-all duration-300">
-                      <IconComponent className="w-3 h-3 text-white drop-shadow-sm" />
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full blur-lg" />
+                <CardContent className="relative p-1.5 text-white">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="bg-white/20 backdrop-blur-sm rounded p-0.5 group-hover:bg-white/30 transition-all duration-300">
+                      <IconComponent className="w-2.5 h-2.5 text-white drop-shadow-sm" />
                     </div>
                     <div className="text-right">
-                      <h4 className="font-semibold text-white text-xs drop-shadow-sm">{type.name}</h4>
-                      <p className="text-white/70 text-[10px]">اصناف فعال</p>
+                      <h4 className="font-semibold text-white text-[10px] drop-shadow-sm leading-tight">{type.name}</h4>
+                      <p className="text-white/70 text-[8px]">اصناف فعال</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-end justify-between mb-2">
+                  <div className="flex items-end justify-between mb-1">
                     <div>
                       <p 
-                        className="text-lg font-bold text-white drop-shadow-sm" 
+                        className="text-sm font-bold text-white drop-shadow-sm" 
                         data-testid={`business-type-${index}-count`}
                       >
                         {type.count}
                       </p>
-                      <p className="text-white/70 text-[10px]">کسب و کار</p>
+                      <p className="text-white/70 text-[8px]">کسب و کار</p>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-bold text-white drop-shadow-sm">{type.percentage}%</span>
-                      <p className="text-white/70 text-[10px]">سهم بازار</p>
+                      <span className="text-xs font-bold text-white drop-shadow-sm">{type.percentage}%</span>
+                      <p className="text-white/70 text-[8px]">سهم بازار</p>
                     </div>
                   </div>
                   
@@ -863,7 +863,7 @@ export function BusinessCategories() {
                         transition={{ delay: index * 0.2 + 0.8, duration: 1.2, ease: "easeOut" }}
                       />
                     </div>
-                    <div className="flex justify-between text-[9px] text-white/60 mt-1">
+                    <div className="flex justify-between text-[7px] text-white/60 mt-0.5">
                       <span>0%</span>
                       <span>100%</span>
                     </div>

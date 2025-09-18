@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -52,6 +53,7 @@ export function PosMapFullscreen({ isOpen, onClose }: PosMapFullscreenProps) {
   const [selectedCustomerForVisit, setSelectedCustomerForVisit] = useState<Customer | null>(null);
   const [showAddVisitModal, setShowAddVisitModal] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [heatMapEnabled, setHeatMapEnabled] = useState(true);
   
   // Use refs to avoid stale closures
   const regionAnalysisEnabledRef = useRef(regionAnalysisEnabled);
@@ -205,21 +207,29 @@ export function PosMapFullscreen({ isOpen, onClose }: PosMapFullscreenProps) {
   // Handle map type changes for density visualization
   useEffect(() => {
     if (mapReady && mapInstanceRef.current?.map && customers) {
-      // Filter customers based on current filters (same logic as markers)
-      const filteredCustomers = (customers as any[]).filter((customer: any) => {
-        const businessMatch = businessFilter === "all" || customer.businessType === businessFilter;
-        const statusMatch = statusFilter === "all" || customer.status === statusFilter;
-        const bankingUnitMatch = bankingUnitFilter === "all" || customer.bankingUnitId === bankingUnitFilter;
-        return businessMatch && statusMatch && bankingUnitMatch;
-      });
+      if (heatMapEnabled) {
+        // Filter customers based on current filters (same logic as markers)
+        const filteredCustomers = (customers as any[]).filter((customer: any) => {
+          const businessMatch = businessFilter === "all" || customer.businessType === businessFilter;
+          const statusMatch = statusFilter === "all" || customer.status === statusFilter;
+          const bankingUnitMatch = bankingUnitFilter === "all" || customer.bankingUnitId === bankingUnitFilter;
+          return businessMatch && statusMatch && bankingUnitMatch;
+        });
 
-      createDensityVisualization(
-        mapInstanceRef.current,
-        filteredCustomers,
-        mapType
-      );
+        createDensityVisualization(
+          mapInstanceRef.current,
+          filteredCustomers,
+          mapType
+        );
+      } else {
+        // Clear density visualization when disabled
+        if ((mapInstanceRef.current as any).densityLayer) {
+          mapInstanceRef.current.map?.removeLayer((mapInstanceRef.current as any).densityLayer);
+          delete (mapInstanceRef.current as any).densityLayer;
+        }
+      }
     }
-  }, [mapReady, customers, mapType, businessFilter, statusFilter, bankingUnitFilter, regionAnalysisEnabled, hasActiveRegions, timeFilter]);
+  }, [mapReady, customers, mapType, heatMapEnabled, businessFilter, statusFilter, bankingUnitFilter, regionAnalysisEnabled, hasActiveRegions, timeFilter]);
 
   const mapStats = {
     visible: (customers as any[]).filter((c: any) => {
@@ -339,18 +349,29 @@ export function PosMapFullscreen({ isOpen, onClose }: PosMapFullscreenProps) {
                         نوع نمایش نقشه
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <Select value={mapType} onValueChange={setMapType}>
-                        <SelectTrigger className="bg-white/80 dark:bg-gray-900/80">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="density">🎯 تراکم دستگاه‌های POS</SelectItem>
-                          <SelectItem value="transactions">💳 تراکم تراکنش‌ها</SelectItem>
-                          <SelectItem value="revenue">💰 تراکم درآمد</SelectItem>
-                          <SelectItem value="hotspots">🔥 نقاط داغ</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Checkbox 
+                          id="heatmap-toggle-fullscreen"
+                          checked={heatMapEnabled}
+                          onCheckedChange={(checked) => setHeatMapEnabled(!!checked)}
+                          data-testid="heatmap-toggle-fullscreen"
+                        />
+                        <label htmlFor="heatmap-toggle-fullscreen" className="text-sm font-medium">نقشه حرارتی فعال</label>
+                      </div>
+                      <div className={heatMapEnabled ? "" : "opacity-50 pointer-events-none"}>
+                        <Select value={mapType} onValueChange={setMapType} disabled={!heatMapEnabled}>
+                          <SelectTrigger className="bg-white/80 dark:bg-gray-900/80">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="density">🎯 تراکم دستگاه‌های POS</SelectItem>
+                            <SelectItem value="transactions">💳 تراکم تراکنش‌ها</SelectItem>
+                            <SelectItem value="revenue">💰 تراکم درآمد</SelectItem>
+                            <SelectItem value="hotspots">🔥 نقاط داغ</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </CardContent>
                   </Card>
 
