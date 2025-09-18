@@ -15,6 +15,7 @@ import { ExcelManagement } from "@/components/excel/excel-management";
 import { RealtimeDashboard } from "@/components/monitoring/realtime-dashboard";
 import { BranchManagement } from "@/components/branches/branch-management";
 import { PosStatsManagement } from "@/components/pos-stats/pos-stats-management";
+import { AdvancedAnalytics } from "@/components/dashboard/advanced-analytics";
 
 export type TabType = 
   | "dashboard" 
@@ -76,6 +77,14 @@ export default function Dashboard() {
                     <BranchPerformance />
                   </div>
                 </div>
+              </div>
+            </div>
+            
+            {/* Advanced Analytics Section */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/10 via-teal-600/10 to-emerald-600/10 rounded-3xl blur-3xl" />
+              <div className="relative">
+                <AdvancedAnalytics />
               </div>
             </div>
             
