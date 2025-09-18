@@ -3,22 +3,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { PosStatsTrends } from "@/components/pos-stats/pos-stats-trends";
+import { SmallMultiplesChart } from "./small-multiples-chart";
+import { BoxPlotChart } from "./box-plot-chart";
+import { BulletChart } from "./bullet-chart";
+import { SankeyFlowChart } from "./sankey-flow-chart";
+import { useState } from "react";
 
 export function AnalyticsDashboard() {
+  const [selectedMetric, setSelectedMetric] = useState<"revenue" | "profit" | "transactions">("revenue");
+
   const { data: analytics } = useQuery({
     queryKey: ["/api/analytics/overview"],
   });
 
-  const { data: customers = [] } = useQuery({
+  const { data: customers = [] } = useQuery<any[]>({
     queryKey: ["/api/customers"],
   });
 
-  const { data: branches = [] } = useQuery({
+  const { data: branches = [] } = useQuery<any[]>({
     queryKey: ["/api/branches"],
   });
 
-  const { data: employees = [] } = useQuery({
+  const { data: employees = [] } = useQuery<any[]>({
     queryKey: ["/api/employees"],
+  });
+
+  const { data: posStats = [] } = useQuery<any[]>({
+    queryKey: ["/api/pos-stats"],
   });
 
   const totalRevenue = customers.reduce((sum: number, customer: any) => 
@@ -59,6 +70,121 @@ export function AnalyticsDashboard() {
     loss: "bg-red-500",
     collected: "bg-blue-500",
   };
+
+  // Prepare data for Small Multiples Chart
+  const persianMonths = [
+    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
+  ];
+
+  const smallMultiplesData = branches.slice(0, 8).map((branch: any) => {
+    const branchStats = (posStats as any[]).filter((stat: any) => stat.branchId === branch.id);
+    
+    const monthlyData = persianMonths.map((month, index) => {
+      const monthIndex = index + 1;
+      const monthStats = branchStats.filter((stat: any) => stat.month === monthIndex);
+      
+      const totalRevenue = monthStats.reduce((sum: number, stat: any) => sum + (stat.revenue || 0), 0);
+      const totalProfit = monthStats.reduce((sum: number, stat: any) => sum + (stat.profit || 0), 0);
+      const totalTransactions = monthStats.reduce((sum: number, stat: any) => sum + (stat.totalTransactions || 0), 0);
+      
+      return {
+        month,
+        monthIndex,
+        revenue: totalRevenue / 1000000, // Convert to millions
+        profit: totalProfit / 1000000,
+        transactions: totalTransactions
+      };
+    });
+
+    return {
+      branchId: branch.id,
+      branchName: branch.name,
+      monthlyData
+    };
+  });
+
+  // Prepare data for Box Plot Chart
+  const boxPlotData = branches.map((branch: any) => {
+    const branchStats = (posStats as any[]).filter((stat: any) => stat.branchId === branch.id);
+    const revenues = branchStats.map((stat: any) => (stat.revenue || 0) / 1000000);
+    const profits = branchStats.map((stat: any) => (stat.profit || 0) / 1000000);
+    const transactions = branchStats.map((stat: any) => stat.totalTransactions || 0);
+
+    return {
+      branchId: branch.id,
+      branchName: branch.name,
+      values: selectedMetric === "revenue" ? revenues : 
+               selectedMetric === "profit" ? profits : transactions,
+      stats: null // Will be calculated in the component
+    };
+  }).filter((data: any) => data.values.length > 0);
+
+  // Prepare data for Bullet Chart
+  const bulletChartData = branches.map((branch: any) => {
+    const branchStats = (posStats as any[]).filter((stat: any) => stat.branchId === branch.id);
+    const currentMonth = new Date().getMonth() + 1;
+    
+    const currentStats = branchStats.filter((stat: any) => stat.month === currentMonth);
+    const previousStats = branchStats.filter((stat: any) => stat.month === currentMonth - 1);
+    
+    const currentRevenue = currentStats.reduce((sum: number, stat: any) => sum + (stat.revenue || 0), 0) / 1000000;
+    const currentProfit = currentStats.reduce((sum: number, stat: any) => sum + (stat.profit || 0), 0) / 1000000;
+    const currentTransactions = currentStats.reduce((sum: number, stat: any) => sum + (stat.totalTransactions || 0), 0);
+    
+    const previousRevenue = previousStats.reduce((sum: number, stat: any) => sum + (stat.revenue || 0), 0) / 1000000;
+    const previousProfit = previousStats.reduce((sum: number, stat: any) => sum + (stat.profit || 0), 0) / 1000000;
+    const previousTransactions = previousStats.reduce((sum: number, stat: any) => sum + (stat.totalTransactions || 0), 0);
+
+    const target = (branch.monthlyTarget || 100) / 1000000; // Convert to millions
+
+    return {
+      branchId: branch.id,
+      branchName: branch.name,
+      actual: selectedMetric === "revenue" ? currentRevenue : 
+              selectedMetric === "profit" ? currentProfit : currentTransactions,
+      target: selectedMetric === "transactions" ? 1000 : target,
+      previous: selectedMetric === "revenue" ? previousRevenue : 
+                selectedMetric === "profit" ? previousProfit : previousTransactions,
+      benchmarks: {
+        poor: target * 0.5,
+        satisfactory: target * 0.8,
+        good: target * 1.2
+      }
+    };
+  });
+
+  // Prepare data for Sankey Flow Chart
+  const sankeyNodes = [
+    ...branches.slice(0, 4).map((branch: any) => ({
+      id: `source-${branch.id}`,
+      label: branch.name,
+      value: customers.filter((c: any) => c.branchId === branch.id)
+        .reduce((sum: number, c: any) => sum + (c.monthlyProfit || 0), 0) / 1000000,
+      type: "source" as const
+    })),
+    { id: "region-center", label: "مرکز منطقه", value: 0, type: "intermediate" as const },
+    { id: "target-customers", label: "مشتریان نهایی", value: totalRevenue / 1000000, type: "target" as const }
+  ];
+
+  const sankeyLinks = branches.slice(0, 4).map((branch: any) => {
+    const branchRevenue = customers.filter((c: any) => c.branchId === branch.id)
+      .reduce((sum: number, c: any) => sum + (c.monthlyProfit || 0), 0) / 1000000;
+    
+    return {
+      source: `source-${branch.id}`,
+      target: "region-center",
+      value: branchRevenue,
+      label: `${branch.name} → مرکز`
+    };
+  });
+
+  sankeyLinks.push({
+    source: "region-center",
+    target: "target-customers", 
+    value: totalRevenue / 1000000,
+    label: "تجمیع نهایی"
+  });
 
   return (
     <div className="space-y-6">
@@ -176,7 +302,7 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topBusinessTypes.map(([type, count], index) => {
+              {topBusinessTypes.map(([type, count]: [string, number], index) => {
                 const percentage = customers.length > 0 ? Math.round((count / customers.length) * 100) : 0;
                 const colors = [
                   "bg-blue-500",
@@ -218,7 +344,7 @@ export function AnalyticsDashboard() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            {Object.entries(statusCounts).slice(0, 3).map(([status, count], index) => {
+            {Object.entries(statusCounts).slice(0, 3).map(([status, count]: [string, number], index) => {
               const percentage = customers.length > 0 ? Math.round((count / customers.length) * 100) : 0;
               const color = statusColors[status] || "bg-gray-500";
               const label = statusLabels[status] || status;
@@ -288,6 +414,60 @@ export function AnalyticsDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Advanced Analytics Charts */}
+      <div className="space-y-6">
+        {/* Metric Selection */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold">🎛️ انتخاب معیار تحلیل</CardTitle>
+              <Select 
+                value={selectedMetric} 
+                onValueChange={(value: "revenue" | "profit" | "transactions") => setSelectedMetric(value)}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="revenue">درآمد (میلیون تومان)</SelectItem>
+                  <SelectItem value="profit">سود (میلیون تومان)</SelectItem>
+                  <SelectItem value="transactions">تعداد تراکنش</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Small Multiples Chart */}
+        <SmallMultiplesChart 
+          data={smallMultiplesData}
+          metric={selectedMetric}
+          title={`روند ماهانه ${selectedMetric === "revenue" ? "درآمد" : selectedMetric === "profit" ? "سود" : "تراکنش"} در شعب مختلف`}
+        />
+
+        {/* Box Plot Chart */}
+        <BoxPlotChart 
+          data={boxPlotData}
+          metric={selectedMetric}
+          title={`توزیع ${selectedMetric === "revenue" ? "درآمد" : selectedMetric === "profit" ? "سود" : "تراکنش"} بین شعب (شناسایی داده‌های پرت)`}
+        />
+
+        {/* Bullet Chart */}
+        <BulletChart 
+          data={bulletChartData}
+          metric={selectedMetric}
+          title={`پیشرفت نسبت به هدف ${selectedMetric === "revenue" ? "درآمد" : selectedMetric === "profit" ? "سود" : "تراکنش"} ماهانه`}
+        />
+
+        {/* Sankey Flow Chart */}
+        <SankeyFlowChart 
+          nodes={sankeyNodes}
+          links={sankeyLinks}
+          metric={selectedMetric}
+          title={`جریان ${selectedMetric === "revenue" ? "درآمد" : selectedMetric === "profit" ? "سود" : "تراکنش"} از شعب به مرکز`}
+        />
+      </div>
 
       {/* POS Trends Analysis */}
       <PosStatsTrends />
