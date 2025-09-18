@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { BranchFormModal } from "./branch-form-modal";
 import { BranchExcelImportModal } from "./branch-excel-import-modal";
+import { BankingUnitFormModal } from "./banking-unit-form-modal";
+import { BankingUnitExcelImportModal } from "./banking-unit-excel-import-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -24,7 +26,10 @@ import { Plus, Upload, Edit, Trash2, MapPin, Users, Building } from "lucide-reac
 export function BranchManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showExcelImportModal, setShowExcelImportModal] = useState(false);
+  const [showBankingUnitModal, setShowBankingUnitModal] = useState(false);
+  const [showBankingUnitExcelModal, setShowBankingUnitExcelModal] = useState(false);
   const [editingBranch, setEditingBranch] = useState<any>(null);
+  const [editingBankingUnit, setEditingBankingUnit] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { toast } = useToast();
@@ -32,6 +37,10 @@ export function BranchManagement() {
 
   const { data: branches = [] } = useQuery<any[]>({
     queryKey: ["/api/branches"],
+  });
+
+  const { data: bankingUnits = [] } = useQuery<any[]>({
+    queryKey: ["/api/banking-units"],
   });
 
   const deleteBranchMutation = useMutation({
@@ -49,6 +58,26 @@ export function BranchManagement() {
       toast({
         title: "خطا",
         description: "خطا در حذف شعبه",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteBankingUnitMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/banking-units/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/banking-units"] });
+      toast({
+        title: "موفقیت",
+        description: "واحد بانکی با موفقیت حذف شد",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "خطا",
+        description: "خطا در حذف واحد بانکی",
         variant: "destructive",
       });
     },
@@ -78,6 +107,21 @@ export function BranchManagement() {
     setShowExcelImportModal(false);
   };
 
+  const handleBankingUnitImportComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/banking-units"] });
+    setShowBankingUnitExcelModal(false);
+  };
+
+  const handleEditBankingUnit = (unit: any) => {
+    setEditingBankingUnit(unit);
+    setShowBankingUnitModal(true);
+  };
+
+  const handleCloseBankingUnitModal = () => {
+    setShowBankingUnitModal(false);
+    setEditingBankingUnit(null);
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
       {/* Header */}
@@ -87,6 +131,22 @@ export function BranchManagement() {
           <p className="text-muted-foreground">مدیریت شعب و واحدهای بانکی</p>
         </div>
         <div className="flex gap-3">
+          <Button 
+            onClick={() => setShowBankingUnitExcelModal(true)}
+            variant="outline"
+            data-testid="button-excel-import-banking-unit"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            وارد کردن Excel واحدهای بانکی
+          </Button>
+          <Button 
+            onClick={() => setShowBankingUnitModal(true)}
+            variant="outline"
+            data-testid="button-add-banking-unit"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            افزودن واحد بانکی
+          </Button>
           <Button 
             onClick={() => setShowExcelImportModal(true)}
             variant="outline"
@@ -168,6 +228,109 @@ export function BranchManagement() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Banking Units Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">واحدهای بانکی</h3>
+        
+        {/* Banking Units List */}
+        <div className="grid gap-4">
+          {bankingUnits.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  هنوز واحد بانکی‌ای اضافه نشده است
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            bankingUnits.map((unit: any) => (
+              <Card key={unit.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{unit.name}</CardTitle>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="secondary">{unit.code}</Badge>
+                        <Badge variant={unit.unitType === 'branch' ? "default" : "outline"}>
+                          {unit.unitType === 'branch' ? '🏦 شعبه' : 
+                           unit.unitType === 'counter' ? '🏪 باجه' : '🏧 خودپرداز'}
+                        </Badge>
+                        <Badge variant={unit.isActive ? "default" : "secondary"}>
+                          {unit.isActive ? "فعال" : "غیرفعال"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditBankingUnit(unit)}
+                        data-testid={`button-edit-banking-unit-${unit.id}`}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            data-testid={`button-delete-banking-unit-${unit.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent dir="rtl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>تأیید حذف</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              آیا از حذف واحد بانکی "{unit.name}" اطمینان دارید؟ این عمل قابل بازگشت نیست.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>انصراف</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteBankingUnitMutation.mutate(unit.id)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              حذف
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-muted-foreground">مدیر:</span>
+                      <p className="mt-1">{unit.managerName || "تعیین نشده"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">تلفن:</span>
+                      <p className="mt-1">{unit.phone || "ثبت نشده"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">نوع واحد:</span>
+                      <p className="mt-1">{
+                        unit.unitType === 'branch' ? 'شعبه' : 
+                        unit.unitType === 'counter' ? 'باجه' : 'خودپرداز'
+                      }</p>
+                    </div>
+                    <div className="md:col-span-2 lg:col-span-3">
+                      <span className="font-medium text-muted-foreground">آدرس:</span>
+                      <p className="mt-1">{unit.address || "آدرس ثبت نشده"}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Branches List */}
@@ -272,6 +435,18 @@ export function BranchManagement() {
         open={showExcelImportModal}
         onOpenChange={setShowExcelImportModal}
         onImportComplete={handleImportComplete}
+      />
+
+      <BankingUnitFormModal
+        open={showBankingUnitModal}
+        onOpenChange={handleCloseBankingUnitModal}
+        editData={editingBankingUnit}
+      />
+
+      <BankingUnitExcelImportModal
+        open={showBankingUnitExcelModal}
+        onOpenChange={setShowBankingUnitExcelModal}
+        onImportComplete={handleBankingUnitImportComplete}
       />
     </div>
   );

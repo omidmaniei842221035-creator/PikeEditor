@@ -3,11 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Target, MapPin, Upload } from "lucide-react";
+import { RefreshCw, Target } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, type MapInstance } from "@/lib/map-utils";
-import { BankingUnitPlacementModal } from "@/components/branches/banking-unit-placement-modal";
-import { BankingUnitExcelImportModal } from "@/components/branches/banking-unit-excel-import-modal";
 import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
 import { AddVisitModal } from "@/components/customers/add-visit-modal";
 import type { Customer } from "@shared/schema";
@@ -21,23 +19,19 @@ export function PosMap() {
   const [bankingUnitFilter, setBankingUnitFilter] = useState("all");
   const [mapReady, setMapReady] = useState(false);
   const [regionAnalysisEnabled, setRegionAnalysisEnabled] = useState(false);
-  const [addBankingUnitMode, setAddBankingUnitMode] = useState(false);
   const [regionStats, setRegionStats] = useState<{
     totalInRegion: number;
     activeInRegion: number;
     regionRevenue: number;
   } | null>(null);
-  const [pendingBranchLocation, setPendingBranchLocation] = useState<{lat: number, lng: number} | null>(null);
   const [hasActiveRegions, setHasActiveRegions] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [selectedCustomerForVisit, setSelectedCustomerForVisit] = useState<Customer | null>(null);
   const [showAddVisitModal, setShowAddVisitModal] = useState(false);
-  const [showBankingUnitExcelImport, setShowBankingUnitExcelImport] = useState(false);
   
   // Use refs to avoid stale closures
-  const addBankingUnitModeRef = useRef(addBankingUnitMode);
   const regionAnalysisEnabledRef = useRef(regionAnalysisEnabled);
 
   const { data: customers = [], isLoading: customersLoading } = useQuery({
@@ -60,10 +54,6 @@ export function PosMap() {
 
   // Update refs when state changes
   useEffect(() => {
-    addBankingUnitModeRef.current = addBankingUnitMode;
-  }, [addBankingUnitMode]);
-
-  useEffect(() => {
     regionAnalysisEnabledRef.current = regionAnalysisEnabled;
   }, [regionAnalysisEnabled]);
 
@@ -82,14 +72,6 @@ export function PosMap() {
           if (mounted && mapInstanceRef.current?.map) {
             setMapReady(true);
             
-            // Add click listener for banking unit placement - using refs to avoid stale closure
-            mapInstanceRef.current.map.on('click', (e: any) => {
-              if (addBankingUnitModeRef.current) {
-                const { lat, lng } = e.latlng;
-                setPendingBranchLocation({ lat, lng });
-                setAddBankingUnitMode(false); // Exit mode after click
-              }
-            });
           }
         } catch (error) {
           console.error('Failed to initialize map:', error);
@@ -315,37 +297,9 @@ export function PosMap() {
                 <Target className="h-4 w-4 mr-2" />
                 {regionAnalysisEnabled ? "تحلیل منطقه فعال" : "تحلیل منطقه"}
               </Button>
-              <Button 
-                variant={addBankingUnitMode ? "default" : "outline"}
-                onClick={() => {
-                  setAddBankingUnitMode(!addBankingUnitMode);
-                  if (!addBankingUnitMode) {
-                    setRegionAnalysisEnabled(false); // Disable region analysis when adding unit
-                  }
-                }}
-                className="w-full" 
-                data-testid="add-banking-unit-toggle"
-              >
-                <MapPin className="h-4 w-4 mr-2" />
-                {addBankingUnitMode ? "انتخاب مکان فعال" : "افزودن واحد بانکی"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowBankingUnitExcelImport(true)}
-                className="w-full"
-                data-testid="button-banking-unit-excel-import"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                وارد کردن Excel واحدهای بانکی
-              </Button>
               {regionAnalysisEnabled && (
                 <p className="text-xs text-muted-foreground text-center">
                   روی نقشه شکل بکشید تا منطقه انتخاب کنید
-                </p>
-              )}
-              {addBankingUnitMode && (
-                <p className="text-xs text-muted-foreground text-center">
-                  روی نقشه کلیک کنید تا واحد بانکی اضافه کنید
                 </p>
               )}
             </div>
@@ -457,12 +411,6 @@ export function PosMap() {
         </Card>
       </div>
       
-      {/* Banking Unit Placement Modal */}
-      <BankingUnitPlacementModal
-        isOpen={pendingBranchLocation !== null}
-        onClose={() => setPendingBranchLocation(null)}
-        location={pendingBranchLocation}
-      />
 
       {/* Customer Info Modal */}
       <CustomerInfoModal
@@ -489,15 +437,6 @@ export function PosMap() {
         }}
       />
 
-      {/* Banking Unit Excel Import Modal */}
-      <BankingUnitExcelImportModal
-        open={showBankingUnitExcelImport}
-        onOpenChange={setShowBankingUnitExcelImport}
-        onImportComplete={() => {
-          setShowBankingUnitExcelImport(false);
-          queryClient.invalidateQueries({ queryKey: ['/api/banking-units'] });
-        }}
-      />
     </div>
   );
 }
