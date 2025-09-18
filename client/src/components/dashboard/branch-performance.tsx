@@ -1,8 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Building2, TrendingUp } from "lucide-react";
+
+interface Branch {
+  id: string;
+  name: string;
+  manager: string;
+  performance: number;
+}
 
 export function BranchPerformance() {
-  const { data: branches = [] } = useQuery({
+  const { data: branches = [] } = useQuery<Branch[]>({
     queryKey: ["/api/branches"],
   });
 
@@ -19,26 +27,37 @@ export function BranchPerformance() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold">📍 عملکرد شعب</CardTitle>
+    <Card className="border-0 shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+            <Building2 className="w-4 h-4 text-blue-600" />
+          </div>
+          <CardTitle className="text-sm font-semibold">عملکرد شعب</CardTitle>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         <div className="space-y-4">
-          {branches.slice(0, 3).map((branch: any, index: number) => (
-            <div key={branch.id} data-testid={`branch-${index}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium">{branch.name}</span>
-                <span className={`text-sm font-bold px-2 py-1 rounded-full ${getPerformanceColor(branch.performance)}`}>
-                  {branch.performance}%
-                </span>
+          {branches.slice(0, 3).map((branch, index: number) => (
+            <div key={branch.id} data-testid={`branch-${index}`} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                  <span className="font-medium text-sm">{branch.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-3 h-3 text-muted-foreground" />
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${getPerformanceColor(branch.performance)}`}>
+                    {branch.performance}%
+                  </span>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground mb-2">
+              <p className="text-xs text-muted-foreground pl-4">
                 مدیر: {branch.manager}
               </p>
-              <div className="w-full bg-muted rounded-full h-2">
+              <div className="w-full bg-muted rounded-full h-1.5">
                 <div
-                  className={`h-2 rounded-full ${getPerformanceBarColor(branch.performance)}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${getPerformanceBarColor(branch.performance)}`}
                   style={{ width: `${branch.performance}%` }}
                 ></div>
               </div>

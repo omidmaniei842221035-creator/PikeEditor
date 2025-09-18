@@ -1,71 +1,83 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
+import { ShoppingCart, Utensils, Pill, Store, Coffee, Sandwich } from "lucide-react";
+
+interface AnalyticsData {
+  businessTypes: Record<string, number>;
+  totalCustomers: number;
+}
 
 export function BusinessCategories() {
-  const { data: analytics } = useQuery({
+  const { data: analytics } = useQuery<AnalyticsData>({
     queryKey: ["/api/analytics/overview"],
   });
 
-  const businessTypeIcons: Record<string, string> = {
-    "سوپرمارکت": "🛒",
-    "رستوران": "🍽️",
-    "داروخانه": "💊",
-    "فروشگاه": "🏬",
-    "کافه": "☕",
-    "نانوایی": "🍞",
+  const businessTypeIcons: Record<string, any> = {
+    "سوپرمارکت": ShoppingCart,
+    "رستوران": Utensils,
+    "داروخانه": Pill,
+    "فروشگاه": Store,
+    "کافه": Coffee,
+    "نانوایی": Sandwich,
   };
 
-  const businessTypeColors: Record<string, string> = {
-    "سوپرمارکت": "bg-blue-500",
-    "رستوران": "bg-orange-500", 
-    "داروخانه": "bg-green-500",
-    "فروشگاه": "bg-purple-500",
-    "کافه": "bg-amber-500",
-    "نانوایی": "bg-pink-500",
+  const businessTypeColors: Record<string, { bg: string; text: string; icon: string }> = {
+    "سوپرمارکت": { bg: "bg-blue-50", text: "text-blue-600", icon: "text-blue-600" },
+    "رستوران": { bg: "bg-orange-50", text: "text-orange-600", icon: "text-orange-600" }, 
+    "داروخانه": { bg: "bg-emerald-50", text: "text-emerald-600", icon: "text-emerald-600" },
+    "فروشگاه": { bg: "bg-purple-50", text: "text-purple-600", icon: "text-purple-600" },
+    "کافه": { bg: "bg-amber-50", text: "text-amber-600", icon: "text-amber-600" },
+    "نانوایی": { bg: "bg-pink-50", text: "text-pink-600", icon: "text-pink-600" },
   };
 
   const businessTypes = Object.entries(analytics?.businessTypes || {})
     .slice(0, 3) // Show top 3 business types
     .map(([type, count]) => ({
       name: type,
-      count,
-      icon: businessTypeIcons[type] || "🏪",
-      color: businessTypeColors[type] || "bg-gray-500",
+      count: typeof count === 'number' ? count : 0,
+      icon: businessTypeIcons[type] || Store,
+      colors: businessTypeColors[type] || { bg: "bg-gray-50", text: "text-gray-600", icon: "text-gray-600" },
       percentage: analytics?.totalCustomers 
-        ? Math.round((count / analytics.totalCustomers) * 100)
+        ? Math.round(((typeof count === 'number' ? count : 0) / analytics.totalCustomers) * 100)
         : 0,
     }));
 
   return (
-    <div className="mb-8">
-      <h3 className="text-xl font-semibold mb-6">🏪 داشبورد اصناف</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {businessTypes.map((type, index) => (
-          <Card key={index} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-medium">{type.name}</h4>
-                <span className="text-2xl">{type.icon}</span>
-              </div>
-              <p 
-                className="text-3xl font-bold text-primary mb-2" 
-                data-testid={`business-type-${index}-count`}
-              >
-                {type.count}
-              </p>
-              <p className="text-sm text-muted-foreground">POS فعال در تبریز</p>
-              <div className="mt-4 flex items-center gap-2">
-                <div className="flex-1 bg-muted rounded-full h-2">
+    <div className="mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {businessTypes.map((type, index) => {
+          const IconComponent = type.icon;
+          return (
+            <Card key={index} className="hover:shadow-md transition-all duration-200 border-0 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className={`w-10 h-10 ${type.colors.bg} rounded-lg flex items-center justify-center`}>
+                    <IconComponent className={`w-5 h-5 ${type.colors.icon}`} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm">{type.name}</h4>
+                    <p className="text-xs text-muted-foreground">اصناف فعال</p>
+                  </div>
+                </div>
+                <div className="flex items-end justify-between mb-3">
+                  <p 
+                    className={`text-2xl font-bold ${type.colors.text}`} 
+                    data-testid={`business-type-${index}-count`}
+                  >
+                    {type.count}
+                  </p>
+                  <span className={`text-sm font-medium ${type.colors.text}`}>{type.percentage}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
                   <div 
-                    className={`${type.color} h-2 rounded-full`}
+                    className={`${type.colors.text.replace('text-', 'bg-')} h-1.5 rounded-full transition-all duration-300`}
                     style={{ width: `${type.percentage}%` }}
                   ></div>
                 </div>
-                <span className="text-sm text-muted-foreground">{type.percentage}%</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
