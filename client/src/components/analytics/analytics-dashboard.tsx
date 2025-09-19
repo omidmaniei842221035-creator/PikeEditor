@@ -9,6 +9,7 @@ import { BulletChart } from "./bullet-chart";
 import { SankeyFlowChart } from "./sankey-flow-chart";
 import { BankingUnitTrends } from "./banking-unit-trends";
 import { UrbanGraphAnalysis } from "./urban-graph-analysis";
+import { FlowODAnalysis } from "./flow-od-analysis";
 import { useState, useMemo } from "react";
 import { useFilter } from "@/pages/dashboard";
 
@@ -557,6 +558,20 @@ export function AnalyticsDashboard() {
           <div className="h-1 w-32 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full"></div>
         </div>
         <UrbanGraphAnalysis />
+      </div>
+
+      {/* Flow and Origin-Destination Analysis */}
+      <div className="mb-12">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+            🌊 تحلیل جریانات و مسارها (Flow / OD Analysis)
+          </h2>
+          <p className="text-lg text-muted-foreground mt-3">
+            بررسی حرکت مشتریان، جریان تراکنشات و کشف الگوهای مکانی
+          </p>
+          <div className="h-1 w-32 bg-gradient-to-r from-cyan-500 to-blue-500 mx-auto mt-4 rounded-full"></div>
+        </div>
+        <FlowODAnalysis />
       </div>
 
       {/* Banking Unit Trends Analysis */}

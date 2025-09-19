@@ -182,85 +182,127 @@ export class FlowODAnalyzer {
   private createFlowEdges(customers: any[], branches: any[], bankingUnits: any[]): FlowEdge[] {
     const edges: FlowEdge[] = [];
     const connectionMap = new Map<string, FlowEdge>();
+    const maxEdges = 1000; // Performance cap
+    let edgeCount = 0;
 
     // Create flows between banking units and customer clusters
-    this.nodes.forEach(sourceNode => {
-      if (sourceNode.type === 'hub') {
-        this.nodes.forEach(targetNode => {
-          if (targetNode.type !== 'hub' && sourceNode.id !== targetNode.id) {
-            const distance = this.calculateDistance(sourceNode.coordinates, targetNode.coordinates);
-            
-            if (distance < 10000) { // Within 10km
-              const flowVolume = Math.min(
-                sourceNode.properties.totalOut,
-                targetNode.properties.totalIn
-              ) * (1 / (distance / 1000)); // Distance decay
-              
-              if (flowVolume > 1000000) { // Minimum threshold
-                const growth = this.calculateGrowth(sourceNode, targetNode);
-                
-                const edge: FlowEdge = {
-                  id: `flow_${sourceNode.id}_${targetNode.id}`,
-                  source: sourceNode.id,
-                  target: targetNode.id,
-                  properties: {
-                    volume: flowVolume,
-                    value: flowVolume,
-                    growth: growth,
-                    transactionCount: Math.floor(flowVolume / 50000),
-                    averageValue: 50000,
-                    seasonality: growth > 10 ? 'peak' : growth < -5 ? 'low' : 'normal',
-                    direction: flowVolume > sourceNode.properties.totalOut * 0.1 ? 'bidirectional' : 'unidirectional'
-                  }
-                };
-                
-                edges.push(edge);
-                connectionMap.set(edge.id, edge);
-              }
-            }
-          }
-        });
-      }
-    });
+    const hubNodes = this.nodes.filter(n => n.type === 'hub');
+    const nonHubNodes = this.nodes.filter(n => n.type !== 'hub');
 
-    // Create inter-cluster flows
-    const clusterNodes = this.nodes.filter(n => n.type !== 'hub');
-    clusterNodes.forEach(source => {
-      clusterNodes.forEach(target => {
-        if (source.id !== target.id) {
-          const distance = this.calculateDistance(source.coordinates, target.coordinates);
-          const businessSimilarity = this.calculateBusinessSimilarity(
-            source.properties.businessTypes,
-            target.properties.businessTypes
-          );
+    hubNodes.forEach(sourceNode => {
+      if (edgeCount >= maxEdges) return;
+      
+      // Use spatial filtering to reduce computation
+      const nearbyNodes = nonHubNodes.filter(targetNode => {
+        const distance = this.calculateDistance(sourceNode.coordinates, targetNode.coordinates);
+        return distance < 10000; // Pre-filter by 10km radius
+      });
+
+      nearbyNodes.forEach(targetNode => {
+        if (edgeCount >= maxEdges) return;
+        
+        const distance = this.calculateDistance(sourceNode.coordinates, targetNode.coordinates);
+        const flowVolume = Math.min(
+          sourceNode.properties.totalOut,
+          targetNode.properties.totalIn
+        ) * (1 / Math.max(1, distance / 1000)); // Distance decay with minimum
+        
+        if (flowVolume > 1000000) { // Minimum threshold
+          const growth = this.calculateGrowth(sourceNode, targetNode);
           
-          if (distance < 5000 && businessSimilarity > 0.3) { // Related businesses within 5km
-            const flowVolume = Math.min(source.properties.totalOut, target.properties.totalIn) * businessSimilarity * 0.1;
-            
-            if (flowVolume > 500000) {
-              const growth = this.calculateGrowth(source, target);
-              
-              const edge: FlowEdge = {
-                id: `inter_${source.id}_${target.id}`,
-                source: source.id,
-                target: target.id,
-                properties: {
-                  volume: flowVolume,
-                  value: flowVolume,
-                  growth: growth,
-                  transactionCount: Math.floor(flowVolume / 30000),
-                  averageValue: 30000,
-                  seasonality: 'normal',
-                  direction: 'bidirectional'
-                }
-              };
-              
-              edges.push(edge);
+          const edge: FlowEdge = {
+            id: `flow_${sourceNode.id}_${targetNode.id}`,
+            source: sourceNode.id,
+            target: targetNode.id,
+            properties: {
+              volume: flowVolume,
+              value: flowVolume,
+              growth: growth,
+              transactionCount: Math.floor(flowVolume / 50000),
+              averageValue: 50000,
+              seasonality: growth > 10 ? 'peak' : growth < -5 ? 'low' : 'normal',
+              direction: flowVolume > sourceNode.properties.totalOut * 0.1 ? 'bidirectional' : 'unidirectional'
             }
-          }
+          };
+          
+          edges.push(edge);
+          connectionMap.set(edge.id, edge);
+          edgeCount++;
         }
       });
     });
+
+    // Create inter-cluster flows with spatial grid optimization
+    if (edgeCount < maxEdges) {
+      const gridSize = 0.02; // ~2km grid for spatial hashing
+      const spatialGrid = new Map<string, FlowNode[]>();
+      
+      // Build spatial grid
+      nonHubNodes.forEach(node => {
+        const [lat, lng] = node.coordinates;
+        if (this.isValidCoordinate([lat, lng])) {
+          const gridKey = `${Math.floor(lat / gridSize)}_${Math.floor(lng / gridSize)}`;
+          if (!spatialGrid.has(gridKey)) {
+            spatialGrid.set(gridKey, []);
+          }
+          spatialGrid.get(gridKey)!.push(node);
+        }
+      });
+
+      // Generate flows within and between adjacent grid cells
+      spatialGrid.forEach((gridNodes, gridKey) => {
+        if (edgeCount >= maxEdges) return;
+        
+        gridNodes.forEach(source => {
+          if (edgeCount >= maxEdges) return;
+          
+          // Check same grid and adjacent grids
+          const [gridLat, gridLng] = gridKey.split('_').map(Number);
+          for (let dLat = -1; dLat <= 1; dLat++) {
+            for (let dLng = -1; dLng <= 1; dLng++) {
+              const adjacentKey = `${gridLat + dLat}_${gridLng + dLng}`;
+              const adjacentNodes = spatialGrid.get(adjacentKey) || [];
+              
+              adjacentNodes.forEach(target => {
+                if (edgeCount >= maxEdges || source.id === target.id) return;
+                
+                const distance = this.calculateDistance(source.coordinates, target.coordinates);
+                const businessSimilarity = this.calculateBusinessSimilarity(
+                  source.properties.businessTypes,
+                  target.properties.businessTypes
+                );
+                
+                if (distance < 5000 && businessSimilarity > 0.3) {
+                  const flowVolume = Math.min(source.properties.totalOut, target.properties.totalIn) * businessSimilarity * 0.1;
+                  
+                  if (flowVolume > 500000) {
+                    const growth = this.calculateGrowth(source, target);
+                    
+                    const edge: FlowEdge = {
+                      id: `inter_${source.id}_${target.id}`,
+                      source: source.id,
+                      target: target.id,
+                      properties: {
+                        volume: flowVolume,
+                        value: flowVolume,
+                        growth: growth,
+                        transactionCount: Math.floor(flowVolume / 30000),
+                        averageValue: 30000,
+                        seasonality: 'normal',
+                        direction: 'bidirectional'
+                      }
+                    };
+                    
+                    edges.push(edge);
+                    edgeCount++;
+                  }
+                }
+              });
+            }
+          }
+        });
+      });
+    }
 
     return edges;
   }
@@ -302,13 +344,21 @@ export class FlowODAnalyzer {
   }
 
   private createODPairs(): ODPair[] {
-    return this.edges.map(edge => {
+    const validEdges = this.edges.filter(edge => {
       const sourceNode = this.nodes.find(n => n.id === edge.source);
       const targetNode = this.nodes.find(n => n.id === edge.target);
-      
-      if (!sourceNode || !targetNode) {
-        return null;
-      }
+      return sourceNode && targetNode && 
+             this.isValidCoordinate(sourceNode.coordinates) && 
+             this.isValidCoordinate(targetNode.coordinates);
+    });
+
+    if (validEdges.length === 0) return [];
+
+    const maxVolume = Math.max(...validEdges.map(e => e.properties.volume));
+    
+    return validEdges.map(edge => {
+      const sourceNode = this.nodes.find(n => n.id === edge.source)!;
+      const targetNode = this.nodes.find(n => n.id === edge.target)!;
 
       // Determine color based on growth
       let color: [number, number, number];
@@ -322,15 +372,15 @@ export class FlowODAnalyzer {
         color = [255, 0, 0]; // Red for significant decline
       }
 
-      // Calculate thickness based on volume
-      const maxVolume = Math.max(...this.edges.map(e => e.properties.volume));
+      // Calculate thickness based on volume (clamped)
       const minThickness = 2;
       const maxThickness = 15;
-      const thickness = minThickness + (edge.properties.volume / maxVolume) * (maxThickness - minThickness);
+      const normalizedVolume = maxVolume > 0 ? edge.properties.volume / maxVolume : 0;
+      const thickness = Math.max(minThickness, Math.min(maxThickness, minThickness + normalizedVolume * (maxThickness - minThickness)));
 
       return {
-        origin: sourceNode.coordinates,
-        destination: targetNode.coordinates,
+        origin: sourceNode.coordinates, // Keep [lat, lng] format - will be flipped in render
+        destination: targetNode.coordinates, // Keep [lat, lng] format - will be flipped in render
         volume: edge.properties.volume,
         value: edge.properties.value,
         growth: edge.properties.growth,
@@ -338,7 +388,14 @@ export class FlowODAnalyzer {
         color: color,
         thickness: thickness
       };
-    }).filter((pair): pair is ODPair => pair !== null);
+    });
+  }
+
+  private isValidCoordinate(coord: [number, number]): boolean {
+    const [lat, lng] = coord;
+    return !isNaN(lat) && !isNaN(lng) && 
+           lat >= -90 && lat <= 90 && 
+           lng >= -180 && lng <= 180;
   }
 
   // Public methods

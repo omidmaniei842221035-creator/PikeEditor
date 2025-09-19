@@ -53,12 +53,10 @@ export function FlowODAnalysis() {
       return { analyzer: null, flowData: { odPairs: [], nodes: [], metrics: null } };
     }
 
-    setIsLoading(true);
     const flowAnalyzer = new FlowODAnalyzer(customers, branches, bankingUnits, []);
-    const odPairs = flowAnalyzer.getODPairs();
+    const odPairs = flowAnalyzer.getODPairs().filter(pair => pair !== null);
     const nodes = flowAnalyzer.getNodes();
     const metrics = flowAnalyzer.getFlowMetrics();
-    setIsLoading(false);
 
     return { 
       analyzer: flowAnalyzer, 
@@ -66,21 +64,44 @@ export function FlowODAnalysis() {
     };
   }, [customers, bankingUnits, branches]);
 
-  // Filter data based on selected metric and threshold
+  // Handle loading state
+  useEffect(() => {
+    setIsLoading(customers.length === 0 || bankingUnits.length === 0);
+  }, [customers.length, bankingUnits.length]);
+
+  // Filter data based on selected metric, threshold, and analysis type
   const filteredData = useMemo(() => {
     if (!flowData.odPairs) return { odPairs: [], nodes: [] };
 
-    const filtered = flowData.odPairs.filter(pair => {
+    let filtered = flowData.odPairs.filter(pair => {
       if (selectedMetric === "volume") return pair.volume >= flowThreshold;
       if (selectedMetric === "growth") return Math.abs(pair.growth) >= flowThreshold / 100000;
       return pair.volume >= flowThreshold;
     });
 
+    // Apply analysis type filter
+    if (analysisType === "origins") {
+      filtered = filtered.filter(pair => pair.growth > 5); // Growing flows from sources
+    } else if (analysisType === "destinations") {
+      filtered = filtered.filter(pair => pair.growth < -5 || pair.volume > flowThreshold * 2); // High volume or declining flows to destinations
+    } else if (analysisType === "expansion") {
+      filtered = filtered.filter(pair => pair.growth > 15 && pair.volume > flowThreshold * 1.5); // High growth, high volume flows
+    }
+
+    const filteredNodes = flowData.nodes || [];
+    let visibleNodes = filteredNodes;
+    
+    if (analysisType === "origins") {
+      visibleNodes = filteredNodes.filter(node => node.type === 'source' || node.type === 'hub');
+    } else if (analysisType === "destinations") {
+      visibleNodes = filteredNodes.filter(node => node.type === 'destination' || node.type === 'hub');
+    }
+
     return {
       odPairs: filtered,
-      nodes: flowData.nodes || []
+      nodes: visibleNodes
     };
-  }, [flowData, selectedMetric, flowThreshold]);
+  }, [flowData, selectedMetric, flowThreshold, analysisType]);
 
   // Create deck.gl layers
   const layers = useMemo(() => {
