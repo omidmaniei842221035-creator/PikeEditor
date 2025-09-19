@@ -409,7 +409,7 @@ const HealthOverview = ({ locations }: { locations: LocationHealthData[] }) => {
               <Tooltip 
                 formatter={(value: any) => [value, 'تعداد مکان']}
               />
-              <Bar dataKey="value" fill={(entry: any) => entry.color} />
+              <Bar dataKey="value" fill="#3b82f6" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
