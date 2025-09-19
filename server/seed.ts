@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats } from "@shared/schema";
+import { users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, bankingUnits } from "@shared/schema";
 
 export async function seedDatabase() {
   console.log("🌱 Seeding database with sample data...");
@@ -13,6 +13,7 @@ export async function seedDatabase() {
   await db.delete(employees);
   await db.delete(branches);
   await db.delete(users);
+  await db.delete(bankingUnits);
 
   // Create sample branches (Tabriz POS offices)
   const sampleBranches = await db.insert(branches).values([
@@ -57,6 +58,70 @@ export async function seedDatabase() {
       coverageRadius: 12,
       monthlyTarget: 280,
       performance: 92
+    }
+  ]).returning();
+
+  // Create sample banking units (واحدهای بانکی)
+  const sampleBankingUnits = await db.insert(bankingUnits).values([
+    {
+      id: "unit-1",
+      code: "BU-001", 
+      name: "واحد بانکی مرکز شهر تبریز",
+      unitType: "branch",
+      managerName: "آقای رحیمی",
+      phone: "041-33445566",
+      address: "تبریز، میدان ساعت، ساختمان بانک مرکزی",
+      latitude: "38.08100000",
+      longitude: "46.29200000",
+      isActive: true
+    },
+    {
+      id: "unit-2",
+      code: "BU-002",
+      name: "واحد بانکی بازار تبریز", 
+      unitType: "counter",
+      managerName: "خانم احمدی",
+      phone: "041-33556677",
+      address: "تبریز، بازار تبریز، راسته طلافروشان",
+      latitude: "38.07500000", 
+      longitude: "46.29500000",
+      isActive: true
+    },
+    {
+      id: "unit-3",
+      code: "BU-003",
+      name: "پیشخوان شهربانک شهرک صنعتی",
+      unitType: "shahrbnet_kiosk",
+      managerName: "آقای نوری",
+      phone: "041-34667788",
+      address: "تبریز، شهرک صنعتی، فاز ۲، مجتمع تجاری",
+      latitude: "38.09100000",
+      longitude: "46.31100000", 
+      isActive: true
+    },
+    {
+      id: "unit-4",
+      code: "BU-004",
+      name: "واحد بانکی دانشگاه تبریز",
+      unitType: "branch",
+      managerName: "خانم کریمی", 
+      phone: "041-33778899",
+      address: "تبریز، خیابان 29 بهمن، دانشگاه تبریز",
+      latitude: "38.07700000",
+      longitude: "46.30900000",
+      isActive: true
+    },
+    {
+      id: "unit-5", 
+      code: "BU-005",
+      name: "پیشخوان شهربانک ترمینال",
+      unitType: "shahrbnet_kiosk",
+      managerName: "آقای قاسمی",
+      phone: "041-34889900", 
+      address: "تبریز، ترمینال مسافربری، سالن انتظار",
+      latitude: "38.06900000",
+      longitude: "46.32200000",
+      isActive: true
     }
   ]).returning();
 
@@ -124,6 +189,7 @@ export async function seedDatabase() {
     {
       id: "cust-1",
       branchId: "branch-1",
+      bankingUnitId: "unit-1",
       shopName: "رستوران سنتی آذربایجان",
       ownerName: "جواد میرزایی",
       phone: "041-33789012",
@@ -138,6 +204,7 @@ export async function seedDatabase() {
     {
       id: "cust-6",
       branchId: "branch-1",
+      bankingUnitId: "unit-1",
       shopName: "فروشگاه زنجیره‌ای ایران",
       ownerName: "حسن محمدی",
       phone: "041-33567890",
@@ -152,6 +219,7 @@ export async function seedDatabase() {
     {
       id: "cust-11",
       branchId: "branch-1",
+      bankingUnitId: "unit-1",
       shopName: "قنادی شیرین",
       ownerName: "زهره احمدی", 
       phone: "041-33123456",
@@ -166,6 +234,7 @@ export async function seedDatabase() {
     {
       id: "cust-16",
       branchId: "branch-1",
+      bankingUnitId: "unit-1",
       shopName: "بانک پارسیان شعبه تبریز",
       ownerName: "مدیر شعبه حسام پور",
       phone: "041-33111222",
@@ -182,6 +251,7 @@ export async function seedDatabase() {
     {
       id: "cust-2",
       branchId: "branch-1",
+      bankingUnitId: "unit-2",
       shopName: "سوپرمارکت پردیس",
       ownerName: "سارا عباسی",
       phone: "041-33890123",
@@ -196,6 +266,7 @@ export async function seedDatabase() {
     {
       id: "cust-7",
       branchId: "branch-2", 
+      bankingUnitId: "unit-2",
       shopName: "نانوایی سنتی تبریز",
       ownerName: "علی رضایی",
       phone: "041-33456789",
@@ -210,6 +281,7 @@ export async function seedDatabase() {
     {
       id: "cust-12",
       branchId: "branch-3",
+      bankingUnitId: "unit-4",
       shopName: "کافه‌نت گلستان",
       ownerName: "سعید مرادی",
       phone: "041-34789012",
@@ -224,6 +296,7 @@ export async function seedDatabase() {
     {
       id: "cust-17",
       branchId: "branch-2",
+      bankingUnitId: "unit-2",
       shopName: "فست‌فود برگر کینگ",
       ownerName: "شهریار امینی",
       phone: "041-33222333",
@@ -240,6 +313,7 @@ export async function seedDatabase() {
     {
       id: "cust-3",
       branchId: "branch-2",
+      bankingUnitId: "unit-3",
       shopName: "کافه آرتین",
       ownerName: "امیر حسینی",
       phone: "041-33901234",
@@ -282,6 +356,7 @@ export async function seedDatabase() {
     {
       id: "cust-18",
       branchId: "branch-3",
+      bankingUnitId: "unit-5",
       shopName: "آژانس مسافربری آذرخش",
       ownerName: "ابراهیم قاسمی",
       phone: "041-34333444",
