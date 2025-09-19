@@ -109,45 +109,83 @@ const MapSelection = ({ selectedRegion, onRegionSelect, regions }: MapSelectionP
   };
 
   // Convert lat/lng to pixel position for display
-  const coordsToPixels = (coords: [number, number], containerWidth: number, containerHeight: number) => {
+  const coordsToPixels = (coords: [number, number], rect: { width: number; height: number }) => {
     const [lat, lng] = coords;
     const centerLat = 38.0742;
     const centerLng = 46.2919;
     
-    const x = ((lng - centerLng) / 0.0001) + containerWidth / 2;
-    const y = ((centerLat - lat) / 0.0001) + containerHeight / 2;
+    // Scale factor for Tabriz area (rough approximation)
+    const scaleX = 0.002; // degrees per pixel
+    const scaleY = 0.0015; // degrees per pixel
     
-    return { x: Math.max(0, Math.min(containerWidth, x)), y: Math.max(0, Math.min(containerHeight, y)) };
+    const x = ((lng - centerLng) / scaleX) + rect.width / 2;
+    const y = ((centerLat - lat) / scaleY) + rect.height / 2;
+    
+    return { 
+      x: Math.max(10, Math.min(rect.width - 10, x)), 
+      y: Math.max(10, Math.min(rect.height - 10, y)) 
+    };
   };
+
+  const [mapRef, setMapRef] = useState<HTMLDivElement | null>(null);
+
+  const getMapRect = useCallback(() => {
+    if (!mapRef) return { width: 400, height: 300 };
+    const rect = mapRef.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
+  }, [mapRef]);
 
   return (
     <div className="h-96 w-full rounded-lg overflow-hidden border bg-gradient-to-br from-blue-50 to-cyan-50 relative">
       <div 
+        ref={setMapRef}
         className="absolute inset-0 cursor-crosshair"
         onClick={handleMapClick}
         data-testid="map-selection"
       >
         {/* Background map representation */}
-        <div className="absolute inset-0 bg-gradient-to-r from-green-100 via-blue-100 to-purple-100 opacity-30">
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl text-blue-300">
-            🗺️
+        <div className="absolute inset-0 bg-gradient-to-r from-green-100 via-blue-100 to-purple-100 opacity-40">
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <div className="text-6xl text-blue-300 mb-2">🗺️</div>
+            <div className="text-center text-sm text-gray-600 font-medium">نقشه تعاملی تبریز</div>
           </div>
+        </div>
+
+        {/* Map grid lines for better visual reference */}
+        <div className="absolute inset-0 opacity-20">
+          {[...Array(8)].map((_, i) => (
+            <div key={`v-${i}`} className="absolute bg-gray-400" style={{
+              left: `${(i + 1) * 12.5}%`,
+              top: 0,
+              width: '1px',
+              height: '100%'
+            }} />
+          ))}
+          {[...Array(6)].map((_, i) => (
+            <div key={`h-${i}`} className="absolute bg-gray-400" style={{
+              top: `${(i + 1) * 16.67}%`,
+              left: 0,
+              height: '1px',
+              width: '100%'
+            }} />
+          ))}
         </div>
         
         {/* Show existing regions */}
-        {regions.map(region => {
-          const pos = coordsToPixels(region.coordinates, 400, 300);
+        {mapRef && regions.map(region => {
+          const rect = getMapRect();
+          const pos = coordsToPixels(region.coordinates, rect);
           return (
             <div
               key={region.id}
-              className={`absolute w-4 h-4 rounded-full cursor-pointer transition-all ${
+              className={`absolute w-5 h-5 rounded-full cursor-pointer transition-all shadow-lg ${
                 selectedRegion?.id === region.id 
-                  ? 'bg-red-500 border-2 border-red-300 scale-125' 
-                  : 'bg-blue-500 border-2 border-blue-300 hover:scale-110'
+                  ? 'bg-red-500 border-2 border-red-300 scale-125 z-20' 
+                  : 'bg-blue-500 border-2 border-white hover:scale-110 z-10'
               }`}
               style={{
-                left: pos.x - 8,
-                top: pos.y - 8,
+                left: pos.x - 10,
+                top: pos.y - 10,
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -155,46 +193,66 @@ const MapSelection = ({ selectedRegion, onRegionSelect, regions }: MapSelectionP
               }}
               title={`${region.name}: ${(region.currentMetrics.revenue / 1000000).toFixed(1)}M تومان`}
             >
-              <div className="absolute top-5 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+              <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white text-xs px-2 py-1 rounded-md opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap z-30 pointer-events-none">
                 <strong>{region.name}</strong><br/>
-                درآمد: {(region.currentMetrics.revenue / 1000000).toFixed(1)}M تومان<br/>
-                تراکنش: {region.currentMetrics.transactions.toLocaleString()}<br/>
-                نقاط فروش: {region.currentMetrics.posCount}
+                💰 {(region.currentMetrics.revenue / 1000000).toFixed(1)}M تومان<br/>
+                📊 {region.currentMetrics.transactions.toLocaleString()}<br/>
+                🏪 {region.currentMetrics.posCount} نقطه
               </div>
             </div>
           );
         })}
 
         {/* Show selected coordinates */}
-        {selectedCoords && (
+        {selectedCoords && mapRef && (
           <div
-            className="absolute w-6 h-6 rounded-full bg-yellow-500 border-3 border-yellow-300 animate-pulse"
+            className="absolute w-7 h-7 rounded-full bg-amber-500 border-3 border-yellow-300 animate-pulse shadow-lg z-15"
             style={{
-              left: coordsToPixels(selectedCoords, 400, 300).x - 12,
-              top: coordsToPixels(selectedCoords, 400, 300).y - 12,
+              left: coordsToPixels(selectedCoords, getMapRect()).x - 14,
+              top: coordsToPixels(selectedCoords, getMapRect()).y - 14,
             }}
             title={`منطقه انتخابی: ${selectedCoords[0].toFixed(4)}, ${selectedCoords[1].toFixed(4)}`}
-          />
+          >
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-xs font-bold">📍</div>
+          </div>
         )}
 
         {/* Show selection radius if region is selected */}
-        {selectedRegion && (
+        {selectedRegion && mapRef && (
           <div
-            className="absolute rounded-full border-2 border-green-400 bg-green-100 bg-opacity-30 pointer-events-none"
+            className="absolute rounded-full border-2 border-green-500 border-dashed bg-green-200 bg-opacity-20 pointer-events-none z-5"
             style={{
-              width: 100,
-              height: 100,
-              left: coordsToPixels(selectedRegion.coordinates, 400, 300).x - 50,
-              top: coordsToPixels(selectedRegion.coordinates, 400, 300).y - 50,
+              width: 120,
+              height: 120,
+              left: coordsToPixels(selectedRegion.coordinates, getMapRect()).x - 60,
+              top: coordsToPixels(selectedRegion.coordinates, getMapRect()).y - 60,
             }}
-          />
+          >
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-green-700 text-xs font-medium">
+              شعاع تأثیر
+            </div>
+          </div>
         )}
         
         {/* Map overlay info */}
-        <div className="absolute top-2 right-2 bg-white bg-opacity-90 p-2 rounded text-xs">
-          📍 کلیک برای انتخاب منطقه<br/>
-          🎯 نقاط آبی: مناطق موجود
+        <div className="absolute top-3 right-3 bg-white bg-opacity-95 p-3 rounded-lg shadow-lg text-sm border">
+          <div className="font-medium text-gray-800 mb-2">راهنمای نقشه</div>
+          <div className="space-y-1 text-xs text-gray-600">
+            <div>📍 کلیک برای انتخاب منطقه جدید</div>
+            <div>🔵 نقاط آبی: مناطق موجود</div>
+            <div>🔴 نقطه قرمز: منطقه انتخاب شده</div>
+            <div>🟡 نقطه طلایی: نقطه کلیک شده</div>
+          </div>
         </div>
+
+        {/* Coordinate display */}
+        {selectedCoords && (
+          <div className="absolute bottom-3 left-3 bg-black bg-opacity-80 text-white px-3 py-2 rounded-lg text-xs">
+            <div className="font-medium">مختصات انتخابی:</div>
+            <div>عرض: {selectedCoords[0].toFixed(4)}°</div>
+            <div>طول: {selectedCoords[1].toFixed(4)}°</div>
+          </div>
+        )}
       </div>
     </div>
   );

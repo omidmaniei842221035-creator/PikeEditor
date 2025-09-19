@@ -11,6 +11,7 @@ import { BankingUnitTrends } from "./banking-unit-trends";
 import { UrbanGraphAnalysis } from "./urban-graph-analysis";
 import { FlowODAnalysis } from "./flow-od-analysis";
 import WhatIfSimulator from "./what-if-simulator";
+import GeoHealthDashboard from "./geo-health-dashboard";
 import { useState, useMemo } from "react";
 import { useFilter } from "@/pages/dashboard";
 
@@ -573,6 +574,11 @@ export function AnalyticsDashboard() {
           <div className="h-1 w-32 bg-gradient-to-r from-cyan-500 to-blue-500 mx-auto mt-4 rounded-full"></div>
         </div>
         <FlowODAnalysis />
+      </div>
+
+      {/* Geo Health Score Dashboard */}
+      <div className="mb-12">
+        <GeoHealthDashboard />
       </div>
 
       {/* What-If Simulator */}
