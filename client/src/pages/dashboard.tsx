@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, createContext, useContext } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
 import { OverviewStats } from "@/components/dashboard/overview-stats";
@@ -16,6 +16,23 @@ import { RealtimeDashboard } from "@/components/monitoring/realtime-dashboard";
 import { BranchManagement } from "@/components/branches/branch-management";
 import { PosStatsManagement } from "@/components/pos-stats/pos-stats-management";
 import { AdvancedAnalytics } from "@/components/dashboard/advanced-analytics";
+import { BankingUnitFilter } from "@/components/filters/banking-unit-filter";
+
+// Context for banking unit filter
+interface FilterContextType {
+  selectedBankingUnitId: string | null;
+  setSelectedBankingUnitId: (id: string | null) => void;
+}
+
+const FilterContext = createContext<FilterContextType | undefined>(undefined);
+
+export const useFilter = () => {
+  const context = useContext(FilterContext);
+  if (!context) {
+    throw new Error('useFilter must be used within a FilterProvider');
+  }
+  return context;
+};
 
 export type TabType = 
   | "dashboard" 
@@ -32,12 +49,25 @@ export type TabType =
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
+  const [selectedBankingUnitId, setSelectedBankingUnitId] = useState<string | null>(null);
 
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
         return (
           <div className="space-y-8">
+            {/* Banking Unit Filter Section */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-600/10 via-indigo-600/10 to-purple-600/10 rounded-3xl blur-3xl" />
+              <div className="relative">
+                <BankingUnitFilter 
+                  selectedUnitId={selectedBankingUnitId}
+                  onUnitChange={setSelectedBankingUnitId}
+                  className="max-w-lg"
+                />
+              </div>
+            </div>
+            
             {/* Header Section with Hero Stats */}
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 rounded-3xl blur-3xl" />

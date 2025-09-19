@@ -16,6 +16,7 @@ const tabTitles: Record<TabType, string> = {
   excel: "بارگزاری اکسل",
   monitoring: "مانیتورینگ لحظه‌ای",
   reports: "گزارش‌گیری پیشرفته",
+  "pos-stats": "مدیریت آمار POS",
 };
 
 const tabDescriptions: Record<TabType, string> = {
@@ -29,6 +30,7 @@ const tabDescriptions: Record<TabType, string> = {
   excel: "بارگذاری اکسل کارمندان و مشتریان",
   monitoring: "مانیتورینگ لحظه‌ای وضعیت POS و تراکنش‌ها",
   reports: "گزارش‌گیری پیشرفته و تحلیل روند",
+  "pos-stats": "مدیریت آمار ماهیانه پایانه‌های فروش",
 };
 
 export function Header({ activeTab }: HeaderProps) {
