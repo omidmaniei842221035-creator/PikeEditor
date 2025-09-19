@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useFilter } from "@/pages/dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +17,7 @@ export function PosStatsTrends() {
   const [chartType, setChartType] = useState<ChartType>("line");
   const [selectedMetric, setSelectedMetric] = useState<TrendMetric>("revenue");
   const [selectedYear, setSelectedYear] = useState("all");
+  const { selectedBankingUnitId } = useFilter();
 
   const { data: posStats = [], isLoading } = useQuery<PosMonthlyStats[]>({
     queryKey: ["/api/pos-stats"],
@@ -23,6 +25,10 @@ export function PosStatsTrends() {
 
   const { data: branches = [] } = useQuery({
     queryKey: ["/api/branches"],
+  });
+
+  const { data: customers = [] } = useQuery<any[]>({
+    queryKey: ["/api/customers"],
   });
 
   const persianMonths = [
@@ -46,10 +52,21 @@ export function PosStatsTrends() {
     inactive: "غیرفعال"
   };
 
-  // Filter and process data
-  const filteredStats = posStats.filter(stat => 
-    selectedYear === "all" || stat.year?.toString() === selectedYear
-  );
+  // Filter and process data with useMemo for performance
+  const filteredStats = useMemo(() => {
+    let stats = posStats.filter(stat => 
+      selectedYear === "all" || stat.year?.toString() === selectedYear
+    );
+
+    // Filter by banking unit if selected
+    if (selectedBankingUnitId && selectedBankingUnitId !== "all") {
+      const unitCustomers = customers.filter(c => c.bankingUnitId === selectedBankingUnitId);
+      const unitCustomerIds = new Set(unitCustomers.map(c => c.id)); // Use Set for O(1) lookup
+      stats = stats.filter(stat => unitCustomerIds.has(stat.customerId));
+    }
+
+    return stats;
+  }, [posStats, selectedYear, selectedBankingUnitId, customers]);
 
   // Prepare trend data by month
   const trendData = persianMonths.map((month, index) => {

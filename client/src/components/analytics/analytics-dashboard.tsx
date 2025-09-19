@@ -7,10 +7,13 @@ import { SmallMultiplesChart } from "./small-multiples-chart";
 import { BoxPlotChart } from "./box-plot-chart";
 import { BulletChart } from "./bullet-chart";
 import { SankeyFlowChart } from "./sankey-flow-chart";
-import { useState } from "react";
+import { BankingUnitTrends } from "./banking-unit-trends";
+import { useState, useMemo } from "react";
+import { useFilter } from "@/pages/dashboard";
 
 export function AnalyticsDashboard() {
   const [selectedMetric, setSelectedMetric] = useState<"revenue" | "profit" | "transactions">("revenue");
+  const { selectedBankingUnitId } = useFilter();
 
   const { data: analytics } = useQuery({
     queryKey: ["/api/analytics/overview"],
@@ -32,15 +35,24 @@ export function AnalyticsDashboard() {
     queryKey: ["/api/pos-stats"],
   });
 
-  const totalRevenue = customers.reduce((sum: number, customer: any) => 
+  const { data: bankingUnits = [] } = useQuery<any[]>({
+    queryKey: ["/api/banking-units"],
+  });
+
+  // Filter customers by banking unit if selected
+  const filteredCustomers = !selectedBankingUnitId || selectedBankingUnitId === "all" 
+    ? customers 
+    : customers.filter((c: any) => c.bankingUnitId === selectedBankingUnitId);
+
+  const totalRevenue = filteredCustomers.reduce((sum: number, customer: any) => 
     sum + (customer.monthlyProfit || 0), 0
   );
   
-  const avgProfit = customers.length > 0 ? totalRevenue / customers.length : 0;
-  const activeCustomers = customers.filter((c: any) => c.status === 'active').length;
+  const avgProfit = filteredCustomers.length > 0 ? totalRevenue / filteredCustomers.length : 0;
+  const activeCustomers = filteredCustomers.filter((c: any) => c.status === 'active').length;
 
   // Business type distribution
-  const businessTypes = customers.reduce((acc: Record<string, number>, customer: any) => {
+  const businessTypes = filteredCustomers.reduce((acc: Record<string, number>, customer: any) => {
     acc[customer.businessType] = (acc[customer.businessType] || 0) + 1;
     return acc;
   }, {});
@@ -50,7 +62,7 @@ export function AnalyticsDashboard() {
     .slice(0, 4);
 
   // Status distribution
-  const statusCounts = customers.reduce((acc: Record<string, number>, customer: any) => {
+  const statusCounts = filteredCustomers.reduce((acc: Record<string, number>, customer: any) => {
     acc[customer.status] = (acc[customer.status] || 0) + 1;
     return acc;
   }, {});
@@ -71,14 +83,32 @@ export function AnalyticsDashboard() {
     collected: "bg-blue-500",
   };
 
+  // Prepare filtered data for charts - use useMemo for performance
+  const filteredPosStats = useMemo(() => {
+    if (!selectedBankingUnitId || selectedBankingUnitId === "all") {
+      return posStats;
+    }
+    const unitCustomerIds = new Set(filteredCustomers.map(c => c.id));
+    return (posStats as any[]).filter((stat: any) => unitCustomerIds.has(stat.customerId));
+  }, [posStats, selectedBankingUnitId, filteredCustomers]);
+
+  const filteredBranches = useMemo(() => {
+    if (!selectedBankingUnitId || selectedBankingUnitId === "all") {
+      return branches;
+    }
+    // Filter branches that have customers in the selected banking unit
+    const branchIds = new Set(filteredCustomers.map(c => c.branchId).filter(Boolean));
+    return branches.filter((branch: any) => branchIds.has(branch.id));
+  }, [branches, selectedBankingUnitId, filteredCustomers]);
+
   // Prepare data for Small Multiples Chart
   const persianMonths = [
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
     "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
   ];
 
-  const smallMultiplesData = branches.slice(0, 8).map((branch: any) => {
-    const branchStats = (posStats as any[]).filter((stat: any) => stat.branchId === branch.id);
+  const smallMultiplesData = filteredBranches.slice(0, 8).map((branch: any) => {
+    const branchStats = filteredPosStats.filter((stat: any) => stat.branchId === branch.id);
     
     const monthlyData = persianMonths.map((month, index) => {
       const monthIndex = index + 1;
@@ -105,8 +135,8 @@ export function AnalyticsDashboard() {
   });
 
   // Prepare data for Box Plot Chart
-  const boxPlotData = branches.map((branch: any) => {
-    const branchStats = (posStats as any[]).filter((stat: any) => stat.branchId === branch.id);
+  const boxPlotData = filteredBranches.map((branch: any) => {
+    const branchStats = filteredPosStats.filter((stat: any) => stat.branchId === branch.id);
     const revenues = branchStats.map((stat: any) => (stat.revenue || 0) / 1000000);
     const profits = branchStats.map((stat: any) => (stat.profit || 0) / 1000000);
     const transactions = branchStats.map((stat: any) => stat.totalTransactions || 0);
@@ -121,8 +151,8 @@ export function AnalyticsDashboard() {
   }).filter((data: any) => data.values.length > 0);
 
   // Prepare data for Bullet Chart
-  const bulletChartData = branches.map((branch: any) => {
-    const branchStats = (posStats as any[]).filter((stat: any) => stat.branchId === branch.id);
+  const bulletChartData = filteredBranches.map((branch: any) => {
+    const branchStats = filteredPosStats.filter((stat: any) => stat.branchId === branch.id);
     const currentMonth = new Date().getMonth() + 1;
     
     const currentStats = branchStats.filter((stat: any) => stat.month === currentMonth);
@@ -156,10 +186,10 @@ export function AnalyticsDashboard() {
 
   // Prepare data for Sankey Flow Chart
   const sankeyNodes = [
-    ...branches.slice(0, 4).map((branch: any) => ({
+    ...filteredBranches.slice(0, 4).map((branch: any) => ({
       id: `source-${branch.id}`,
       label: branch.name,
-      value: customers.filter((c: any) => c.branchId === branch.id)
+      value: filteredCustomers.filter((c: any) => c.branchId === branch.id)
         .reduce((sum: number, c: any) => sum + (c.monthlyProfit || 0), 0) / 1000000,
       type: "source" as const
     })),
@@ -167,8 +197,8 @@ export function AnalyticsDashboard() {
     { id: "target-customers", label: "مشتریان نهایی", value: totalRevenue / 1000000, type: "target" as const }
   ];
 
-  const sankeyLinks = branches.slice(0, 4).map((branch: any) => {
-    const branchRevenue = customers.filter((c: any) => c.branchId === branch.id)
+  const sankeyLinks = filteredBranches.slice(0, 4).map((branch: any) => {
+    const branchRevenue = filteredCustomers.filter((c: any) => c.branchId === branch.id)
       .reduce((sum: number, c: any) => sum + (c.monthlyProfit || 0), 0) / 1000000;
     
     return {
@@ -193,6 +223,16 @@ export function AnalyticsDashboard() {
         <p className="text-muted-foreground">آمار تفصیلی عملکرد و گزارش‌های مالی</p>
       </div>
 
+      {/* Analytics Filter Info */}
+      {selectedBankingUnitId && selectedBankingUnitId !== "all" && (
+        <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+          <span className="text-sm font-medium">نمایش آمار برای واحد بانکی انتخابی:</span>
+          <span className="text-xs text-muted-foreground">
+            {filteredCustomers.length} مشتری
+          </span>
+        </div>
+      )}
+
       {/* Analytics KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
@@ -201,7 +241,7 @@ export function AnalyticsDashboard() {
               <div>
                 <p className="text-sm text-blue-700">کل مشتریان</p>
                 <p className="text-3xl font-bold text-blue-900" data-testid="total-customers">
-                  {customers.length}
+                  {filteredCustomers.length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
@@ -468,6 +508,9 @@ export function AnalyticsDashboard() {
           title={`جریان ${selectedMetric === "revenue" ? "درآمد" : selectedMetric === "profit" ? "سود" : "تراکنش"} از شعب به مرکز`}
         />
       </div>
+
+      {/* Banking Unit Trends Analysis */}
+      <BankingUnitTrends />
 
       {/* POS Trends Analysis */}
       <PosStatsTrends />
