@@ -8,6 +8,7 @@ import { BoxPlotChart } from "./box-plot-chart";
 import { BulletChart } from "./bullet-chart";
 import { SankeyFlowChart } from "./sankey-flow-chart";
 import { BankingUnitTrends } from "./banking-unit-trends";
+import { UrbanGraphAnalysis } from "./urban-graph-analysis";
 import { useState, useMemo } from "react";
 import { useFilter } from "@/pages/dashboard";
 
@@ -508,6 +509,9 @@ export function AnalyticsDashboard() {
           title={`جریان ${selectedMetric === "revenue" ? "درآمد" : selectedMetric === "profit" ? "سود" : "تراکنش"} از شعب به مرکز`}
         />
       </div>
+
+      {/* Urban Graph Analysis */}
+      <UrbanGraphAnalysis />
 
       {/* Banking Unit Trends Analysis */}
       <BankingUnitTrends />

@@ -301,13 +301,13 @@ export function PosMap() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-2">واحد مصرفی:</label>
+              <label className="block text-sm font-medium mb-2">🏦 واحد بانکی:</label>
               <Select value={bankingUnitFilter} onValueChange={setBankingUnitFilter}>
                 <SelectTrigger data-testid="banking-unit-filter-select">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">همه واحدها</SelectItem>
+                  <SelectItem value="all">🏛️ همه واحدهای بانکی</SelectItem>
                   {(bankingUnits as any[]).map((unit: any) => (
                     <SelectItem key={unit.id} value={unit.id}>
                       {unit.unitType === 'branch' ? '🏦' : unit.unitType === 'counter' ? '🏪' : '🏧'} {unit.name} ({unit.code})

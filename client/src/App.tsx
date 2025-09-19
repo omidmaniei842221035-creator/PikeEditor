@@ -12,6 +12,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/analytics" component={() => <Dashboard defaultTab="analytics" />} />
       <Route path="/monitoring" component={Monitoring} />
       <Route component={NotFound} />
     </Switch>
