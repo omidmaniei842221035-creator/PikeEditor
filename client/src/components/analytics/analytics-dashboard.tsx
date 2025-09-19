@@ -10,6 +10,7 @@ import { SankeyFlowChart } from "./sankey-flow-chart";
 import { BankingUnitTrends } from "./banking-unit-trends";
 import { UrbanGraphAnalysis } from "./urban-graph-analysis";
 import { FlowODAnalysis } from "./flow-od-analysis";
+import WhatIfSimulator from "./what-if-simulator";
 import { useState, useMemo } from "react";
 import { useFilter } from "@/pages/dashboard";
 
@@ -572,6 +573,20 @@ export function AnalyticsDashboard() {
           <div className="h-1 w-32 bg-gradient-to-r from-cyan-500 to-blue-500 mx-auto mt-4 rounded-full"></div>
         </div>
         <FlowODAnalysis />
+      </div>
+
+      {/* What-If Simulator */}
+      <div className="mb-12">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            🧠 شبیه‌ساز سناریو هوشمند
+          </h2>
+          <p className="text-lg text-muted-foreground mt-3">
+            پیش‌بینی تأثیر تصمیمات استراتژیک با قدرت هوش مصنوعی
+          </p>
+          <div className="h-1 w-32 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto mt-4 rounded-full"></div>
+        </div>
+        <WhatIfSimulator />
       </div>
 
       {/* Banking Unit Trends Analysis */}

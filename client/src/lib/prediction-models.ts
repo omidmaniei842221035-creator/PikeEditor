@@ -2,8 +2,12 @@
 // Advanced What-If Simulation System for POS Management
 
 import * as tf from '@tensorflow/tfjs';
-import { regression } from 'ml-regression';
 import { standardDeviation, mean, median } from 'simple-statistics';
+
+// Type declaration for ml-regression
+declare module 'ml-regression' {
+  export const regression: any;
+}
 
 export interface ScenarioInput {
   scenarioType: 'add_pos' | 'increase_hours' | 'increase_users' | 'add_branch' | 'optimize_location';
