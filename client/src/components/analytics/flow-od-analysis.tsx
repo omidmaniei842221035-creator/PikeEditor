@@ -9,9 +9,19 @@ import { Progress } from "@/components/ui/progress";
 import DeckGL from '@deck.gl/react';
 import { ArcLayer, ScatterplotLayer, TextLayer } from '@deck.gl/layers';
 import { HexagonLayer } from '@deck.gl/aggregation-layers';
+import { TileLayer } from '@deck.gl/geo-layers';
 import { MapView } from '@deck.gl/core';
 import { FlowODAnalyzer, ODPair, FlowNode, FlowMetrics } from "@/lib/flow-analysis";
 import { Navigation, TrendingUp, MapPin, ArrowRight, Target, Zap, Users, DollarSign } from "lucide-react";
+
+// OpenStreetMap configuration for base tiles
+const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+// OpenStreetMap tile servers
+const OSM_SUBDOMAINS = ['a', 'b', 'c'];
+
+// Attribution for OpenStreetMap
+const OSM_ATTRIBUTION = '© OpenStreetMap contributors';
 
 interface ViewState {
   longitude: number;
@@ -355,10 +365,21 @@ export function FlowODAnalysis() {
               <div className="relative w-full h-96 rounded-lg overflow-hidden border">
                 <DeckGL
                   initialViewState={viewState}
-                  onViewStateChange={(e) => setViewState(e.viewState)}
+                  onViewStateChange={(params) => {
+                    if (params.viewState) {
+                      setViewState({
+                        longitude: params.viewState.longitude,
+                        latitude: params.viewState.latitude,
+                        zoom: params.viewState.zoom,
+                        pitch: params.viewState.pitch || 45,
+                        bearing: params.viewState.bearing || 0
+                      });
+                    }
+                  }}
                   controller={true}
                   layers={layers}
                   views={[new MapView({ id: 'map' })]}
+                  mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
                   getTooltip={({ object, index }) => {
                     if (!object) return null;
                     
