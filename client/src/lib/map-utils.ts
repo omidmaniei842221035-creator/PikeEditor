@@ -294,7 +294,14 @@ export function addBankingUnitMarker(
     closeOnEscapeKey: true 
   });
 
-  // Add click handler for view details button
+  // Add direct click handler to marker
+  if (onUnitClick) {
+    marker.on('click', () => {
+      onUnitClick(unit);
+    });
+  }
+
+  // Add click handler for view details button in popup
   if (onUnitClick) {
     marker.on('popupopen', () => {
       const viewBtn = document.getElementById(`view-unit-btn-${unit.id}`);

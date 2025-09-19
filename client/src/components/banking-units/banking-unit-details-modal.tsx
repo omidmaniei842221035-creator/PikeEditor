@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -66,6 +66,9 @@ export function BankingUnitDetailsModal({ open, onClose, bankingUnit }: BankingU
               </Badge>
             </div>
           </DialogTitle>
+          <DialogDescription>
+            جزئیات و اطلاعات کامل واحد بانکی، شامل مشتریان و دستگاه‌های POS تحت پوشش
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -244,7 +247,7 @@ export function BankingUnitDetailsModal({ open, onClose, bankingUnit }: BankingU
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs truncate">{businessType}</p>
-                        <p className="text-xs font-medium">{count} دستگاه</p>
+                        <p className="text-xs font-medium">{count as number} دستگاه</p>
                       </div>
                     </div>
                   ))}
