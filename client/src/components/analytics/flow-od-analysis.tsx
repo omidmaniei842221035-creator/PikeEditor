@@ -377,7 +377,15 @@ export function FlowODAnalysis() {
                 <DeckGL
                   viewState={viewState}
                   onViewStateChange={({viewState: newViewState}) => {
-                    setViewState(newViewState);
+                    if (newViewState) {
+                      setViewState({
+                        longitude: newViewState.longitude,
+                        latitude: newViewState.latitude,
+                        zoom: newViewState.zoom,
+                        pitch: newViewState.pitch || 45,
+                        bearing: newViewState.bearing || 0
+                      });
+                    }
                   }}
                   controller={true}
                   layers={layers}
