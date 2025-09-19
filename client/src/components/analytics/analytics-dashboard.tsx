@@ -224,6 +224,41 @@ export function AnalyticsDashboard() {
         <p className="text-muted-foreground">آمار تفصیلی عملکرد و گزارش‌های مالی</p>
       </div>
 
+      {/* Urban Graph Analysis Highlight Banner */}
+      <div className="relative mb-8">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/10 via-blue-600/10 to-purple-600/10 rounded-3xl blur-xl"></div>
+        <div className="relative bg-gradient-to-br from-emerald-50/80 via-blue-50/80 to-purple-50/80 dark:from-emerald-900/20 dark:via-blue-900/20 dark:to-purple-900/20 rounded-3xl p-8 border-2 border-blue-200/50 dark:border-blue-700/50">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <span className="text-5xl animate-pulse">🌐</span>
+              <div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  تحلیل‌های گراف شهری پیشرفته
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">✨ ویژگی جدید - در ادامه این صفحه</p>
+              </div>
+            </div>
+            <p className="text-lg text-muted-foreground mb-6 max-w-4xl mx-auto">
+              کشف روابط پیچیده میان مناطق شهری، تحلیل شبکه‌های تجاری، خوشه‌بندی جوامع کسب‌وکار و بررسی تأثیرات سرریز
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <div className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 rounded-lg px-4 py-2">
+                <span className="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></span>
+                <span className="font-medium">🏘️ خوشه‌بندی جوامع تجاری</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 rounded-lg px-4 py-2">
+                <span className="w-3 h-3 bg-blue-500 rounded-full animate-ping"></span>
+                <span className="font-medium">🎯 تحلیل مرکزیت شبکه</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 rounded-lg px-4 py-2">
+                <span className="w-3 h-3 bg-purple-500 rounded-full animate-ping"></span>
+                <span className="font-medium">🌊 تأثیرات سرریز اقتصادی</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Analytics Filter Info */}
       {selectedBankingUnitId && selectedBankingUnitId !== "all" && (
         <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
@@ -510,8 +545,19 @@ export function AnalyticsDashboard() {
         />
       </div>
 
-      {/* Urban Graph Analysis */}
-      <UrbanGraphAnalysis />
+      {/* Urban Graph Analysis - First Priority */}
+      <div className="mb-12">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            🌐 تحلیل‌های گراف شهری پیشرفته
+          </h2>
+          <p className="text-lg text-muted-foreground mt-3">
+            تحلیل شبکه‌های تجاری شهری، خوشه‌بندی جوامع، مرکزیت و تأثیرات سرریز
+          </p>
+          <div className="h-1 w-32 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full"></div>
+        </div>
+        <UrbanGraphAnalysis />
+      </div>
 
       {/* Banking Unit Trends Analysis */}
       <BankingUnitTrends />

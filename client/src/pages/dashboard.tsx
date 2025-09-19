@@ -60,18 +60,6 @@ export default function Dashboard({ defaultTab = "dashboard" }: DashboardProps) 
       case "dashboard":
         return (
           <div className="space-y-8">
-            {/* Banking Unit Filter Section */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-600/10 via-indigo-600/10 to-purple-600/10 rounded-3xl blur-3xl" />
-              <div className="relative">
-                <BankingUnitFilter 
-                  selectedUnitId={selectedBankingUnitId}
-                  onUnitChange={setSelectedBankingUnitId}
-                  className="max-w-lg"
-                />
-              </div>
-            </div>
-            
             {/* Header Section with Hero Stats */}
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 rounded-3xl blur-3xl" />
