@@ -1,7 +1,7 @@
 // What-If Simulator Component
 // Interactive scenario planning with ML predictions and map selection
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { Play, Zap, TrendingUp, AlertTriangle, CheckCircle, MapPin, Target, DollarSign, Users, Clock, Building2, Lightbulb, Cpu, Brain } from 'lucide-react';
 import { MLPredictionEngine, ScenarioInput, ScenarioPrediction, RegionData } from '@/lib/prediction-models';
+import { initializeMap, type MapInstance } from '@/lib/map-utils';
 
 // Simple Map Selection with Click Interaction
 
@@ -26,23 +27,129 @@ interface MapSelectionProps {
 }
 
 const MapSelection = ({ selectedRegion, onRegionSelect, regions }: MapSelectionProps) => {
-  const [selectedCoords, setSelectedCoords] = useState<[number, number] | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<MapInstance | null>(null);
+  const markersRef = useRef<any[]>([]);
+  const [mapReady, setMapReady] = useState(false);
 
-  const handleMapClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+  // Initialize Leaflet map
+  useEffect(() => {
+    let mounted = true;
     
-    // Convert pixel coordinates to approximate lat/lng for Tabriz area
-    const lat = 38.0742 + (y - rect.height / 2) * -0.0001; // Approximate conversion
-    const lng = 46.2919 + (x - rect.width / 2) * 0.0001;
-    
-    setSelectedCoords([lat, lng]);
-    
-    // Find nearest region or create a new one
-    const nearestRegion = findNearestRegion([lat, lng], regions) || createRegionFromCoords([lat, lng]);
-    onRegionSelect(nearestRegion);
-  };
+    const initMap = async () => {
+      if (mapRef.current && !mapInstanceRef.current && mounted) {
+        try {
+          mapInstanceRef.current = await initializeMap(mapRef.current);
+          if (mounted && mapInstanceRef.current?.map) {
+            setMapReady(true);
+
+            // Add click handler for map
+            mapInstanceRef.current.map.on('click', (e: any) => {
+              const { lat, lng } = e.latlng;
+              const coords: [number, number] = [lat, lng];
+              
+              // Find nearest region or create a new one
+              const nearestRegion = findNearestRegion(coords, regions) || createRegionFromCoords(coords);
+              onRegionSelect(nearestRegion);
+            });
+          }
+        } catch (error) {
+          console.error('Failed to initialize map:', error);
+        }
+      }
+    };
+
+    initMap();
+
+    return () => {
+      mounted = false;
+      if (mapInstanceRef.current && mapInstanceRef.current.map) {
+        mapInstanceRef.current.map.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Add markers for existing regions
+  useEffect(() => {
+    if (!mapReady || !mapInstanceRef.current?.map || typeof window === 'undefined' || !(window as any).L) {
+      return;
+    }
+
+    const L = (window as any).L;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Add markers for regions
+    regions.forEach(region => {
+      const isSelected = selectedRegion?.id === region.id;
+      
+      const customIcon = L.divIcon({
+        html: `
+          <div style="
+            background: ${isSelected ? '#ef4444' : '#3b82f6'};
+            width: ${isSelected ? '24px' : '20px'};
+            height: ${isSelected ? '24px' : '20px'};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid ${isSelected ? '#fca5a5' : 'white'};
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transform: scale(${isSelected ? 1.2 : 1});
+            transition: all 0.3s ease;
+          ">
+            <span style="color: white; font-size: 12px;">📍</span>
+          </div>
+        `,
+        iconSize: [isSelected ? 24 : 20, isSelected ? 24 : 20],
+        iconAnchor: [isSelected ? 12 : 10, isSelected ? 12 : 10],
+        popupAnchor: [0, isSelected ? -12 : -10],
+        className: 'region-marker'
+      });
+
+      const marker = L.marker([region.coordinates[0], region.coordinates[1]], { 
+        icon: customIcon 
+      });
+
+      // Add popup with region info
+      marker.bindPopup(`
+        <div style="font-family: Vazirmatn, sans-serif; direction: rtl; min-width: 200px;">
+          <h3 style="margin: 0 0 8px 0; color: #1e40af; font-weight: bold;">${region.name}</h3>
+          <div style="border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; padding-bottom: 8px;">
+            <p style="margin: 4px 0;"><strong>💰 درآمد:</strong> ${(region.currentMetrics.revenue / 1000000).toFixed(1)}M تومان</p>
+            <p style="margin: 4px 0;"><strong>📊 تراکنش:</strong> ${region.currentMetrics.transactions.toLocaleString()}</p>
+            <p style="margin: 4px 0;"><strong>🏪 نقاط فروش:</strong> ${region.currentMetrics.posCount}</p>
+          </div>
+          <p style="margin: 0; color: #6b7280; font-size: 12px;">کلیک برای انتخاب این منطقه</p>
+        </div>
+      `);
+
+      // Add click handler
+      marker.on('click', () => {
+        onRegionSelect(region);
+      });
+
+      marker.addTo(mapInstanceRef.current!.map);
+      markersRef.current.push(marker);
+
+      // Add selection radius for selected region
+      if (isSelected && mapInstanceRef.current!.map) {
+        const circle = L.circle([region.coordinates[0], region.coordinates[1]], {
+          color: '#22c55e',
+          fillColor: '#dcfce7',
+          fillOpacity: 0.2,
+          radius: 1000, // 1km radius
+          weight: 2,
+          dashArray: '10, 5'
+        }).addTo(mapInstanceRef.current!.map);
+        
+        markersRef.current.push(circle);
+      }
+    });
+  }, [mapReady, regions, selectedRegion]);
 
   const findNearestRegion = (coords: [number, number], regions: RegionData[]): RegionData | null => {
     if (regions.length === 0) return null;
@@ -108,152 +215,13 @@ const MapSelection = ({ selectedRegion, onRegionSelect, regions }: MapSelectionP
     return R * c;
   };
 
-  // Convert lat/lng to pixel position for display
-  const coordsToPixels = (coords: [number, number], rect: { width: number; height: number }) => {
-    const [lat, lng] = coords;
-    const centerLat = 38.0742;
-    const centerLng = 46.2919;
-    
-    // Scale factor for Tabriz area (rough approximation)
-    const scaleX = 0.002; // degrees per pixel
-    const scaleY = 0.0015; // degrees per pixel
-    
-    const x = ((lng - centerLng) / scaleX) + rect.width / 2;
-    const y = ((centerLat - lat) / scaleY) + rect.height / 2;
-    
-    return { 
-      x: Math.max(10, Math.min(rect.width - 10, x)), 
-      y: Math.max(10, Math.min(rect.height - 10, y)) 
-    };
-  };
-
-  const [mapRef, setMapRef] = useState<HTMLDivElement | null>(null);
-
-  const getMapRect = useCallback(() => {
-    if (!mapRef) return { width: 400, height: 300 };
-    const rect = mapRef.getBoundingClientRect();
-    return { width: rect.width, height: rect.height };
-  }, [mapRef]);
-
   return (
-    <div className="h-96 w-full rounded-lg overflow-hidden border bg-gradient-to-br from-blue-50 to-cyan-50 relative">
+    <div className="h-96 w-full rounded-lg overflow-hidden border shadow-lg">
       <div 
-        ref={setMapRef}
-        className="absolute inset-0 cursor-crosshair"
-        onClick={handleMapClick}
+        ref={mapRef} 
+        className="h-full w-full"
         data-testid="map-selection"
-      >
-        {/* Background map representation */}
-        <div className="absolute inset-0 bg-gradient-to-r from-green-100 via-blue-100 to-purple-100 opacity-40">
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className="text-6xl text-blue-300 mb-2">🗺️</div>
-            <div className="text-center text-sm text-gray-600 font-medium">نقشه تعاملی تبریز</div>
-          </div>
-        </div>
-
-        {/* Map grid lines for better visual reference */}
-        <div className="absolute inset-0 opacity-20">
-          {[...Array(8)].map((_, i) => (
-            <div key={`v-${i}`} className="absolute bg-gray-400" style={{
-              left: `${(i + 1) * 12.5}%`,
-              top: 0,
-              width: '1px',
-              height: '100%'
-            }} />
-          ))}
-          {[...Array(6)].map((_, i) => (
-            <div key={`h-${i}`} className="absolute bg-gray-400" style={{
-              top: `${(i + 1) * 16.67}%`,
-              left: 0,
-              height: '1px',
-              width: '100%'
-            }} />
-          ))}
-        </div>
-        
-        {/* Show existing regions */}
-        {mapRef && regions.map(region => {
-          const rect = getMapRect();
-          const pos = coordsToPixels(region.coordinates, rect);
-          return (
-            <div
-              key={region.id}
-              className={`absolute w-5 h-5 rounded-full cursor-pointer transition-all shadow-lg ${
-                selectedRegion?.id === region.id 
-                  ? 'bg-red-500 border-2 border-red-300 scale-125 z-20' 
-                  : 'bg-blue-500 border-2 border-white hover:scale-110 z-10'
-              }`}
-              style={{
-                left: pos.x - 10,
-                top: pos.y - 10,
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onRegionSelect(region);
-              }}
-              title={`${region.name}: ${(region.currentMetrics.revenue / 1000000).toFixed(1)}M تومان`}
-            >
-              <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white text-xs px-2 py-1 rounded-md opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap z-30 pointer-events-none">
-                <strong>{region.name}</strong><br/>
-                💰 {(region.currentMetrics.revenue / 1000000).toFixed(1)}M تومان<br/>
-                📊 {region.currentMetrics.transactions.toLocaleString()}<br/>
-                🏪 {region.currentMetrics.posCount} نقطه
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Show selected coordinates */}
-        {selectedCoords && mapRef && (
-          <div
-            className="absolute w-7 h-7 rounded-full bg-amber-500 border-3 border-yellow-300 animate-pulse shadow-lg z-15"
-            style={{
-              left: coordsToPixels(selectedCoords, getMapRect()).x - 14,
-              top: coordsToPixels(selectedCoords, getMapRect()).y - 14,
-            }}
-            title={`منطقه انتخابی: ${selectedCoords[0].toFixed(4)}, ${selectedCoords[1].toFixed(4)}`}
-          >
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-xs font-bold">📍</div>
-          </div>
-        )}
-
-        {/* Show selection radius if region is selected */}
-        {selectedRegion && mapRef && (
-          <div
-            className="absolute rounded-full border-2 border-green-500 border-dashed bg-green-200 bg-opacity-20 pointer-events-none z-5"
-            style={{
-              width: 120,
-              height: 120,
-              left: coordsToPixels(selectedRegion.coordinates, getMapRect()).x - 60,
-              top: coordsToPixels(selectedRegion.coordinates, getMapRect()).y - 60,
-            }}
-          >
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-green-700 text-xs font-medium">
-              شعاع تأثیر
-            </div>
-          </div>
-        )}
-        
-        {/* Map overlay info */}
-        <div className="absolute top-3 right-3 bg-white bg-opacity-95 p-3 rounded-lg shadow-lg text-sm border">
-          <div className="font-medium text-gray-800 mb-2">راهنمای نقشه</div>
-          <div className="space-y-1 text-xs text-gray-600">
-            <div>📍 کلیک برای انتخاب منطقه جدید</div>
-            <div>🔵 نقاط آبی: مناطق موجود</div>
-            <div>🔴 نقطه قرمز: منطقه انتخاب شده</div>
-            <div>🟡 نقطه طلایی: نقطه کلیک شده</div>
-          </div>
-        </div>
-
-        {/* Coordinate display */}
-        {selectedCoords && (
-          <div className="absolute bottom-3 left-3 bg-black bg-opacity-80 text-white px-3 py-2 rounded-lg text-xs">
-            <div className="font-medium">مختصات انتخابی:</div>
-            <div>عرض: {selectedCoords[0].toFixed(4)}°</div>
-            <div>طول: {selectedCoords[1].toFixed(4)}°</div>
-          </div>
-        )}
-      </div>
+      />
     </div>
   );
 };

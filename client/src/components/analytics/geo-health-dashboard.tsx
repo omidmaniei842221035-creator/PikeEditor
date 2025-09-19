@@ -1,7 +1,7 @@
 // Geo Health Score Dashboard Component
 // Advanced location health monitoring and visualization
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { MapPin, TrendingUp, TrendingDown, Activity, Shield, Building2, Zap, AlertTriangle, CheckCircle, Heart, Target } from 'lucide-react';
 import geoHealthScoreEngine, { LocationHealthData, GeoHealthScore } from '@/lib/geo-health-score';
+import { initializeMap, type MapInstance } from '@/lib/map-utils';
 
 interface HealthMapProps {
   locations: LocationHealthData[];
@@ -19,108 +20,237 @@ interface HealthMapProps {
 }
 
 const HealthMap = ({ locations, selectedLocation, onLocationSelect }: HealthMapProps) => {
-  const [mapRef, setMapRef] = useState<HTMLDivElement | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<MapInstance | null>(null);
+  const markersRef = useRef<any[]>([]);
+  const [mapReady, setMapReady] = useState(false);
 
-  const coordsToPixels = (coords: [number, number], containerWidth: number, containerHeight: number) => {
-    const [lat, lng] = coords;
-    const centerLat = 38.0742;
-    const centerLng = 46.2919;
+  // Initialize Leaflet map
+  useEffect(() => {
+    let mounted = true;
     
-    // Scale factor for Tabriz area
-    const scaleX = 0.003;
-    const scaleY = 0.0025;
-    
-    const x = ((lng - centerLng) / scaleX) + containerWidth / 2;
-    const y = ((centerLat - lat) / scaleY) + containerHeight / 2;
-    
-    return { 
-      x: Math.max(15, Math.min(containerWidth - 15, x)), 
-      y: Math.max(15, Math.min(containerHeight - 15, y)) 
+    const initMap = async () => {
+      if (mapRef.current && !mapInstanceRef.current && mounted) {
+        try {
+          mapInstanceRef.current = await initializeMap(mapRef.current);
+          if (mounted && mapInstanceRef.current?.map) {
+            setMapReady(true);
+          }
+        } catch (error) {
+          console.error('Failed to initialize health map:', error);
+        }
+      }
     };
-  };
 
-  return (
-    <div className="h-96 w-full rounded-lg overflow-hidden border bg-gradient-to-br from-slate-50 to-blue-50 relative">
-      <div ref={setMapRef} className="absolute inset-0" data-testid="health-map">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-100 via-cyan-100 to-emerald-100 opacity-40">
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className="text-5xl text-blue-300 mb-2">🏥</div>
-            <div className="text-center text-sm text-gray-600 font-medium">نقشه سلامت مکان‌ها</div>
+    initMap();
+
+    return () => {
+      mounted = false;
+      if (mapInstanceRef.current && mapInstanceRef.current.map) {
+        mapInstanceRef.current.map.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Add health markers for locations
+  useEffect(() => {
+    if (!mapReady || !mapInstanceRef.current?.map || typeof window === 'undefined' || !(window as any).L) {
+      return;
+    }
+
+    const L = (window as any).L;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Add markers for each location with health-based colors
+    locations.forEach(location => {
+      const isSelected = selectedLocation?.locationId === location.locationId;
+      const healthColor = geoHealthScoreEngine.getHealthColor(location.score.overallScore);
+      const healthEmoji = geoHealthScoreEngine.getHealthEmoji(location.score.healthStatus);
+      
+      const customIcon = L.divIcon({
+        html: `
+          <div style="
+            background: ${healthColor};
+            width: ${isSelected ? '32px' : '24px'};
+            height: ${isSelected ? '32px' : '24px'};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+            transform: scale(${isSelected ? 1.3 : 1});
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: ${isSelected ? '1000' : '100'};
+          ">
+            <span style="color: white; font-size: ${isSelected ? '16px' : '12px'};">${healthEmoji}</span>
           </div>
-        </div>
+        `,
+        iconSize: [isSelected ? 32 : 24, isSelected ? 32 : 24],
+        iconAnchor: [isSelected ? 16 : 12, isSelected ? 16 : 12],
+        popupAnchor: [0, isSelected ? -16 : -12],
+        className: 'health-marker'
+      });
 
-        {/* Location markers with health colors */}
-        {mapRef && locations.map(location => {
-          const rect = mapRef.getBoundingClientRect();
-          const pos = coordsToPixels(location.coordinates, rect.width, rect.height);
-          const healthColor = geoHealthScoreEngine.getHealthColor(location.score.overallScore);
-          const healthEmoji = geoHealthScoreEngine.getHealthEmoji(location.score.healthStatus);
+      const marker = L.marker([location.coordinates[0], location.coordinates[1]], { 
+        icon: customIcon 
+      });
+
+      // Health status translation helper
+      const getStatusText = (status: string) => {
+        switch (status) {
+          case 'excellent': return 'عالی';
+          case 'good': return 'خوب';
+          case 'fair': return 'متوسط';
+          case 'poor': return 'ضعیف';
+          case 'critical': return 'بحرانی';
+          default: return status;
+        }
+      };
+
+      const getRiskText = (risk: string) => {
+        switch (risk) {
+          case 'low': return 'کم';
+          case 'medium': return 'متوسط';
+          case 'high': return 'زیاد';
+          default: return risk;
+        }
+      };
+
+      // Add popup with health information
+      marker.bindPopup(`
+        <div style="font-family: Vazirmatn, sans-serif; direction: rtl; min-width: 280px;">
+          <div style="border-bottom: 3px solid ${healthColor}; padding-bottom: 10px; margin-bottom: 12px;">
+            <h3 style="margin: 0; color: ${healthColor}; font-size: 18px; font-weight: bold; display: flex; align-items: center;">
+              ${healthEmoji} ${location.name}
+            </h3>
+            <p style="margin: 4px 0 0 0; color: #666; font-size: 14px;">امتیاز سلامت: ${(location.score.overallScore * 100).toFixed(0)}%</p>
+          </div>
           
-          return (
-            <div
-              key={location.locationId}
-              className={`absolute cursor-pointer transition-all duration-300 ${
-                selectedLocation?.locationId === location.locationId 
-                  ? 'scale-150 z-30' 
-                  : 'hover:scale-125 z-10'
-              }`}
-              style={{
-                left: pos.x - 15,
-                top: pos.y - 15,
-              }}
-              onClick={() => onLocationSelect(location)}
-              title={`${location.name}: ${(location.score.overallScore * 100).toFixed(0)}% سلامت`}
-            >
-              <div 
-                className="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white font-bold text-xs"
-                style={{ backgroundColor: healthColor }}
-              >
-                {healthEmoji}
+          <div style="margin-bottom: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+              <div style="background: #f8fafc; padding: 8px; border-radius: 6px;">
+                <strong>🏥 وضعیت کلی:</strong><br/>
+                <span style="color: ${healthColor}; font-weight: bold;">${getStatusText(location.score.healthStatus)}</span>
               </div>
-              
-              {/* Health score popup on hover */}
-              <div className="absolute top-10 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-90 text-white text-xs px-3 py-2 rounded-lg opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap z-40 pointer-events-none">
-                <div className="font-bold">{location.name}</div>
-                <div>امتیاز سلامت: {(location.score.overallScore * 100).toFixed(0)}%</div>
-                <div>وضعیت: {location.score.healthStatus === 'excellent' ? 'عالی' :
-                              location.score.healthStatus === 'good' ? 'خوب' :
-                              location.score.healthStatus === 'fair' ? 'متوسط' :
-                              location.score.healthStatus === 'poor' ? 'ضعیف' : 'بحرانی'}</div>
-                <div>ریسک: {location.score.riskLevel === 'low' ? 'کم' :
-                             location.score.riskLevel === 'medium' ? 'متوسط' : 'زیاد'}</div>
+              <div style="background: #f8fafc; padding: 8px; border-radius: 6px;">
+                <strong>⚠️ سطح ریسک:</strong><br/>
+                <span>${getRiskText(location.score.riskLevel)}</span>
               </div>
             </div>
-          );
-        })}
+          </div>
 
-        {/* Legend */}
-        <div className="absolute bottom-4 right-4 bg-white bg-opacity-95 p-4 rounded-lg shadow-lg text-sm">
-          <div className="font-medium mb-2">راهنمای رنگ‌بندی</div>
-          <div className="space-y-1 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#10b981' }}></div>
+          <div style="margin-bottom: 12px; font-size: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <div><strong>📈 سلامت تراکنش:</strong> ${(location.score.categoryScores.transactionHealth * 100).toFixed(0)}%</div>
+              <div><strong>🏪 تنوع کسب‌وکار:</strong> ${(location.score.categoryScores.businessDiversity * 100).toFixed(0)}%</div>
+              <div><strong>⚡ زیرساخت:</strong> ${(location.score.categoryScores.infrastructure * 100).toFixed(0)}%</div>
+              <div><strong>🛡️ ایمنی:</strong> ${(location.score.categoryScores.riskProfile * 100).toFixed(0)}%</div>
+            </div>
+          </div>
+
+          <div style="background: #f1f5f9; padding: 8px; border-radius: 6px; margin-top: 8px;">
+            <strong style="color: #475569;">📊 آمار کلیدی:</strong>
+            <div style="margin-top: 4px; font-size: 11px; color: #64748b;">
+              💰 درآمد: ${(location.metrics.averageTransactionValue / 1000).toFixed(0)}K تومان | 
+              📊 آپ‌تایم: ${(location.metrics.uptimePercentage * 100).toFixed(1)}% | 
+              🏢 تنوع: ${location.metrics.businessTypeCount} نوع
+            </div>
+          </div>
+
+          <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 11px; text-align: center;">
+            کلیک برای انتخاب و مشاهده جزئیات کامل
+          </p>
+        </div>
+      `, {
+        maxWidth: 320,
+        className: 'health-popup'
+      });
+
+      // Add click handler
+      marker.on('click', () => {
+        onLocationSelect(location);
+      });
+
+      marker.addTo(mapInstanceRef.current!.map);
+      markersRef.current.push(marker);
+
+      // Add health radius visualization for selected location
+      if (isSelected && mapInstanceRef.current!.map) {
+        const circle = L.circle([location.coordinates[0], location.coordinates[1]], {
+          color: healthColor,
+          fillColor: healthColor,
+          fillOpacity: 0.1,
+          radius: 800, // 800m radius
+          weight: 2,
+          dashArray: '8, 4'
+        }).addTo(mapInstanceRef.current!.map);
+        
+        markersRef.current.push(circle);
+      }
+    });
+
+    // Add legend control to map
+    if (mapInstanceRef.current!.map) {
+      const legend = L.control({ position: 'bottomright' });
+      
+      legend.onAdd = function() {
+        const div = L.DomUtil.create('div', 'health-legend');
+        div.style.background = 'rgba(255, 255, 255, 0.95)';
+        div.style.padding = '12px';
+        div.style.borderRadius = '8px';
+        div.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+        div.style.fontFamily = 'Vazirmatn, sans-serif';
+        div.style.fontSize = '12px';
+        div.style.direction = 'rtl';
+        
+        div.innerHTML = `
+          <div style="font-weight: bold; margin-bottom: 8px; color: #1f2937;">راهنمای سلامت</div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981;"></div>
               <span>عالی (85%+)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#84cc16' }}></div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #84cc16;"></div>
               <span>خوب (70-84%)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#eab308' }}></div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #eab308;"></div>
               <span>متوسط (50-69%)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }}></div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #f97316;"></div>
               <span>ضعیف (30-49%)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ef4444' }}></div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></div>
               <span>بحرانی (&lt;30%)</span>
             </div>
           </div>
-        </div>
-      </div>
+        `;
+        
+        return div;
+      };
+      
+      legend.addTo(mapInstanceRef.current!.map);
+      markersRef.current.push({ remove: () => mapInstanceRef.current!.map.removeControl(legend) });
+    }
+
+  }, [mapReady, locations, selectedLocation]);
+
+  return (
+    <div className="h-96 w-full rounded-lg overflow-hidden border shadow-lg">
+      <div 
+        ref={mapRef} 
+        className="h-full w-full"
+        data-testid="health-map"
+      />
     </div>
   );
 };
