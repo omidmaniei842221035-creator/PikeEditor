@@ -10,6 +10,7 @@ import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegio
 import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
 import { AddVisitModal } from "@/components/customers/add-visit-modal";
 import { PosMapFullscreen } from "@/components/pos-map-fullscreen";
+import { BankingUnitDetailsModal } from "@/components/banking-units/banking-unit-details-modal";
 import type { Customer } from "@shared/schema";
 
 export function PosMap() {
@@ -34,6 +35,8 @@ export function PosMap() {
   const [showAddVisitModal, setShowAddVisitModal] = useState(false);
   const [showFullscreenMap, setShowFullscreenMap] = useState(false);
   const [heatMapEnabled, setHeatMapEnabled] = useState(true);
+  const [selectedBankingUnit, setSelectedBankingUnit] = useState<any>(null);
+  const [showBankingUnitModal, setShowBankingUnitModal] = useState(false);
   
   // Use refs to avoid stale closures
   const regionAnalysisEnabledRef = useRef(regionAnalysisEnabled);
@@ -163,8 +166,8 @@ export function PosMap() {
               parseFloat(unit.latitude),
               parseFloat(unit.longitude),
               (unit: any) => {
-                // TODO: Add banking unit details modal
-                console.log('Banking unit clicked:', unit);
+                setSelectedBankingUnit(unit);
+                setShowBankingUnitModal(true);
               }
             );
           }
@@ -487,6 +490,16 @@ export function PosMap() {
           setSelectedCustomerForVisit(null);
           setDataVersion(v => v + 1);
         }}
+      />
+
+      {/* Banking Unit Details Modal */}
+      <BankingUnitDetailsModal
+        open={showBankingUnitModal}
+        onClose={() => {
+          setShowBankingUnitModal(false);
+          setSelectedBankingUnit(null);
+        }}
+        bankingUnit={selectedBankingUnit}
       />
 
       {/* Fullscreen Map Modal */}

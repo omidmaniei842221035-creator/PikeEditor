@@ -437,8 +437,8 @@ export function addCustomerMarker(
                      markerColor === 'red' ? '#ef4444' :
                      markerColor === 'darkgray' ? '#374151' :
                      markerColor === 'gray' ? '#9ca3af' : '#6b7280'};
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         border-radius: 50% 50% 50% 0;
         transform: rotate(-45deg);
         display: flex;
@@ -449,13 +449,13 @@ export function addCustomerMarker(
       ">
         <span style="
           transform: rotate(45deg);
-          font-size: 18px;
+          font-size: 14px;
         ">${businessIcon}</span>
       </div>
     `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40],
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
   });
 
   // Create marker
