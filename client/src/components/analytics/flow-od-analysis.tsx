@@ -362,24 +362,25 @@ export function FlowODAnalysis() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="relative w-full h-96 rounded-lg overflow-hidden border">
+              <div 
+                className="relative w-full h-96 rounded-lg overflow-hidden border"
+                style={{
+                  background: `
+                    linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0.1)),
+                    url('https://tile.openstreetmap.org/${Math.floor(viewState.zoom)}/${Math.floor((viewState.longitude + 180) / 360 * Math.pow(2, viewState.zoom))}/${Math.floor((1 - Math.log(Math.tan(viewState.latitude * Math.PI / 180) + 1 / Math.cos(viewState.latitude * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, viewState.zoom))}.png')
+                  `,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat'
+                }}
+              >
                 <DeckGL
-                  initialViewState={viewState}
-                  onViewStateChange={(params) => {
-                    if (params.viewState) {
-                      setViewState({
-                        longitude: params.viewState.longitude,
-                        latitude: params.viewState.latitude,
-                        zoom: params.viewState.zoom,
-                        pitch: params.viewState.pitch || 45,
-                        bearing: params.viewState.bearing || 0
-                      });
-                    }
+                  viewState={viewState}
+                  onViewStateChange={({viewState: newViewState}) => {
+                    setViewState(newViewState);
                   }}
                   controller={true}
                   layers={layers}
-                  views={[new MapView({ id: 'map' })]}
-                  mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
                   getTooltip={({ object, index }) => {
                     if (!object) return null;
                     
