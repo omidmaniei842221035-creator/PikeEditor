@@ -13,7 +13,7 @@ interface BoxPlotData {
     q3: number;
     max: number;
     outliers: number[];
-  };
+  } | null;
 }
 
 interface BoxPlotChartProps {

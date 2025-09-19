@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, branches, employees, customers, posDevices, transactions, alerts } from "@shared/schema";
+import { users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats } from "@shared/schema";
 
 export async function seedDatabase() {
   console.log("🌱 Seeding database with sample data...");
@@ -8,6 +8,7 @@ export async function seedDatabase() {
   await db.delete(alerts);
   await db.delete(transactions);
   await db.delete(posDevices);
+  await db.delete(posMonthlyStats);
   await db.delete(customers);
   await db.delete(employees);
   await db.delete(branches);
@@ -588,6 +589,49 @@ export async function seedDatabase() {
     }
   ]).returning();
 
+  // Create sample POS monthly stats
+  const currentYear = new Date().getFullYear();
+  const samplePosStats = [];
+
+  // Generate stats for each branch for the last 12 months
+  for (const branch of sampleBranches) {
+    for (let monthOffset = 0; monthOffset < 12; monthOffset++) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - monthOffset);
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+
+      // Find customers for this branch
+      const branchCustomers = sampleCustomers.filter(c => c.branchId === branch.id);
+      
+      for (const customer of branchCustomers) {
+        // Generate varying stats based on branch performance and randomness
+        const baseRevenue = Math.random() * 50000000 + 20000000; // 20-70M تومان
+        const performanceFactor = (branch.performance || 80) / 100;
+        const seasonalFactor = month <= 3 || month >= 11 ? 1.2 : 0.9; // Winter boost
+        
+        const revenue = Math.floor(baseRevenue * performanceFactor * seasonalFactor);
+        const profit = Math.floor(revenue * (0.15 + Math.random() * 0.1)); // 15-25% profit margin
+        const transactions = Math.floor(100 + Math.random() * 200); // 100-300 transactions
+        
+        samplePosStats.push({
+          customerId: customer.id,
+          branchId: branch.id,
+          year,
+          month,
+          totalTransactions: transactions,
+          totalAmount: revenue,
+          revenue,
+          profit,
+          status: customer.status || "active",
+          notes: `آمار ${month}/${year} - ${branch.name}`
+        });
+      }
+    }
+  }
+
+  const posStatsResult = await db.insert(posMonthlyStats).values(samplePosStats).returning();
+
   // Create sample alerts
   const sampleAlerts = await db.insert(alerts).values([
     {
@@ -616,6 +660,6 @@ export async function seedDatabase() {
     }
   ]).returning();
 
-  console.log(`Created: ${sampleCustomers.length} customers, ${sampleDevices.length} POS devices`); 
+  console.log(`Created: ${sampleCustomers.length} customers, ${sampleDevices.length} POS devices, ${posStatsResult.length} monthly stats`); 
   console.log("✅ Database seeded successfully!");
 }
