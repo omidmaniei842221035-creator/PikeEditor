@@ -12,6 +12,7 @@ import { UrbanGraphAnalysis } from "./urban-graph-analysis";
 import { FlowODAnalysis } from "./flow-od-analysis";
 import WhatIfSimulator from "./what-if-simulator";
 import GeoHealthDashboard from "./geo-health-dashboard";
+import { GeoForecastDashboard } from "./geo-forecast-dashboard";
 import { useState, useMemo } from "react";
 import { useFilter } from "@/pages/dashboard";
 
@@ -593,6 +594,20 @@ export function AnalyticsDashboard() {
           <div className="h-1 w-32 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto mt-4 rounded-full"></div>
         </div>
         <WhatIfSimulator />
+      </div>
+
+      {/* Geo-Forecasting Dashboard */}
+      <div className="mb-12">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+            🗺️ پیش‌بینی جغرافیایی هوشمند
+          </h2>
+          <p className="text-lg text-muted-foreground mt-3">
+            تحلیل و پیش‌بینی تراکنش‌های آینده بر پایه شبکه H3 و یادگیری ماشین
+          </p>
+          <div className="h-1 w-32 bg-gradient-to-r from-emerald-500 to-teal-500 mx-auto mt-4 rounded-full"></div>
+        </div>
+        <GeoForecastDashboard />
       </div>
 
       {/* Banking Unit Trends Analysis */}
