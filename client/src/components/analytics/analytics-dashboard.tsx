@@ -14,6 +14,7 @@ import { ProfessionalFlowMaps } from "./professional-flow-maps";
 import WhatIfSimulator from "./what-if-simulator";
 import GeoHealthDashboard from "./geo-health-dashboard";
 import { GeoForecastDashboard } from "./geo-forecast-dashboard";
+import ComprehensiveReportingSystem from "./comprehensive-reporting-system";
 import { useState, useMemo } from "react";
 import { useFilter } from "@/pages/dashboard";
 
@@ -614,6 +615,20 @@ export function AnalyticsDashboard() {
           <div className="h-1 w-32 bg-gradient-to-r from-emerald-500 to-teal-500 mx-auto mt-4 rounded-full"></div>
         </div>
         <GeoForecastDashboard />
+      </div>
+
+      {/* Comprehensive Reporting System */}
+      <div className="mb-12">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            📊 سامانه گزارش‌گیری جامع
+          </h2>
+          <p className="text-lg text-muted-foreground mt-3">
+            تولید گزارشات حرفه‌ای و جامع از عملکرد سامانه با فیلترهای پیشرفته
+          </p>
+          <div className="h-1 w-32 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto mt-4 rounded-full"></div>
+        </div>
+        <ComprehensiveReportingSystem />
       </div>
 
       {/* Banking Unit Trends Analysis */}
