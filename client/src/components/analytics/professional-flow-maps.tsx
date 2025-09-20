@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import DeckGL from '@deck.gl/react';
-import { ArcLayer, ScatterplotLayer, TextLayer, PathLayer, LineLayer } from '@deck.gl/layers';
+import { ArcLayer, ScatterplotLayer, TextLayer, PathLayer, LineLayer, BitmapLayer } from '@deck.gl/layers';
 import { HexagonLayer } from '@deck.gl/aggregation-layers';
+import { TileLayer } from '@deck.gl/geo-layers';
 import { MapView } from '@deck.gl/core';
 // Professional color functions (replacing d3 dependencies)
 const interpolateViridis = (t: number) => {
@@ -265,9 +266,56 @@ export function ProfessionalFlowMaps() {
     return scaleSequential(interpolator).domain([minValue, maxValue]);
   }, [flowData, colorScheme]);
 
+  // Map tile URL configuration based on selection
+  const mapTileConfig = useMemo(() => {
+    switch (mapStyle) {
+      case 'satellite':
+        return {
+          data: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          minZoom: 0,
+          maxZoom: 19,
+          tileSize: 256
+        };
+      case 'terrain':
+        return {
+          data: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'.replace('{s}', 'a'),
+          minZoom: 0,
+          maxZoom: 17,
+          tileSize: 256
+        };
+      default:
+        return {
+          data: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'.replace('{s}', 'a'),
+          minZoom: 0,
+          maxZoom: 19,
+          tileSize: 256
+        };
+    }
+  }, [mapStyle]);
+
   // Professional DeckGL layers
   const layers = useMemo(() => {
     const layersList = [];
+
+    // Base map tiles layer (must be first)
+    layersList.push(new TileLayer({
+      id: 'base-map',
+      data: mapTileConfig.data,
+      minZoom: mapTileConfig.minZoom,
+      maxZoom: mapTileConfig.maxZoom,
+      tileSize: mapTileConfig.tileSize,
+      renderSubLayers: props => {
+        const {
+          bbox: {west, south, east, north}
+        } = props.tile;
+
+        return new BitmapLayer(props, {
+          data: null,
+          image: props.data,
+          bounds: [west, south, east, north]
+        });
+      }
+    }));
 
     // Enhanced Arc Layer for flows
     if (filteredData.flows.length > 0) {
@@ -339,19 +387,7 @@ export function ProfessionalFlowMaps() {
     }
 
     return layersList;
-  }, [filteredData, flowIntensity, show3D, showNodes, showLabels]);
-
-  // Map style URL based on selection
-  const mapStyleUrl = useMemo(() => {
-    switch (mapStyle) {
-      case 'satellite':
-        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-      case 'terrain':
-        return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
-      default:
-        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-    }
-  }, [mapStyle]);
+  }, [filteredData, flowIntensity, show3D, showNodes, showLabels, mapTileConfig]);
 
   // Animation controls
   const handlePlayPause = useCallback(() => {
@@ -517,16 +553,8 @@ export function ProfessionalFlowMaps() {
       <Card className="overflow-hidden border-2">
         <CardContent className="p-0">
           <div className="relative w-full h-[600px]">
-            {/* Background Map Layer */}
-            <div 
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url(${mapStyleUrl.replace('{s}', 'a').replace('{z}', '11').replace('{x}', '1174').replace('{y}', '802')})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                filter: 'brightness(0.8)'
-              }}
-            />
+            {/* Map container with dark background */}
+            <div className="absolute inset-0 bg-gray-900" />
 
             {/* DeckGL Professional Overlay */}
             <DeckGL
@@ -610,8 +638,6 @@ export function ProfessionalFlowMaps() {
                 }
                 return null;
               }}
-              // DeckGL with optimized settings
-              getCursor={() => 'crosshair'}
             />
 
             {/* Professional Legend */}
