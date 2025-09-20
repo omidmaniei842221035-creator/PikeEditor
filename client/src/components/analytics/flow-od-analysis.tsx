@@ -9,18 +9,26 @@ import { Progress } from "@/components/ui/progress";
 import DeckGL from '@deck.gl/react';
 import { ArcLayer, ScatterplotLayer, TextLayer } from '@deck.gl/layers';
 import { HexagonLayer } from '@deck.gl/aggregation-layers';
-import { TileLayer } from '@deck.gl/geo-layers';
+// TileLayer from geo-layers - temporarily commented for compatibility
+// import { TileLayer } from '@deck.gl/geo-layers';
 import { MapView } from '@deck.gl/core';
 import { FlowODAnalyzer, ODPair, FlowNode, FlowMetrics } from "@/lib/flow-analysis";
 import { Navigation, TrendingUp, MapPin, ArrowRight, Target, Zap, Users, DollarSign } from "lucide-react";
 
-// OpenStreetMap configuration for base tiles
-const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+// Enhanced OpenStreetMap configuration
+const OSM_TILE_SERVERS = [
+  'https://a.tile.openstreetmap.org',
+  'https://b.tile.openstreetmap.org', 
+  'https://c.tile.openstreetmap.org'
+];
 
-// OpenStreetMap tile servers
-const OSM_SUBDOMAINS = ['a', 'b', 'c'];
+// Professional map styles
+const MAP_STYLES = {
+  standard: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+};
 
-// Attribution for OpenStreetMap
 const OSM_ATTRIBUTION = '© OpenStreetMap contributors';
 
 interface ViewState {
@@ -377,7 +385,7 @@ export function FlowODAnalysis() {
                 <DeckGL
                   viewState={viewState}
                   onViewStateChange={({viewState: newViewState}) => {
-                    if (newViewState) {
+                    if (newViewState && 'longitude' in newViewState) {
                       setViewState({
                         longitude: newViewState.longitude,
                         latitude: newViewState.latitude,
