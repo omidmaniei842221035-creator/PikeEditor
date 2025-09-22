@@ -15,6 +15,7 @@ import WhatIfSimulator from "./what-if-simulator";
 import GeoHealthDashboard from "./geo-health-dashboard";
 import { GeoForecastDashboard } from "./geo-forecast-dashboard";
 import ComprehensiveReportingSystem from "./comprehensive-reporting-system";
+import { RegionalAnalysisDashboard } from "./regional-analysis-dashboard";
 import { useState, useMemo } from "react";
 import { useFilter } from "@/pages/dashboard";
 
@@ -230,6 +231,44 @@ export function AnalyticsDashboard() {
         <p className="text-muted-foreground">آمار تفصیلی عملکرد و گزارش‌های مالی</p>
       </div>
 
+      {/* Regional Analysis Banner */}
+      <div className="relative mb-8">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-green-600/10 to-purple-600/10 rounded-3xl blur-xl"></div>
+        <div className="relative bg-gradient-to-br from-blue-50/80 via-green-50/80 to-purple-50/80 dark:from-blue-900/20 dark:via-green-900/20 dark:to-purple-900/20 rounded-3xl p-8 border-2 border-green-200/50 dark:border-green-700/50">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <span className="text-5xl animate-pulse">🗺️</span>
+              <div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-green-600 to-purple-600 bg-clip-text text-transparent">
+                  تحلیل منطقه‌ای هوشمند
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">✨ ابزار جامع مدیریت مناطق با رسم منحنی</p>
+              </div>
+            </div>
+            <p className="text-lg text-muted-foreground mb-6 max-w-4xl mx-auto">
+              مدیریت مناطق با رسم خطوط منحنی، شناسایی مناطق بکر، منطقه‌بندی خودکار و تحلیل توزیع مشتریان
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <div className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 rounded-lg px-4 py-2">
+                <span className="w-3 h-3 bg-blue-500 rounded-full animate-ping"></span>
+                <span className="font-medium">🎯 رسم مناطق منحنی</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 rounded-lg px-4 py-2">
+                <span className="w-3 h-3 bg-green-500 rounded-full animate-ping"></span>
+                <span className="font-medium">🔍 شناسایی مناطق بکر</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 rounded-lg px-4 py-2">
+                <span className="w-3 h-3 bg-purple-500 rounded-full animate-ping"></span>
+                <span className="font-medium">⚡ منطقه‌بندی خودکار</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Regional Analysis Dashboard */}
+      <RegionalAnalysisDashboard className="mb-12" />
+
       {/* Urban Graph Analysis Highlight Banner */}
       <div className="relative mb-8">
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/10 via-blue-600/10 to-purple-600/10 rounded-3xl blur-xl"></div>
@@ -241,7 +280,7 @@ export function AnalyticsDashboard() {
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
                   تحلیل‌های گراف شهری پیشرفته
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">✨ ویژگی جدید - در ادامه این صفحه</p>
+                <p className="text-sm text-muted-foreground mt-1">✨ ویژگی پیشرفته - در ادامه این صفحه</p>
               </div>
             </div>
             <p className="text-lg text-muted-foreground mb-6 max-w-4xl mx-auto">
