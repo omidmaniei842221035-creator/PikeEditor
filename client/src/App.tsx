@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import Monitoring from "@/pages/monitoring";
+import TerritoryManagement from "@/components/territories/territory-management";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -12,8 +13,11 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/analytics" component={() => <Dashboard defaultTab="analytics" />} />
+      <Route path="/analytics">
+        {() => <Dashboard defaultTab="analytics" />}
+      </Route>
       <Route path="/monitoring" component={Monitoring} />
+      <Route path="/territories" component={TerritoryManagement} />
       <Route component={NotFound} />
     </Switch>
   );
