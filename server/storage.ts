@@ -10,7 +10,8 @@ import {
   type Visit, type InsertVisit,
   type CustomerAccessLog, type InsertCustomerAccessLog,
   type BankingUnit, type InsertBankingUnit,
-  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits, customerAccessLogs, bankingUnits
+  type Territory, type InsertTerritory,
+  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits, customerAccessLogs, bankingUnits, territories
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, ilike, or, desc } from "drizzle-orm";
@@ -105,6 +106,16 @@ export interface IStorage {
   deleteBankingUnit(id: string): Promise<boolean>;
   bulkCreateBankingUnits(units: InsertBankingUnit[]): Promise<BankingUnit[]>;
   bulkUpdateBankingUnits(updates: Array<{ id: string; data: Partial<InsertBankingUnit> }>): Promise<BankingUnit[]>;
+
+  // Territories
+  getAllTerritories(): Promise<Territory[]>;
+  getTerritory(id: string): Promise<Territory | undefined>;
+  getTerritoryByName(name: string): Promise<Territory | undefined>;
+  getTerritoriesByBankingUnit(bankingUnitId: string): Promise<Territory[]>;
+  createTerritory(territory: InsertTerritory): Promise<Territory>;
+  updateTerritory(id: string, territory: Partial<InsertTerritory>): Promise<Territory | undefined>;
+  deleteTerritory(id: string): Promise<boolean>;
+  assignTerritoryToBankingUnit(territoryId: string, bankingUnitId: string | null): Promise<Territory | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -501,6 +512,57 @@ export class DatabaseStorage implements IStorage {
       if (unit) results.push(unit);
     }
     return results;
+  }
+
+  // Territory methods
+  async getAllTerritories(): Promise<Territory[]> {
+    return await db.select().from(territories).where(eq(territories.isActive, true)).orderBy(desc(territories.createdAt));
+  }
+
+  async getTerritory(id: string): Promise<Territory | undefined> {
+    const [territory] = await db.select().from(territories).where(and(eq(territories.id, id), eq(territories.isActive, true)));
+    return territory;
+  }
+
+  async getTerritoryByName(name: string): Promise<Territory | undefined> {
+    const [territory] = await db.select().from(territories).where(and(eq(territories.name, name), eq(territories.isActive, true)));
+    return territory;
+  }
+
+  async getTerritoriesByBankingUnit(bankingUnitId: string): Promise<Territory[]> {
+    return await db.select().from(territories).where(and(
+      eq(territories.assignedBankingUnitId, bankingUnitId),
+      eq(territories.isActive, true)
+    )).orderBy(desc(territories.createdAt));
+  }
+
+  async createTerritory(insertTerritory: InsertTerritory): Promise<Territory> {
+    const [territory] = await db.insert(territories).values(insertTerritory).returning();
+    return territory;
+  }
+
+  async updateTerritory(id: string, insertTerritory: Partial<InsertTerritory>): Promise<Territory | undefined> {
+    const [territory] = await db.update(territories).set({
+      ...insertTerritory,
+      updatedAt: new Date()
+    }).where(eq(territories.id, id)).returning();
+    return territory;
+  }
+
+  async deleteTerritory(id: string): Promise<boolean> {
+    const [territory] = await db.update(territories).set({
+      isActive: false,
+      updatedAt: new Date()
+    }).where(eq(territories.id, id)).returning();
+    return !!territory;
+  }
+
+  async assignTerritoryToBankingUnit(territoryId: string, bankingUnitId: string | null): Promise<Territory | undefined> {
+    const [territory] = await db.update(territories).set({
+      assignedBankingUnitId: bankingUnitId,
+      updatedAt: new Date()
+    }).where(eq(territories.id, territoryId)).returning();
+    return territory;
   }
 }
 

@@ -204,6 +204,27 @@ export const insertBankingUnitSchema = createInsertSchema(bankingUnits).omit({
   unitType: z.enum(['branch', 'counter', 'shahrbnet_kiosk']),
 });
 
+// Territories - مناطق جغرافیایی
+export const territories = pgTable("territories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // نام منطقه
+  color: varchar("color", { length: 7 }).notNull().default("#3b82f6"), // رنگ نمایش (hex)
+  assignedBankingUnitId: varchar("assigned_banking_unit_id").references(() => bankingUnits.id), // واحد بانکی تخصیص یافته
+  businessFocus: text("business_focus"), // نوع کسب‌وکار غالب
+  autoNamed: boolean("auto_named").default(false), // آیا نام خودکار تولید شده است
+  geometry: jsonb("geometry").notNull(), // GeoJSON Polygon or MultiPolygon
+  bbox: jsonb("bbox").notNull(), // [minLng, minLat, maxLng, maxLat] for performance
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTerritorySchema = createInsertSchema(territories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -237,3 +258,6 @@ export type InsertCustomerAccessLog = z.infer<typeof insertCustomerAccessLogSche
 
 export type BankingUnit = typeof bankingUnits.$inferSelect;
 export type InsertBankingUnit = z.infer<typeof insertBankingUnitSchema>;
+
+export type Territory = typeof territories.$inferSelect;
+export type InsertTerritory = z.infer<typeof insertTerritorySchema>;
