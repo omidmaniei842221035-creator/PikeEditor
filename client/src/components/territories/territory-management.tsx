@@ -283,6 +283,10 @@ export function TerritoryManagement() {
   // Map initialization
   useEffect(() => {
     if (!mapRef.current) {
+      // Check if container exists before initializing map
+      const container = document.getElementById('territory-map');
+      if (!container) return;
+      
       // Initialize map
       const map = L.map('territory-map', {
         center: [38.0962, 46.2738], // Tabriz coordinates
