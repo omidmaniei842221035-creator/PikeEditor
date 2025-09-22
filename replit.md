@@ -50,6 +50,13 @@ Preferred communication style: Simple, everyday language.
 - Customer location tracking and territory management
 - Coverage radius analysis for service optimization
 
+#### Regional Analysis Dashboard (New Feature)
+- **Territory Management**: Curved territory drawing with Bezier support and polygon management
+- **Virgin Region Detection**: Grid-based analysis to identify areas with no customer presence
+- **Automatic Zone Creation**: Proximity-based customer clustering with convex hull boundaries
+- **Customer Distribution Analysis**: Coverage scoring and strategic recommendations
+- **Integrated Analytics**: 4-tab interface within main analytics dashboard for comprehensive territorial insights
+
 #### Data Management
 - Excel import/export functionality for bulk customer data operations
 - Comprehensive customer relationship management
