@@ -36,6 +36,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import 'leaflet-draw';
+import '@elfalem/leaflet-curve';
 import { apiRequest } from '@/lib/queryClient';
 
 // Extend Leaflet Draw types
@@ -52,6 +53,8 @@ declare module 'leaflet' {
       static DRAWSTOP: string;
     }
   }
+  // Add curve function to L
+  function curve(path: any[], options?: any): any;
 }
 
 // Add global Draw to L
@@ -103,6 +106,10 @@ export function TerritoryManagement() {
   const territoryLayersRef = useRef<L.LayerGroup | null>(null);
   const [selectedTerritoryId, setSelectedTerritoryId] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isCurveDrawingMode, setIsCurveDrawingMode] = useState(false);
+  const [curvePoints, setCurvePoints] = useState<L.LatLng[]>([]);
+  const controlMarkersRef = useRef<L.CircleMarker[]>([]);
+  const tempCurveRef = useRef<L.Layer | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -353,6 +360,7 @@ export function TerritoryManagement() {
         setIsDrawing(false);
       });
 
+
       mapRef.current = map;
     }
 
@@ -363,6 +371,146 @@ export function TerritoryManagement() {
       }
     };
   }, [getBBoxFromGeometry]);
+
+  // Handle curve drawing with proper state dependencies
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const map = mapRef.current;
+    
+    const handleCurveClick = (e: L.LeafletMouseEvent) => {
+      if (isCurveDrawingMode && curvePoints.length < 4) {
+        const newPoints = [...curvePoints, e.latlng];
+        setCurvePoints(newPoints);
+
+        // Add visual marker for control points
+        const marker = L.circleMarker(e.latlng, {
+          radius: 5,
+          color: '#10b981',
+          fillColor: '#10b981',
+          fillOpacity: 0.8
+        }).addTo(map);
+        
+        controlMarkersRef.current.push(marker);
+
+        // If we have 4 points, create the curve
+        if (newPoints.length === 4) {
+          // Sample Bezier curve manually
+          const samples = sampleBezierCurve(newPoints[0], newPoints[1], newPoints[2], newPoints[3]);
+          
+          // Create visual curve on map with fallback
+          try {
+            const curvePath = [
+              'M', [newPoints[0].lat, newPoints[0].lng], // Move to start
+              'C', [newPoints[1].lat, newPoints[1].lng], // Control point 1
+                   [newPoints[2].lat, newPoints[2].lng], // Control point 2
+                   [newPoints[3].lat, newPoints[3].lng], // End point
+              'Z' // Close path
+            ];
+
+            if (typeof (L as any).curve === 'function') {
+              const curve = (L as any).curve(curvePath, {
+                color: '#3b82f6',
+                weight: 3,
+                fillOpacity: 0.1,
+                fill: true
+              }).addTo(map);
+              tempCurveRef.current = curve;
+            } else {
+              // Fallback: use polyline from sampled points
+              const fallbackCurve = L.polyline(samples, {
+                color: '#3b82f6',
+                weight: 3
+              }).addTo(map);
+              tempCurveRef.current = fallbackCurve;
+            }
+          } catch (error) {
+            // Fallback: use polyline from sampled points
+            const fallbackCurve = L.polyline(samples, {
+              color: '#3b82f6',
+              weight: 3
+            }).addTo(map);
+            tempCurveRef.current = fallbackCurve;
+          }
+
+          // Convert to properly closed polygon for backend
+          const coords = samples.map(latlng => [latlng.lng, latlng.lat]);
+          coords.push(coords[0]); // Close the polygon ring
+          
+          const geometry: GeoJSON.Polygon = {
+            type: 'Polygon',
+            coordinates: [coords]
+          };
+
+          const bbox = getBBoxFromGeometry(geometry);
+
+          // Cleanup markers and curve
+          controlMarkersRef.current.forEach(marker => marker.remove());
+          controlMarkersRef.current = [];
+          if (tempCurveRef.current) {
+            tempCurveRef.current.remove();
+            tempCurveRef.current = null;
+          }
+
+          setCurrentGeometry(geometry);
+          setCurrentBbox(bbox);
+          setIsCurveDrawingMode(false);
+          setCurvePoints([]);
+          setShowCreateForm(true);
+          map.getContainer().style.cursor = '';
+        }
+      }
+    };
+
+    if (isCurveDrawingMode) {
+      map.on('click', handleCurveClick);
+    }
+
+    return () => {
+      map.off('click', handleCurveClick);
+    };
+  }, [isCurveDrawingMode, curvePoints, getBBoxFromGeometry]);
+
+  // Manual Bezier curve sampling function
+  const sampleBezierCurve = (p0: L.LatLng, p1: L.LatLng, p2: L.LatLng, p3: L.LatLng): L.LatLng[] => {
+    const samples: L.LatLng[] = [];
+    const numSamples = 100;
+    
+    for (let i = 0; i <= numSamples; i++) {
+      const t = i / numSamples;
+      const u = 1 - t;
+      const tt = t * t;
+      const uu = u * u;
+      const uuu = uu * u;
+      const ttt = tt * t;
+
+      // Cubic Bezier formula: B(t) = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3
+      const lat = uuu * p0.lat + 3 * uu * t * p1.lat + 3 * u * tt * p2.lat + ttt * p3.lat;
+      const lng = uuu * p0.lng + 3 * uu * t * p1.lng + 3 * u * tt * p2.lng + ttt * p3.lng;
+      
+      samples.push(L.latLng(lat, lng));
+    }
+    
+    return samples;
+  };
+
+  // Cleanup curve drawing when mode changes
+  useEffect(() => {
+    if (!isCurveDrawingMode) {
+      // Clear any existing markers
+      controlMarkersRef.current.forEach(marker => marker.remove());
+      controlMarkersRef.current = [];
+      // Clear temporary curve
+      if (tempCurveRef.current) {
+        tempCurveRef.current.remove();
+        tempCurveRef.current = null;
+      }
+      setCurvePoints([]);
+      if (mapRef.current) {
+        mapRef.current.getContainer().style.cursor = '';
+      }
+    }
+  }, [isCurveDrawingMode]);
 
   // Load territories on map
   useEffect(() => {
@@ -656,11 +804,48 @@ export function TerritoryManagement() {
                   <p className="text-xs text-gray-600">مربع</p>
                 </div>
               </div>
+              
+              {/* Curve Drawing Button */}
+              <div className="mt-3">
+                <Button
+                  variant={isCurveDrawingMode ? "default" : "outline"}
+                  onClick={() => {
+                    if (isCurveDrawingMode) {
+                      setIsCurveDrawingMode(false);
+                      setCurvePoints([]);
+                      if (mapRef.current) {
+                        mapRef.current.getContainer().style.cursor = '';
+                      }
+                    } else {
+                      setIsCurveDrawingMode(true);
+                      setCurvePoints([]);
+                      if (mapRef.current) {
+                        mapRef.current.getContainer().style.cursor = 'crosshair';
+                      }
+                    }
+                  }}
+                  className="w-full flex items-center gap-2"
+                  data-testid="curve-drawing-button"
+                >
+                  <Circle className="w-4 h-4" />
+                  {isCurveDrawingMode ? 'لغو رسم منحنی' : 'رسم خط منحنی'}
+                </Button>
+              </div>
               {isDrawing && (
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded text-center">
                   <Pencil className="w-6 h-6 mx-auto mb-2 text-blue-600 animate-pulse" />
                   <p className="text-sm text-blue-700">در حال ترسیم...</p>
                   <p className="text-xs text-blue-600">برای تکمیل دابل کلیک کنید</p>
+                </div>
+              )}
+              
+              {isCurveDrawingMode && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded text-center">
+                  <Circle className="w-6 h-6 mx-auto mb-2 text-green-600 animate-pulse" />
+                  <p className="text-sm text-green-700">حالت رسم منحنی</p>
+                  <p className="text-xs text-green-600">
+                    نقاط کنترل را کلیک کنید ({curvePoints.length}/4)
+                  </p>
                 </div>
               )}
             </div>
