@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema } from "@shared/schema";
+import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema, insertTerritorySchema } from "@shared/schema";
 import { z } from "zod";
 
 // WebSocket connection management
@@ -528,6 +528,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedUnits);
     } catch (error) {
       res.status(400).json({ error: "Invalid banking units data" });
+    }
+  });
+
+  // Territory routes
+  app.get("/api/territories", async (req, res) => {
+    const territories = await storage.getAllTerritories();
+    res.json(territories);
+  });
+
+  app.get("/api/territories/:id", async (req, res) => {
+    const territory = await storage.getTerritory(req.params.id);
+    if (!territory) {
+      return res.status(404).json({ error: "Territory not found" });
+    }
+    res.json(territory);
+  });
+
+  app.post("/api/territories", async (req, res) => {
+    try {
+      const territoryData = insertTerritorySchema.parse(req.body);
+      const territory = await storage.createTerritory(territoryData);
+      res.json(territory);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid territory data" });
+    }
+  });
+
+  app.patch("/api/territories/:id", async (req, res) => {
+    try {
+      const updateData = insertTerritorySchema.partial().parse(req.body);
+      const territory = await storage.updateTerritory(req.params.id, updateData);
+      if (!territory) {
+        return res.status(404).json({ error: "Territory not found" });
+      }
+      res.json(territory);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid territory data" });
+    }
+  });
+
+  app.delete("/api/territories/:id", async (req, res) => {
+    const deleted = await storage.deleteTerritory(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Territory not found" });
+    }
+    res.json({ success: true });
+  });
+
+  app.post("/api/territories/:id/assign", async (req, res) => {
+    try {
+      const { bankingUnitId } = z.object({
+        bankingUnitId: z.string().nullable()
+      }).parse(req.body);
+      
+      const territory = await storage.assignTerritoryToBankingUnit(req.params.id, bankingUnitId);
+      if (!territory) {
+        return res.status(404).json({ error: "Territory not found" });
+      }
+      res.json(territory);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid assignment data" });
+    }
+  });
+
+  app.get("/api/territories/:id/stats", async (req, res) => {
+    try {
+      const territory = await storage.getTerritory(req.params.id);
+      if (!territory) {
+        return res.status(404).json({ error: "Territory not found" });
+      }
+
+      const customers = await storage.getAllCustomers();
+      const posStats = await storage.getAllPosMonthlyStats();
+      
+      // Simple point-in-polygon check (basic implementation)
+      const territoryCustomers = customers.filter(customer => {
+        if (!customer.latitude || !customer.longitude) return false;
+        
+        try {
+          const point = [parseFloat(customer.longitude.toString()), parseFloat(customer.latitude.toString())];
+          // This is a simplified check - in production you'd use a proper point-in-polygon library
+          const geometry = territory.geometry as any;
+          if (geometry.type === 'Polygon') {
+            // Basic bounding box check for simplicity
+            const bbox = territory.bbox as [number, number, number, number];
+            return point[0] >= bbox[0] && point[0] <= bbox[2] && point[1] >= bbox[1] && point[1] <= bbox[3];
+          }
+          return false;
+        } catch {
+          return false;
+        }
+      });
+
+      const territoryCustomerIds = new Set(territoryCustomers.map(c => c.id));
+      const territoryPosStats = posStats.filter(stat => stat.customerId && territoryCustomerIds.has(stat.customerId));
+
+      // Calculate statistics
+      const totalRevenue = territoryPosStats.reduce((sum, stat) => sum + (stat.revenue || 0), 0);
+      const totalTransactions = territoryPosStats.reduce((sum, stat) => sum + (stat.totalTransactions || 0), 0);
+      
+      // Business type distribution
+      const businessTypes = territoryCustomers.reduce((acc, customer) => {
+        acc[customer.businessType] = (acc[customer.businessType] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      res.json({
+        territoryId: territory.id,
+        territoryName: territory.name,
+        totalCustomers: territoryCustomers.length,
+        totalRevenue,
+        totalTransactions,
+        businessTypes,
+        customers: territoryCustomers,
+        topBusinessType: Object.entries(businessTypes).sort(([,a], [,b]) => b - a)[0]?.[0] || null
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to calculate territory stats" });
+    }
+  });
+
+  app.post("/api/territories/suggest-name", async (req, res) => {
+    try {
+      const { geometry, bbox } = z.object({
+        geometry: z.object({
+          type: z.literal("Polygon"),
+          coordinates: z.array(z.array(z.array(z.number())))
+        }),
+        bbox: z.array(z.number()).length(4)
+      }).parse(req.body);
+
+      const customers = await storage.getAllCustomers();
+      
+      // Find customers within territory (simplified bounding box check)
+      const territoryCustomers = customers.filter(customer => {
+        if (!customer.latitude || !customer.longitude) return false;
+        
+        try {
+          const point = [parseFloat(customer.longitude.toString()), parseFloat(customer.latitude.toString())];
+          return point[0] >= bbox[0] && point[0] <= bbox[2] && point[1] >= bbox[1] && point[1] <= bbox[3];
+        } catch {
+          return false;
+        }
+      });
+
+      // Count business types
+      const businessTypes = territoryCustomers.reduce((acc, customer) => {
+        acc[customer.businessType] = (acc[customer.businessType] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const totalCustomers = territoryCustomers.length;
+      const topBusinessType = Object.entries(businessTypes).sort(([,a], [,b]) => b - a)[0];
+      
+      let suggestedName = "منطقه سفارشی";
+      let autoNamed = false;
+
+      if (topBusinessType && totalCustomers >= 5) {
+        const [businessType, count] = topBusinessType;
+        const percentage = (count / totalCustomers) * 100;
+        
+        if (percentage >= 30) {
+          const businessNameMap: Record<string, string> = {
+            'supermarket': 'سوپرمارکت‌ها',
+            'restaurant': 'رستوران‌ها', 
+            'pharmacy': 'داروخانه‌ها',
+            'cafe': 'کافه‌ها',
+            'bakery': 'نانوایی‌ها',
+            'clothing': 'پوشاک',
+            'electronics': 'الکترونیک',
+            'bookstore': 'کتابفروشی‌ها',
+            'jewelry': 'طلا و جواهر',
+            'auto': 'خودرو و قطعات'
+          };
+          
+          const persianName = businessNameMap[businessType] || businessType;
+          suggestedName = `منطقه ${persianName}`;
+          autoNamed = true;
+        }
+      }
+
+      res.json({
+        suggestedName,
+        autoNamed,
+        businessFocus: topBusinessType?.[0] || null,
+        stats: {
+          totalCustomers,
+          businessTypes,
+          topBusinessType: topBusinessType?.[0],
+          topBusinessTypeCount: topBusinessType?.[1] || 0,
+          topBusinessTypePercentage: topBusinessType ? Math.round((topBusinessType[1] / totalCustomers) * 100) : 0
+        }
+      });
+    } catch (error) {
+      res.status(400).json({ error: "Invalid territory data" });
     }
   });
 
