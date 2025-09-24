@@ -261,3 +261,159 @@ export type InsertBankingUnit = z.infer<typeof insertBankingUnitSchema>;
 
 export type Territory = typeof territories.$inferSelect;
 export type InsertTerritory = z.infer<typeof insertTerritorySchema>;
+
+// ======================
+// GRAFANA ENTERPRISE SCHEMA
+// ======================
+
+// Organizations (for multi-tenancy)
+export const organizations = pgTable("organizations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  settings: jsonb("settings").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Data Sources
+export const dataSources = pgTable("data_sources", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // prometheus, clickhouse, loki, postgresql, csv, json
+  url: text("url"),
+  settings: jsonb("settings").default({}),
+  credentials: jsonb("credentials").default({}), // encrypted
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Dashboards
+export const dashboards = pgTable("dashboards", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  uid: text("uid").notNull().unique(),
+  title: text("title").notNull(),
+  tags: jsonb("tags").default([]),
+  panels: jsonb("panels").default([]),
+  timeRange: jsonb("time_range").default({}),
+  variables: jsonb("variables").default([]),
+  version: integer("version").default(1),
+  isStarred: boolean("is_starred").default(false),
+  folderId: varchar("folder_id"),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Dashboard Versions (for versioning)
+export const dashboardVersions = pgTable("dashboard_versions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  dashboardId: varchar("dashboard_id").references(() => dashboards.id),
+  version: integer("version").notNull(),
+  data: jsonb("data").notNull(),
+  message: text("message"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Alert Rules
+export const alertRules = pgTable("alert_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  title: text("title").notNull(),
+  condition: text("condition").notNull(),
+  data: jsonb("data").notNull(),
+  intervalSeconds: integer("interval_seconds").default(60),
+  maxDataPoints: integer("max_data_points").default(43200),
+  noDataState: text("no_data_state").default("NoData"),
+  execErrState: text("exec_err_state").default("Alerting"),
+  forDuration: text("for_duration").default("5m"),
+  annotations: jsonb("annotations").default({}),
+  labels: jsonb("labels").default({}),
+  isPaused: boolean("is_paused").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// ML Models
+export const mlModels = pgTable("ml_models", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // anomaly_detection, forecasting, classification
+  endpoint: text("endpoint"),
+  version: text("version"),
+  metadata: jsonb("metadata").default({}),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// ML Predictions
+export const mlPredictions = pgTable("ml_predictions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  modelId: varchar("model_id").references(() => mlModels.id),
+  inputData: jsonb("input_data").notNull(),
+  prediction: jsonb("prediction").notNull(),
+  confidence: decimal("confidence", { precision: 5, scale: 4 }),
+  explanation: jsonb("explanation"), // SHAP values
+  deviceId: varchar("device_id").references(() => posDevices.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Reports
+export const reports = pgTable("reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  dashboardId: varchar("dashboard_id").references(() => dashboards.id),
+  name: text("name").notNull(),
+  format: text("format").default("pdf"), // pdf, png, csv
+  schedule: text("schedule"), // cron expression
+  recipients: jsonb("recipients").default([]),
+  settings: jsonb("settings").default({}),
+  isEnabled: boolean("is_enabled").default(true),
+  lastRun: timestamp("last_run"),
+  nextRun: timestamp("next_run"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Create insert schemas for Grafana Enterprise
+export const insertOrganizationSchema = createInsertSchema(organizations);
+export const insertDataSourceSchema = createInsertSchema(dataSources);
+export const insertDashboardSchema = createInsertSchema(dashboards);
+export const insertDashboardVersionSchema = createInsertSchema(dashboardVersions);
+export const insertAlertRuleSchema = createInsertSchema(alertRules);
+export const insertMlModelSchema = createInsertSchema(mlModels);
+export const insertMlPredictionSchema = createInsertSchema(mlPredictions);
+export const insertReportSchema = createInsertSchema(reports);
+
+// Create types for Grafana Enterprise
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+
+export type DataSource = typeof dataSources.$inferSelect;
+export type InsertDataSource = z.infer<typeof insertDataSourceSchema>;
+
+export type Dashboard = typeof dashboards.$inferSelect;
+export type InsertDashboard = z.infer<typeof insertDashboardSchema>;
+
+export type DashboardVersion = typeof dashboardVersions.$inferSelect;
+export type InsertDashboardVersion = z.infer<typeof insertDashboardVersionSchema>;
+
+export type AlertRule = typeof alertRules.$inferSelect;
+export type InsertAlertRule = z.infer<typeof insertAlertRuleSchema>;
+
+export type MlModel = typeof mlModels.$inferSelect;
+export type InsertMlModel = z.infer<typeof insertMlModelSchema>;
+
+export type MlPrediction = typeof mlPredictions.$inferSelect;
+export type InsertMlPrediction = z.infer<typeof insertMlPredictionSchema>;
+
+export type Report = typeof reports.$inferSelect;
+export type InsertReport = z.infer<typeof insertReportSchema>;

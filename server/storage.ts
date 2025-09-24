@@ -11,7 +11,17 @@ import {
   type CustomerAccessLog, type InsertCustomerAccessLog,
   type BankingUnit, type InsertBankingUnit,
   type Territory, type InsertTerritory,
-  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits, customerAccessLogs, bankingUnits, territories
+  // Grafana Enterprise Types
+  type Organization, type InsertOrganization,
+  type DataSource, type InsertDataSource,
+  type Dashboard, type InsertDashboard,
+  type DashboardVersion, type InsertDashboardVersion,
+  type AlertRule, type InsertAlertRule,
+  type MlModel, type InsertMlModel,
+  type MlPrediction, type InsertMlPrediction,
+  type Report, type InsertReport,
+  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits, customerAccessLogs, bankingUnits, territories,
+  organizations, dataSources, dashboards, dashboardVersions, alertRules, mlModels, mlPredictions, reports
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, ilike, or, desc } from "drizzle-orm";
@@ -116,6 +126,81 @@ export interface IStorage {
   updateTerritory(id: string, territory: Partial<InsertTerritory>): Promise<Territory | undefined>;
   deleteTerritory(id: string): Promise<boolean>;
   assignTerritoryToBankingUnit(territoryId: string, bankingUnitId: string | null): Promise<Territory | undefined>;
+
+  // ======================
+  // GRAFANA ENTERPRISE METHODS
+  // ======================
+
+  // Organizations
+  getAllOrganizations(): Promise<Organization[]>;
+  getOrganization(id: string): Promise<Organization | undefined>;
+  getOrganizationBySlug(slug: string): Promise<Organization | undefined>;
+  createOrganization(org: InsertOrganization): Promise<Organization>;
+  updateOrganization(id: string, org: Partial<InsertOrganization>): Promise<Organization | undefined>;
+  deleteOrganization(id: string): Promise<boolean>;
+
+  // Data Sources
+  getAllDataSources(): Promise<DataSource[]>;
+  getDataSource(id: string): Promise<DataSource | undefined>;
+  getDataSourcesByOrganization(orgId: string): Promise<DataSource[]>;
+  getDefaultDataSource(orgId: string): Promise<DataSource | undefined>;
+  createDataSource(ds: InsertDataSource): Promise<DataSource>;
+  updateDataSource(id: string, ds: Partial<InsertDataSource>): Promise<DataSource | undefined>;
+  deleteDataSource(id: string): Promise<boolean>;
+
+  // Dashboards
+  getAllDashboards(): Promise<Dashboard[]>;
+  getDashboard(id: string): Promise<Dashboard | undefined>;
+  getDashboardByUid(uid: string): Promise<Dashboard | undefined>;
+  getDashboardsByOrganization(orgId: string): Promise<Dashboard[]>;
+  getDashboardsByFolder(folderId: string): Promise<Dashboard[]>;
+  getStarredDashboards(userId: string): Promise<Dashboard[]>;
+  createDashboard(dashboard: InsertDashboard): Promise<Dashboard>;
+  updateDashboard(id: string, dashboard: Partial<InsertDashboard>): Promise<Dashboard | undefined>;
+  deleteDashboard(id: string): Promise<boolean>;
+  starDashboard(dashboardId: string, isStarred: boolean): Promise<Dashboard | undefined>;
+  searchDashboards(query: string, orgId: string): Promise<Dashboard[]>;
+
+  // Dashboard Versions
+  getDashboardVersions(dashboardId: string): Promise<DashboardVersion[]>;
+  getDashboardVersion(dashboardId: string, version: number): Promise<DashboardVersion | undefined>;
+  createDashboardVersion(version: InsertDashboardVersion): Promise<DashboardVersion>;
+
+  // Alert Rules
+  getAllAlertRules(): Promise<AlertRule[]>;
+  getAlertRule(id: string): Promise<AlertRule | undefined>;
+  getAlertRulesByOrganization(orgId: string): Promise<AlertRule[]>;
+  createAlertRule(rule: InsertAlertRule): Promise<AlertRule>;
+  updateAlertRule(id: string, rule: Partial<InsertAlertRule>): Promise<AlertRule | undefined>;
+  deleteAlertRule(id: string): Promise<boolean>;
+  pauseAlertRule(id: string, isPaused: boolean): Promise<AlertRule | undefined>;
+
+  // ML Models
+  getAllMlModels(): Promise<MlModel[]>;
+  getMlModel(id: string): Promise<MlModel | undefined>;
+  getMlModelsByOrganization(orgId: string): Promise<MlModel[]>;
+  getMlModelsByType(type: string): Promise<MlModel[]>;
+  createMlModel(model: InsertMlModel): Promise<MlModel>;
+  updateMlModel(id: string, model: Partial<InsertMlModel>): Promise<MlModel | undefined>;
+  deleteMlModel(id: string): Promise<boolean>;
+  activateMlModel(id: string, isActive: boolean): Promise<MlModel | undefined>;
+
+  // ML Predictions
+  getAllMlPredictions(): Promise<MlPrediction[]>;
+  getMlPrediction(id: string): Promise<MlPrediction | undefined>;
+  getMlPredictionsByModel(modelId: string): Promise<MlPrediction[]>;
+  getMlPredictionsByDevice(deviceId: string): Promise<MlPrediction[]>;
+  createMlPrediction(prediction: InsertMlPrediction): Promise<MlPrediction>;
+  
+  // Reports
+  getAllReports(): Promise<Report[]>;
+  getReport(id: string): Promise<Report | undefined>;
+  getReportsByOrganization(orgId: string): Promise<Report[]>;
+  getReportsByDashboard(dashboardId: string): Promise<Report[]>;
+  createReport(report: InsertReport): Promise<Report>;
+  updateReport(id: string, report: Partial<InsertReport>): Promise<Report | undefined>;
+  deleteReport(id: string): Promise<boolean>;
+  enableReport(id: string, isEnabled: boolean): Promise<Report | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {

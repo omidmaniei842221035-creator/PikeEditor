@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import Monitoring from "@/pages/monitoring";
 import TerritoryManagement from "@/components/territories/territory-management";
+import { DashboardBuilder } from "@/components/grafana/dashboard-builder";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,10 @@ function Router() {
       </Route>
       <Route path="/monitoring" component={Monitoring} />
       <Route path="/territories" component={TerritoryManagement} />
+      <Route path="/grafana" component={DashboardBuilder} />
+      <Route path="/grafana/dashboard/:uid">
+        {(params) => <DashboardBuilder uid={params.uid} />}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

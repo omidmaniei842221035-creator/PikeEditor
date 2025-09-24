@@ -4,12 +4,16 @@ import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema, insertTerritorySchema } from "@shared/schema";
 import { z } from "zod";
+import { grafanaRouter } from "./routes/grafana";
 
 // WebSocket connection management
 const wsClients = new Set<any>();
 let deviceStatusSimulation: NodeJS.Timeout | null = null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Mount Grafana Enterprise routes
+  app.use('/api/grafana', grafanaRouter);
   
   // Branches routes
   app.get("/api/branches", async (req, res) => {
