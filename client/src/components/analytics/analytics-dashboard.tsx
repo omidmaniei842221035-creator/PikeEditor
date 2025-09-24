@@ -266,7 +266,16 @@ export function AnalyticsDashboard() {
         </div>
       </div>
 
-      {/* Regional Analysis Dashboard */}
+      {/* Regional Analysis Dashboard - TEST */}
+      <div className="mb-12 p-6 bg-green-100 dark:bg-green-900 rounded-lg border-2 border-green-500">
+        <h3 className="text-xl font-bold text-green-800 dark:text-green-200">
+          ✅ تحلیل منطقه‌ای هوشمند - تست
+        </h3>
+        <p className="text-green-700 dark:text-green-300">
+          اگر این پیام را می‌بینید، یعنی بخش تحلیل کار می‌کند
+        </p>
+      </div>
+      
       <RegionalAnalysisDashboard className="mb-12" />
 
       {/* Urban Graph Analysis Highlight Banner */}
