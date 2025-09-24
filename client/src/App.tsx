@@ -15,13 +15,13 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/analytics">
-        {() => <Dashboard defaultTab="analytics" />}
+        {() => <Dashboard />}
       </Route>
       <Route path="/monitoring" component={Monitoring} />
       <Route path="/territories" component={TerritoryManagement} />
       <Route path="/grafana" component={DashboardBuilder} />
       <Route path="/grafana/dashboard/:uid">
-        {(params) => <DashboardBuilder uid={params.uid} />}
+        {() => <DashboardBuilder />}
       </Route>
       <Route component={NotFound} />
     </Switch>

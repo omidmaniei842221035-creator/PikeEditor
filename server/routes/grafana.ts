@@ -42,12 +42,14 @@ grafanaRouter.post('/organizations', async (req, res) => {
     const orgData = insertOrganizationSchema.parse(req.body);
     const newOrg = {
       id: String(Date.now()),
-      ...orgData,
+      name: orgData.name,
+      slug: orgData.slug,
+      settings: orgData.settings || {},
       createdAt: new Date(),
       updatedAt: new Date()
     };
     
-    mockOrganizations.push(newOrg);
+    mockOrganizations.push(newOrg as any);
     res.status(201).json(newOrg);
   } catch (error) {
     res.status(400).json({ error: 'Invalid organization data' });
@@ -71,12 +73,15 @@ grafanaRouter.post('/datasources', async (req, res) => {
     const dsData = insertDataSourceSchema.parse(req.body);
     const newDs = {
       id: String(Date.now()),
-      ...dsData,
+      name: dsData.name,
+      type: dsData.type,
+      url: dsData.url || '',
+      isDefault: dsData.isDefault || false,
       createdAt: new Date(),
       updatedAt: new Date()
     };
     
-    mockDataSources.push(newDs);
+    mockDataSources.push(newDs as any);
     res.status(201).json(newDs);
   } catch (error) {
     res.status(400).json({ error: 'Invalid data source data' });
@@ -105,8 +110,10 @@ grafanaRouter.put('/datasources/:id', async (req, res) => {
     const dsData = insertDataSourceSchema.partial().parse(req.body);
     mockDataSources[index] = { 
       ...mockDataSources[index], 
-      ...dsData, 
-      updatedAt: new Date() 
+      name: dsData.name || mockDataSources[index].name,
+      type: dsData.type || mockDataSources[index].type,
+      url: dsData.url || mockDataSources[index].url,
+      isDefault: dsData.isDefault !== undefined ? dsData.isDefault : mockDataSources[index].isDefault
     };
     
     res.json(mockDataSources[index]);
