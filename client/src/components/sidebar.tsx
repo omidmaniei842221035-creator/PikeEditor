@@ -31,7 +31,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           </div>
           <div>
             <h1 className="text-xl font-bold">داشبورد POS</h1>
-            <p className="text-sm text-muted-foreground">مدیریت تبریز</p>
+            <p className="text-sm text-muted-foreground">مدیریت تبریز - v2.0</p>
           </div>
         </div>
       </div>
