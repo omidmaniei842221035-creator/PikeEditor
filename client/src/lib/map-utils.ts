@@ -5,6 +5,7 @@ export interface MapInstance {
   drawnItems?: any;
   drawControl?: any;
   onRegionChange?: (hasRegions: boolean) => void;
+  error?: string; // Error message if initialization failed
 }
 
 // Function to log customer access
@@ -42,26 +43,100 @@ async function logCustomerAccess(customerId: string, accessType: 'view_details' 
   }
 }
 
+// Function to wait for container to become visible
+function waitForVisibleContainer(container: HTMLElement): Promise<void> {
+  return new Promise((resolve) => {
+    // If container is already visible, resolve immediately
+    const rect = container.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      console.log('Container is already visible');
+      resolve();
+      return;
+    }
+    
+    console.log('Waiting for container to become visible...');
+    
+    // Use IntersectionObserver if available, otherwise use polling
+    if (typeof window !== 'undefined' && 'IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && entry.boundingClientRect.width > 0 && entry.boundingClientRect.height > 0) {
+          console.log('Container became visible via IntersectionObserver');
+          observer.disconnect();
+          resolve();
+        }
+      });
+      
+      observer.observe(container);
+      
+      // Fallback timeout after 10 seconds
+      setTimeout(() => {
+        observer.disconnect();
+        console.log('Container visibility timeout reached, proceeding anyway');
+        resolve();
+      }, 10000);
+    } else {
+      // Polling fallback
+      let attempts = 0;
+      const maxAttempts = 100; // 5 seconds
+      
+      const checkVisibility = () => {
+        attempts++;
+        const rect = container.getBoundingClientRect();
+        
+        if (rect.width > 0 && rect.height > 0) {
+          console.log(`Container became visible after ${attempts} polling attempts`);
+          resolve();
+        } else if (attempts >= maxAttempts) {
+          console.log('Container visibility polling timeout, proceeding anyway');
+          resolve();
+        } else {
+          setTimeout(checkVisibility, 50);
+        }
+      };
+      
+      checkVisibility();
+    }
+  });
+}
+
 // Function to wait for Leaflet to be available
 function waitForLeaflet(): Promise<any> {
   return new Promise((resolve, reject) => {
+    console.log('Waiting for Leaflet to load...');
+    
     if (typeof window !== 'undefined' && (window as any).L) {
+      console.log('Leaflet found immediately');
       resolve((window as any).L);
       return;
     }
     
-    // Poll for Leaflet every 100ms, timeout after 10 seconds
+    // Check if Leaflet scripts are in DOM
+    const leafletScript = document.querySelector('script[src*="leaflet"]');
+    const leafletCSS = document.querySelector('link[href*="leaflet.css"]');
+    
+    if (!leafletScript || !leafletCSS) {
+      console.warn('Leaflet scripts or CSS not found in DOM');
+    }
+    
+    // Poll for Leaflet every 50ms, timeout after 15 seconds
     let attempts = 0;
-    const maxAttempts = 100;
+    const maxAttempts = 300; // 15 seconds
     
     const checkLeaflet = () => {
       attempts++;
+      
       if (typeof window !== 'undefined' && (window as any).L) {
+        console.log(`Leaflet loaded after ${attempts} attempts`);
         resolve((window as any).L);
       } else if (attempts >= maxAttempts) {
-        reject(new Error('Leaflet failed to load within timeout period'));
+        console.error(`Leaflet failed to load after ${maxAttempts} attempts (${maxAttempts * 50}ms)`);
+        reject(new Error(`Leaflet failed to load within timeout period (${maxAttempts * 50}ms)`));
       } else {
-        setTimeout(checkLeaflet, 100);
+        if (attempts % 20 === 0) { // Log every second
+          console.log(`Still waiting for Leaflet... attempt ${attempts}/${maxAttempts}`);
+        }
+        setTimeout(checkLeaflet, 50);
       }
     };
     
@@ -71,7 +146,54 @@ function waitForLeaflet(): Promise<any> {
 
 export async function initializeMap(container: HTMLElement, onRegionChange?: (hasRegions: boolean) => void): Promise<MapInstance> {
   try {
+    console.log('Initializing map for container:', container);
+    
+    // Validate container
+    if (!container) {
+      throw new Error('Container element is null or undefined');
+    }
+    
+    if (!container.isConnected) {
+      throw new Error('Container element is not connected to DOM');
+    }
+    
+    // Check container dimensions and wait for visibility if needed
+    const rect = container.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      console.warn('Container has zero dimensions:', { width: rect.width, height: rect.height });
+      // Force minimum dimensions
+      container.style.minHeight = '400px';
+      container.style.minWidth = '100%';
+      
+      // Wait for container to become visible if it's currently hidden
+      await waitForVisibleContainer(container);
+    }
+    
+    // Clear any existing Leaflet instance on this container
+    if ((container as any)._leaflet_id) {
+      console.log('Removing existing Leaflet map from container');
+      try {
+        const existingMap = (container as any)._leaflet;
+        if (existingMap && existingMap.remove) {
+          existingMap.remove();
+        }
+      } catch (e) {
+        console.warn('Error removing existing map:', e);
+      }
+      delete (container as any)._leaflet_id;
+      delete (container as any)._leaflet;
+    }
+    
+    // Clear container content
+    container.innerHTML = '';
+    
     const L = await waitForLeaflet();
+    console.log('Leaflet ready, creating map instance');
+    
+    // Check if Leaflet.draw is available
+    if (!L.Control || !L.Control.Draw) {
+      console.warn('Leaflet.draw plugin not found, map will be created without drawing controls');
+    }
     
     // Initialize map centered on Tabriz, Iran
     const map = L.map(container, {
@@ -79,87 +201,150 @@ export async function initializeMap(container: HTMLElement, onRegionChange?: (ha
       zoom: 12,
       zoomControl: true,
       scrollWheelZoom: true,
+      preferCanvas: true, // Better performance
+      renderer: L.canvas(), // Use canvas renderer
+    });
+    
+    // Store map reference in container for cleanup
+    (container as any)._leaflet = map;
+    
+    console.log('Map created successfully');
+
+    // Handle map size invalidation for dynamic containers
+    const handleResize = () => {
+      try {
+        map.invalidateSize();
+        console.debug('Map size invalidated due to container resize');
+      } catch (error) {
+        console.warn('Error invalidating map size:', error);
+      }
+    };
+
+    // Use ResizeObserver to handle container size changes
+    if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
+      const resizeObserver = new ResizeObserver(handleResize);
+      resizeObserver.observe(container);
+      
+      // Store observer for cleanup
+      (container as any)._resizeObserver = resizeObserver;
+    }
+
+    // Initial size validation after map is ready
+    map.whenReady(() => {
+      setTimeout(() => {
+        handleResize();
+      }, 100);
     });
 
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Add OpenStreetMap tiles with error handling
+    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
-    }).addTo(map);
+      errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', // 1x1 transparent PNG
+      retry: true,
+      timeout: 10000, // 10 seconds timeout
+    });
+    
+    tileLayer.on('tileerror', function(error: any) {
+      console.warn('Tile loading error:', error);
+    });
+    
+    tileLayer.on('tileloadstart', function() {
+      console.debug('Started loading tiles');
+    });
+    
+    tileLayer.on('tileload', function() {
+      console.debug('Tile loaded successfully');
+    });
+    
+    tileLayer.addTo(map);
+    console.log('Tiles added to map');
 
     // Configure RTL controls positioning
     map.zoomControl.setPosition('topright');
     map.attributionControl.setPosition('bottomright');
 
-    // Initialize draw controls for region selection
-    const drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
+    // Initialize draw controls for region selection (only if Leaflet.draw is available)
+    let drawnItems = null;
+    let drawControl = null;
+    
+    if (L.Control && L.Control.Draw) {
+      drawnItems = new L.FeatureGroup();
+      map.addLayer(drawnItems);
 
-    const drawControl = new L.Control.Draw({
-      position: 'topleft',
-      draw: {
-        polygon: {
-          allowIntersection: false,
-          drawError: {
-            color: '#e1e100',
-            message: '<strong>خطا!</strong> شکل نمی‌تواند با خودش تداخل داشته باشد.'
+      drawControl = new L.Control.Draw({
+        position: 'topleft',
+        draw: {
+          polygon: {
+            allowIntersection: false,
+            drawError: {
+              color: '#e1e100',
+              message: '<strong>خطا!</strong> شکل نمی‌تواند با خودش تداخل داشته باشد.'
+            },
+            shapeOptions: {
+              color: '#3b82f6',
+              fillColor: '#3b82f6',
+              fillOpacity: 0.2
+            }
           },
-          shapeOptions: {
-            color: '#3b82f6',
-            fillColor: '#3b82f6',
-            fillOpacity: 0.2
-          }
+          rectangle: {
+            shapeOptions: {
+              color: '#3b82f6',
+              fillColor: '#3b82f6',
+              fillOpacity: 0.2
+            }
+          },
+          circle: {
+            shapeOptions: {
+              color: '#3b82f6',
+              fillColor: '#3b82f6',
+              fillOpacity: 0.2
+            }
+          },
+          marker: false,
+          circlemarker: false,
+          polyline: false
         },
-        rectangle: {
-          shapeOptions: {
-            color: '#3b82f6',
-            fillColor: '#3b82f6',
-            fillOpacity: 0.2
-          }
-        },
-        circle: {
-          shapeOptions: {
-            color: '#3b82f6',
-            fillColor: '#3b82f6',
-            fillOpacity: 0.2
-          }
-        },
-        marker: false,
-        circlemarker: false,
-        polyline: false
-      },
-      edit: {
-        featureGroup: drawnItems,
-        remove: true
-      }
-    });
+        edit: {
+          featureGroup: drawnItems,
+          remove: true
+        }
+      });
 
-    map.addControl(drawControl);
+      map.addControl(drawControl);
+      console.log('Drawing controls added successfully');
+    } else {
+      console.warn('Leaflet.draw not available - drawing controls disabled');
+    }
 
-    // Add event listeners for draw operations
-    map.on('draw:created', function (event: any) {
-      const layer = event.layer;
-      drawnItems.addLayer(layer);
+    // Add event listeners for draw operations (only if drawing controls are available)
+    if (drawnItems && drawControl) {
+      map.on('draw:created', function (event: any) {
+        const layer = event.layer;
+        drawnItems.addLayer(layer);
+        
+        // Notify that regions have changed
+        if (onRegionChange) {
+          onRegionChange(drawnItems.getLayers().length > 0);
+        }
+      });
+
+      map.on('draw:edited', function (event: any) {
+        // Notify that regions have changed
+        if (onRegionChange && drawnItems) {
+          onRegionChange(drawnItems.getLayers().length > 0);
+        }
+      });
+
+      map.on('draw:deleted', function (event: any) {
+        // Notify that regions have changed
+        if (onRegionChange && drawnItems) {
+          onRegionChange(drawnItems.getLayers().length > 0);
+        }
+      });
       
-      // Notify that regions have changed
-      if (onRegionChange) {
-        onRegionChange(drawnItems.getLayers().length > 0);
-      }
-    });
-
-    map.on('draw:edited', function (event: any) {
-      // Notify that regions have changed
-      if (onRegionChange) {
-        onRegionChange(drawnItems.getLayers().length > 0);
-      }
-    });
-
-    map.on('draw:deleted', function (event: any) {
-      // Notify that regions have changed
-      if (onRegionChange) {
-        onRegionChange(drawnItems.getLayers().length > 0);
-      }
-    });
+      console.log('Draw event listeners configured successfully');
+    }
 
     return {
       map,
@@ -170,11 +355,35 @@ export async function initializeMap(container: HTMLElement, onRegionChange?: (ha
       onRegionChange,
     };
   } catch (error) {
-    console.warn('Failed to initialize map:', error);
+    console.error('Failed to initialize map:', error);
+    
+    // Clean up container on error
+    if (container) {
+      try {
+        container.innerHTML = '';
+        
+        // Clean up ResizeObserver
+        if ((container as any)._resizeObserver) {
+          (container as any)._resizeObserver.disconnect();
+          delete (container as any)._resizeObserver;
+        }
+        
+        delete (container as any)._leaflet_id;
+        delete (container as any)._leaflet;
+      } catch (cleanupError) {
+        console.warn('Error during cleanup:', cleanupError);
+      }
+    }
+    
+    // Return error state with detailed message
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Map initialization failed: ${errorMessage}`);
+    
     return {
       map: null,
       markers: [],
       bankingUnitMarkers: [],
+      error: errorMessage,
     };
   }
 }
