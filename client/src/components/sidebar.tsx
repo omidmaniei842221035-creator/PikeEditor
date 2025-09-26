@@ -26,6 +26,7 @@ const navigationItems = [
   { path: "/strategic-analysis", label: "تحلیل استراتژیک", icon: "🧠" },
   { path: "/grafana", label: "Grafana Enterprise", icon: "📊" },
   { path: "/territories", label: "مدیریت مناطق", icon: "🗺️" },
+  { path: "/geo-spider-network", label: "نقشه تار عنکبوت شهری", icon: "🕸️" },
 ];
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {

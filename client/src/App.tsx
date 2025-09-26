@@ -10,6 +10,7 @@ import TerritoryManagement from "@/components/territories/territory-management";
 import { DashboardBuilder } from "@/components/grafana/dashboard-builder";
 import { SpiderWebNetwork } from "@/components/spider-web-network";
 import { StrategicAnalysisPage } from "@/pages/strategic-analysis";
+import { GeoSpiderNetworkPage } from "@/pages/geo-spider-network";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/territories" component={TerritoryManagement} />
       <Route path="/spider-web" component={SpiderWebNetwork} />
       <Route path="/strategic-analysis" component={StrategicAnalysisPage} />
+      <Route path="/geo-spider-network" component={GeoSpiderNetworkPage} />
       <Route path="/grafana">
         {() => <DashboardBuilder />}
       </Route>
