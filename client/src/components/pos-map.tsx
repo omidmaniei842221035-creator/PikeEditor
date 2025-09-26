@@ -11,15 +11,14 @@ import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
 import { AddVisitModal } from "@/components/customers/add-visit-modal";
 import { PosMapFullscreen } from "@/components/pos-map-fullscreen";
 import { BankingUnitDetailsModal } from "@/components/banking-units/banking-unit-details-modal";
+import { useFilters } from "@/contexts/FiltersContext";
 import type { Customer } from "@shared/schema";
 
 export function PosMap() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<MapInstance | null>(null);
   const [mapType, setMapType] = useState("density");
-  const [businessFilter, setBusinessFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [bankingUnitFilter, setBankingUnitFilter] = useState("all");
+  const { businessFilter, statusFilter, bankingUnitFilter, setBusinessFilter, setStatusFilter, setBankingUnitFilter } = useFilters();
   const [mapReady, setMapReady] = useState(false);
   const [regionAnalysisEnabled, setRegionAnalysisEnabled] = useState(false);
   const [regionStats, setRegionStats] = useState<{

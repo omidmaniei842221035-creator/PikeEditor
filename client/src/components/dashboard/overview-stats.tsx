@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Store, CreditCard, Building, TrendingUp, Target } from "lucide-react";
 import { motion } from "framer-motion";
+import { useFilters } from "@/contexts/FiltersContext";
+import { useMemo } from "react";
 
 interface AnalyticsData {
   totalCustomers: number;
@@ -12,8 +14,27 @@ interface AnalyticsData {
 }
 
 export function OverviewStats() {
+  const { businessFilter, statusFilter, bankingUnitFilter } = useFilters();
+  
+  // Create filter query params
+  const filterParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (businessFilter !== "all") params.set("businessType", businessFilter);
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (bankingUnitFilter !== "all") params.set("bankingUnit", bankingUnitFilter);
+    return params.toString();
+  }, [businessFilter, statusFilter, bankingUnitFilter]);
+
   const { data: analytics } = useQuery<AnalyticsData>({
-    queryKey: ["/api/analytics/overview"],
+    queryKey: ["/api/analytics/overview", filterParams],
+    queryFn: async () => {
+      const url = `/api/analytics/overview${filterParams ? `?${filterParams}` : ''}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics');
+      }
+      return response.json();
+    }
   });
 
   const stats = [

@@ -732,11 +732,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Analytics routes
   app.get("/api/analytics/overview", async (req, res) => {
-    const customers = await storage.getAllCustomers();
+    let customers = await storage.getAllCustomers();
     const employees = await storage.getAllEmployees();
     const branches = await storage.getAllBranches();
     const bankingUnits = await storage.getAllBankingUnits();
     const alerts = await storage.getUnreadAlerts();
+
+    // Apply filters from query parameters
+    const { businessType, status, bankingUnit } = req.query;
+    
+    if (businessType && businessType !== 'all') {
+      customers = customers.filter(c => c.businessType === businessType);
+    }
+    
+    if (status && status !== 'all') {
+      customers = customers.filter(c => c.status === status);
+    }
+    
+    if (bankingUnit && bankingUnit !== 'all') {
+      customers = customers.filter(c => c.bankingUnitId === bankingUnit);
+    }
 
     const activeCustomers = customers.filter(c => c.status === 'active').length;
     const totalRevenue = customers.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0);
