@@ -9,20 +9,28 @@ import Monitoring from "@/pages/monitoring";
 import TerritoryManagement from "@/components/territories/territory-management";
 import { DashboardBuilder } from "@/components/grafana/dashboard-builder";
 import { SpiderWebNetwork } from "@/components/spider-web-network";
+import { StrategicAnalysisPage } from "@/pages/strategic-analysis";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/">
+        {() => <Dashboard />}
+      </Route>
+      <Route path="/dashboard">
+        {() => <Dashboard />}
+      </Route>
       <Route path="/analytics">
         {() => <Dashboard />}
       </Route>
       <Route path="/monitoring" component={Monitoring} />
       <Route path="/territories" component={TerritoryManagement} />
       <Route path="/spider-web" component={SpiderWebNetwork} />
-      <Route path="/grafana" component={DashboardBuilder} />
+      <Route path="/strategic-analysis" component={StrategicAnalysisPage} />
+      <Route path="/grafana">
+        {() => <DashboardBuilder />}
+      </Route>
       <Route path="/grafana/dashboard/:uid">
         {() => <DashboardBuilder />}
       </Route>

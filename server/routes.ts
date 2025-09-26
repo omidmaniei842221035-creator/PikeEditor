@@ -905,6 +905,403 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ======================
+  // STRATEGIC ANALYSIS ROUTES
+  // ======================
+  
+  // Get strategic recommendations for banking units
+  app.get("/api/strategic/banking-unit-recommendations", async (req, res) => {
+    try {
+      const customers = await storage.getAllCustomers();
+      const bankingUnits = await storage.getAllBankingUnits();
+      const posDevices = await storage.getAllPosDevices();
+      
+      const recommendations = bankingUnits.map(unit => {
+        const unitCustomers = customers.filter(c => c.bankingUnitId === unit.id);
+        const unitDevices = posDevices.filter(d => unitCustomers.some(c => c.id === d.customerId));
+        
+        // Performance metrics
+        const totalRevenue = unitCustomers.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0);
+        const avgRevenue = unitCustomers.length > 0 ? totalRevenue / unitCustomers.length : 0;
+        const deviceCount = unitDevices.length;
+        const activeDevices = unitDevices.filter(d => d.status === 'active').length;
+        const deviceUtilization = deviceCount > 0 ? (activeDevices / deviceCount) * 100 : 0;
+        
+        // Business type diversity
+        const businessTypes = [...new Set(unitCustomers.map(c => c.businessType))];
+        const diversityScore = (businessTypes.length / 10) * 100; // Max 10 types
+        
+        // Performance classification
+        let performanceLevel: string;
+        let recommendations: string[];
+        
+        if (totalRevenue > 50000000 && deviceUtilization > 80) {
+          performanceLevel = 'عالی';
+          recommendations = [
+            'ادامه استراتژی موجود',
+            'توسعه خدمات پیشرفته',
+            'افزایش تعداد POS در مناطق پرتقاضا',
+            'آموزش کارمندان برای خدمات ویژه'
+          ];
+        } else if (totalRevenue > 25000000 && deviceUtilization > 60) {
+          performanceLevel = 'خوب';
+          recommendations = [
+            'بهینه‌سازی فرآیندهای موجود',
+            'افزایش تنوع کسب‌وکارها',
+            'بهبود نگهداری POS ها',
+            'برنامه‌های ترغیبی برای مشتریان'
+          ];
+        } else if (totalRevenue > 10000000) {
+          performanceLevel = 'متوسط';
+          recommendations = [
+            'تحلیل علل کاهش عملکرد',
+            'بازاریابی هدفمند در منطقه',
+            'آموزش مجدد کارمندان',
+            'بررسی وضعیت فنی POS ها'
+          ];
+        } else {
+          performanceLevel = 'ضعیف';
+          recommendations = [
+            'بازنگری استراتژی کلی واحد',
+            'تحلیل رقابتی منطقه',
+            'بررسی جابجایی واحد',
+            'برنامه بهبود عملکرد فوری'
+          ];
+        }
+        
+        return {
+          unitId: unit.id,
+          unitName: unit.name,
+          unitType: unit.unitType,
+          performanceLevel,
+          metrics: {
+            totalRevenue,
+            avgRevenue,
+            customerCount: unitCustomers.length,
+            deviceCount,
+            activeDevices,
+            deviceUtilization,
+            diversityScore,
+            businessTypes: businessTypes.length
+          },
+          recommendations,
+          priorityActions: recommendations.slice(0, 2)
+        };
+      });
+      
+      res.json(recommendations);
+      
+    } catch (error) {
+      console.error("Strategic banking unit recommendations error:", error);
+      res.status(500).json({ error: "Failed to generate recommendations" });
+    }
+  });
+  
+  // Get strategic recommendations for employees
+  app.get("/api/strategic/employee-recommendations", async (req, res) => {
+    try {
+      const employees = await storage.getAllEmployees();
+      const customers = await storage.getAllCustomers();
+      
+      const recommendations = employees.map(employee => {
+        const employeeCustomers = customers.filter(c => c.supportEmployeeId === employee.id);
+        const totalRevenue = employeeCustomers.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0);
+        const avgRevenue = employeeCustomers.length > 0 ? totalRevenue / employeeCustomers.length : 0;
+        
+        // Employee performance metrics
+        const customerSatisfaction = Math.min(100, (totalRevenue / 1000000) + (employeeCustomers.length * 5));
+        const efficiency = employeeCustomers.length > 0 ? Math.min(100, avgRevenue / 100000) : 0;
+        
+        let performanceLevel: string;
+        let developmentPlan: string[];
+        let incentives: string[];
+        
+        if (totalRevenue > 30000000 && employeeCustomers.length > 8) {
+          performanceLevel = 'برتر';
+          developmentPlan = [
+            'ارتقا به سطح مدیریت',
+            'آموزش مهارت‌های رهبری',
+            'مسئولیت واحدهای جدید',
+            'شرکت در دوره‌های تخصصی'
+          ];
+          incentives = [
+            'پاداش عملکرد ویژه',
+            'برنامه سهم در سود',
+            'ارتقا شغلی',
+            'تحصیل با هزینه شرکت'
+          ];
+        } else if (totalRevenue > 15000000 && employeeCustomers.length > 5) {
+          performanceLevel = 'خوب';
+          developmentPlan = [
+            'آموزش فروش پیشرفته',
+            'مهارت‌های ارتباط با مشتری',
+            'دوره‌های فنی POS',
+            'تجربه در واحدهای مختلف'
+          ];
+          incentives = [
+            'پاداش فصلی',
+            'روزهای مرخصی اضافی',
+            'آموزش‌های تخصصی',
+            'امکانات رفاهی بیشتر'
+          ];
+        } else if (totalRevenue > 5000000) {
+          performanceLevel = 'متوسط';
+          developmentPlan = [
+            'آموزش مجدد مهارت‌های پایه',
+            'همراهی با کارمندان موفق',
+            'دوره‌های انگیزشی',
+            'بررسی چالش‌های شخصی'
+          ];
+          incentives = [
+            'تشویق‌های ماهانه',
+            'برنامه آموزش رایگان',
+            'انعطاف در ساعات کار',
+            'مشاوره شغلی'
+          ];
+        } else {
+          performanceLevel = 'نیاز به بهبود';
+          developmentPlan = [
+            'ارزیابی مجدد مهارت‌ها',
+            'آموزش فشرده',
+            'نظارت مستقیم مدیر',
+            'برنامه بهبود عملکرد'
+          ];
+          incentives = [
+            'آموزش‌های تقویتی',
+            'حمایت روانی و انگیزشی',
+            'تغییر محیط کار',
+            'فرصت شروع مجدد'
+          ];
+        }
+        
+        return {
+          employeeId: employee.id,
+          employeeName: employee.name,
+          employeeCode: employee.employeeCode,
+          performanceLevel,
+          metrics: {
+            totalRevenue,
+            avgRevenue,
+            customerCount: employeeCustomers.length,
+            customerSatisfaction: Math.round(customerSatisfaction),
+            efficiency: Math.round(efficiency)
+          },
+          developmentPlan,
+          incentives,
+          nextReviewDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 3 months
+        };
+      });
+      
+      res.json(recommendations);
+      
+    } catch (error) {
+      console.error("Strategic employee recommendations error:", error);
+      res.status(500).json({ error: "Failed to generate employee recommendations" });
+    }
+  });
+  
+  // Get regional marketing recommendations
+  app.get("/api/strategic/regional-marketing", async (req, res) => {
+    try {
+      const customers = await storage.getAllCustomers();
+      
+      // Group customers by location patterns
+      const locationAnalysis = customers.reduce((acc, customer) => {
+        const region = customer.address ? customer.address.split(' ')[0] : 'نامشخص';
+        if (!acc[region]) {
+          acc[region] = {
+            customers: [],
+            businessTypes: new Set(),
+            totalRevenue: 0
+          };
+        }
+        acc[region].customers.push(customer);
+        acc[region].businessTypes.add(customer.businessType);
+        acc[region].totalRevenue += customer.monthlyProfit || 0;
+        return acc;
+      }, {} as any);
+      
+      const regionalRecommendations = Object.entries(locationAnalysis).map(([region, data]: [string, any]) => {
+        const customerCount = data.customers.length;
+        const avgRevenue = customerCount > 0 ? data.totalRevenue / customerCount : 0;
+        const businessDiversity = data.businessTypes.size;
+        
+        // Market potential calculation
+        const marketPotential = (customerCount * 2000000) + (businessDiversity * 5000000);
+        const currentCapture = (data.totalRevenue / marketPotential) * 100;
+        
+        let marketingStrategy: string[];
+        let targetSegments: string[];
+        let campaignBudget: number;
+        
+        if (currentCapture < 30) {
+          marketingStrategy = [
+            'کمپین آگاهی‌سازی گسترده',
+            'تبلیغات محلی و رسانه‌ای',
+            'ارائه تخفیف‌های ویژه',
+            'همکاری با اتحادیه‌های صنفی'
+          ];
+          targetSegments = [
+            'کسب‌وکارهای جدید',
+            'فروشگاه‌های زنجیره‌ای',
+            'رستوران‌ها و کافه‌ها',
+            'خدمات درمانی'
+          ];
+          campaignBudget = 50000000;
+        } else if (currentCapture < 60) {
+          marketingStrategy = [
+            'ارتقا خدمات موجود',
+            'معرفی محصولات جدید',
+            'برنامه‌های وفاداری',
+            'بازاریابی شبکه‌ای'
+          ];
+          targetSegments = [
+            'مشتریان موجود',
+            'کسب‌وکارهای مشابه',
+            'شرکای تجاری',
+            'ارجاعات مشتریان'
+          ];
+          campaignBudget = 30000000;
+        } else {
+          marketingStrategy = [
+            'حفظ جایگاه بازار',
+            'نوآوری در خدمات',
+            'توسعه به مناطق مجاور',
+            'برنامه‌های مشارکتی'
+          ];
+          targetSegments = [
+            'بازارهای جدید',
+            'خدمات پیشرفته',
+            'شرکای استراتژیک',
+            'صادرات خدمات'
+          ];
+          campaignBudget = 20000000;
+        }
+        
+        return {
+          region,
+          metrics: {
+            customerCount,
+            businessDiversity,
+            totalRevenue: data.totalRevenue,
+            avgRevenue,
+            marketPotential,
+            currentCapture: Math.round(currentCapture)
+          },
+          marketingStrategy,
+          targetSegments,
+          campaignBudget,
+          expectedROI: Math.round((campaignBudget * 0.3) / campaignBudget * 100),
+          timeframe: '6 ماه'
+        };
+      });
+      
+      res.json(regionalRecommendations);
+      
+    } catch (error) {
+      console.error("Regional marketing recommendations error:", error);
+      res.status(500).json({ error: "Failed to generate regional marketing recommendations" });
+    }
+  });
+  
+  // Get POS performance insights
+  app.get("/api/strategic/pos-performance", async (req, res) => {
+    try {
+      const posDevices = await storage.getAllPosDevices();
+      const customers = await storage.getAllCustomers();
+      
+      const posInsights = posDevices.map(device => {
+        const customer = customers.find(c => c.id === device.customerId);
+        const revenue = customer?.monthlyProfit || 0;
+        
+        // Calculate performance metrics
+        const utilizationScore = device.status === 'active' ? 100 : 
+                               device.status === 'maintenance' ? 50 : 0;
+        
+        const revenueScore = Math.min(100, revenue / 100000);
+        const overallScore = (utilizationScore + revenueScore) / 2;
+        
+        let recommendations: string[];
+        let maintenanceNeeded = false;
+        let upgradeSuggested = false;
+        
+        if (overallScore > 80) {
+          recommendations = [
+            'عملکرد عالی - ادامه وضع فعلی',
+            'نظارت منظم بر عملکرد',
+            'بکاپ گیری از تنظیمات',
+            'آموزش پیشرفته برای کاربر'
+          ];
+        } else if (overallScore > 60) {
+          recommendations = [
+            'بهینه‌سازی تنظیمات',
+            'بررسی سرعت اتصال',
+            'آموزش مجدد کاربر',
+            'بروزرسانی نرم‌افزار'
+          ];
+        } else if (overallScore > 40) {
+          recommendations = [
+            'بررسی فنی کامل',
+            'تعمیر یا تعویض قطعات',
+            'بهبود شرایط محیطی',
+            'آموزش کامل کاربر'
+          ];
+          maintenanceNeeded = true;
+        } else {
+          recommendations = [
+            'تعویض دستگاه',
+            'بررسی امکان ارتقا',
+            'تحلیل هزینه-فایده',
+            'برنامه‌ریزی برای POS جدید'
+          ];
+          maintenanceNeeded = true;
+          upgradeSuggested = true;
+        }
+        
+        return {
+          deviceId: device.id,
+          deviceCode: device.deviceCode,
+          customerName: customer?.shopName || 'نامشخص',
+          businessType: customer?.businessType || 'نامشخص',
+          status: device.status,
+          metrics: {
+            utilizationScore: Math.round(utilizationScore),
+            revenueScore: Math.round(revenueScore),
+            overallScore: Math.round(overallScore),
+            monthlyRevenue: revenue
+          },
+          recommendations,
+          flags: {
+            maintenanceNeeded,
+            upgradeSuggested,
+            highPerformance: overallScore > 80,
+            needsAttention: overallScore < 60
+          }
+        };
+      });
+      
+      // Aggregate insights
+      const aggregateInsights = {
+        totalDevices: posDevices.length,
+        highPerformance: posInsights.filter(p => p.flags.highPerformance).length,
+        needsMaintenance: posInsights.filter(p => p.flags.maintenanceNeeded).length,
+        upgradeRequired: posInsights.filter(p => p.flags.upgradeSuggested).length,
+        avgPerformance: Math.round(posInsights.reduce((sum, p) => sum + p.metrics.overallScore, 0) / posInsights.length),
+        topPerformers: posInsights.filter(p => p.metrics.overallScore > 80).slice(0, 5),
+        underPerformers: posInsights.filter(p => p.metrics.overallScore < 40).slice(0, 5)
+      };
+      
+      res.json({
+        insights: posInsights,
+        aggregate: aggregateInsights
+      });
+      
+    } catch (error) {
+      console.error("POS performance insights error:", error);
+      res.status(500).json({ error: "Failed to generate POS insights" });
+    }
+  });
+
+  // ======================
   // NETWORK ANALYSIS ROUTES (Spider Web Visualization)
   // ======================
   
