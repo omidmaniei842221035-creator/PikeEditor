@@ -18,6 +18,7 @@ const menuItems = [
   { id: "monitoring" as TabType, label: "مانیتورینگ زنده", icon: "📡" },
   { id: "regional" as TabType, label: "تحلیل منطقه‌ای", icon: "🗺️" },
   { id: "excel" as TabType, label: "بارگزاری اکسل", icon: "📄" },
+  { id: "spider-web" as TabType, label: "نقشه تار عنکبوت", icon: "🕸️" },
 ];
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {

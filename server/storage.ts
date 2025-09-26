@@ -20,8 +20,12 @@ import {
   type MlModel, type InsertMlModel,
   type MlPrediction, type InsertMlPrediction,
   type Report, type InsertReport,
+  // Network Analysis Types
+  type NetworkNode, type InsertNetworkNode,
+  type NetworkEdge, type InsertNetworkEdge,
   users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits, customerAccessLogs, bankingUnits, territories,
-  organizations, dataSources, dashboards, dashboardVersions, alertRules, mlModels, mlPredictions, reports
+  organizations, dataSources, dashboards, dashboardVersions, alertRules, mlModels, mlPredictions, reports,
+  networkNodes, networkEdges
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, ilike, or, desc } from "drizzle-orm";
@@ -201,6 +205,33 @@ export interface IStorage {
   updateReport(id: string, report: Partial<InsertReport>): Promise<Report | undefined>;
   deleteReport(id: string): Promise<boolean>;
   enableReport(id: string, isEnabled: boolean): Promise<Report | undefined>;
+
+  // ======================
+  // NETWORK ANALYSIS METHODS (Spider Web Visualization)
+  // ======================
+
+  // Network Nodes
+  getAllNetworkNodes(): Promise<NetworkNode[]>;
+  getNetworkNode(id: string): Promise<NetworkNode | undefined>;
+  getNetworkNodesByType(nodeType: string): Promise<NetworkNode[]>;
+  createNetworkNode(node: InsertNetworkNode): Promise<NetworkNode>;
+  updateNetworkNode(id: string, node: Partial<InsertNetworkNode>): Promise<NetworkNode | undefined>;
+  deleteNetworkNode(id: string): Promise<boolean>;
+  bulkCreateNetworkNodes(nodes: InsertNetworkNode[]): Promise<NetworkNode[]>;
+
+  // Network Edges
+  getAllNetworkEdges(): Promise<NetworkEdge[]>;
+  getNetworkEdge(id: string): Promise<NetworkEdge | undefined>;
+  getNetworkEdgesByType(edgeType: string): Promise<NetworkEdge[]>;
+  getNetworkEdgesByNode(nodeId: string): Promise<NetworkEdge[]>;
+  createNetworkEdge(edge: InsertNetworkEdge): Promise<NetworkEdge>;
+  updateNetworkEdge(id: string, edge: Partial<InsertNetworkEdge>): Promise<NetworkEdge | undefined>;
+  deleteNetworkEdge(id: string): Promise<boolean>;
+  bulkCreateNetworkEdges(edges: InsertNetworkEdge[]): Promise<NetworkEdge[]>;
+
+  // Network Analytics
+  generateNetworkFromBusinessData(): Promise<{nodes: NetworkNode[], edges: NetworkEdge[]}>;
+  getNetworkStatistics(): Promise<{nodeCount: number, edgeCount: number, avgConnections: number}>;
 }
 
 export class DatabaseStorage implements IStorage {

@@ -8,6 +8,7 @@ import Dashboard from "@/pages/dashboard";
 import Monitoring from "@/pages/monitoring";
 import TerritoryManagement from "@/components/territories/territory-management";
 import { DashboardBuilder } from "@/components/grafana/dashboard-builder";
+import { SpiderWebNetwork } from "@/components/spider-web-network";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       </Route>
       <Route path="/monitoring" component={Monitoring} />
       <Route path="/territories" component={TerritoryManagement} />
+      <Route path="/spider-web" component={SpiderWebNetwork} />
       <Route path="/grafana" component={DashboardBuilder} />
       <Route path="/grafana/dashboard/:uid">
         {() => <DashboardBuilder />}

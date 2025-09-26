@@ -417,3 +417,59 @@ export type InsertMlPrediction = z.infer<typeof insertMlPredictionSchema>;
 
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = z.infer<typeof insertReportSchema>;
+
+// ======================
+// NETWORK ANALYSIS SCHEMA (Spider Web Visualization)
+// ======================
+
+// Network Nodes for spider web visualization
+export const networkNodes = pgTable("network_nodes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nodeType: varchar("node_type").notNull(), // 'business_type', 'banking_unit', 'customer', 'territory'
+  entityId: varchar("entity_id").notNull(), // Reference to actual entity
+  label: varchar("label").notNull(),
+  value: decimal("value", { precision: 15, scale: 2 }).default("0"), // Revenue, transaction count, etc.
+  properties: jsonb("properties"), // Additional metadata
+  x: decimal("x", { precision: 10, scale: 6 }),
+  y: decimal("y", { precision: 10, scale: 6 }),
+  group: varchar("group"),
+  color: varchar("color", { length: 7 }).default("#3b82f6"),
+  size: integer("size").default(10),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Network Edges for spider web connections
+export const networkEdges = pgTable("network_edges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sourceNodeId: varchar("source_node_id").notNull().references(() => networkNodes.id),
+  targetNodeId: varchar("target_node_id").notNull().references(() => networkNodes.id),
+  edgeType: varchar("edge_type").notNull(), // 'revenue_flow', 'business_relation', 'geographic_proximity', 'banking_connection'
+  weight: decimal("weight", { precision: 10, scale: 4 }).default("1"), // Strength of relationship
+  value: decimal("value", { precision: 15, scale: 2 }).default("0"), // Transaction volume, etc.
+  properties: jsonb("properties"),
+  color: varchar("color", { length: 7 }).default("#64748b"),
+  width: integer("width").default(2),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Create insert schemas for Network Analysis
+export const insertNetworkNodeSchema = createInsertSchema(networkNodes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNetworkEdgeSchema = createInsertSchema(networkEdges).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Create types for Network Analysis
+export type NetworkNode = typeof networkNodes.$inferSelect;
+export type InsertNetworkNode = z.infer<typeof insertNetworkNodeSchema>;
+
+export type NetworkEdge = typeof networkEdges.$inferSelect;
+export type InsertNetworkEdge = z.infer<typeof insertNetworkEdgeSchema>;

@@ -17,6 +17,7 @@ import { BranchManagement } from "@/components/branches/branch-management";
 import { PosStatsManagement } from "@/components/pos-stats/pos-stats-management";
 import { AdvancedAnalytics } from "@/components/dashboard/advanced-analytics";
 import { BankingUnitFilter } from "@/components/filters/banking-unit-filter";
+import { SpiderWebNetwork } from "@/components/spider-web-network";
 
 // Context for banking unit filter
 interface FilterContextType {
@@ -45,7 +46,8 @@ export type TabType =
   | "excel"
   | "monitoring"
   | "reports"
-  | "pos-stats";
+  | "pos-stats"
+  | "spider-web";
 
 interface DashboardProps {
   defaultTab?: TabType;
@@ -139,6 +141,8 @@ export default function Dashboard({ defaultTab = "dashboard" }: DashboardProps) 
         return <BranchManagement />;
       case "pos-stats":
         return <PosStatsManagement />;
+      case "spider-web":
+        return <SpiderWebNetwork />;
       default:
         return (
           <div className="space-y-8">
