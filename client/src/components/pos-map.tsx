@@ -167,6 +167,8 @@ export function PosMap() {
               (unit: any) => {
                 setSelectedBankingUnit(unit);
                 setShowBankingUnitModal(true);
+                // Auto-filter to show only POS devices from this banking unit
+                setBankingUnitFilter(String(unit.id));
               }
             );
           }
@@ -300,7 +302,20 @@ export function PosMap() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-2">🏦 واحد بانکی:</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium">🏦 واحد بانکی:</label>
+                {bankingUnitFilter !== "all" && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setBankingUnitFilter("all")}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                    data-testid="clear-banking-unit-filter"
+                  >
+                    پاک کردن فیلتر
+                  </Button>
+                )}
+              </div>
               <Select value={bankingUnitFilter} onValueChange={setBankingUnitFilter}>
                 <SelectTrigger data-testid="banking-unit-filter-select">
                   <SelectValue />
