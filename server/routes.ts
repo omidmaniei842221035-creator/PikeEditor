@@ -908,7 +908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // STRATEGIC ANALYSIS ROUTES
   // ======================
   
-  // Get strategic recommendations for banking units
+  // Get strategic recommendations for banking units (moved from existing implementation above)
   app.get("/api/strategic/banking-unit-recommendations", async (req, res) => {
     try {
       const customers = await storage.getAllCustomers();
@@ -1305,6 +1305,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // NETWORK ANALYSIS ROUTES (Spider Web Visualization)
   // ======================
   
+  // Get network performance analytics
+  app.get("/api/network/performance-analytics", async (req, res) => {
+    try {
+      const customers = await storage.getAllCustomers();
+      const bankingUnits = await storage.getAllBankingUnits();
+      const posDevices = await storage.getAllPosDevices();
+      
+      // Calculate performance metrics for banking units
+      const unitPerformance = bankingUnits.map(unit => {
+        const unitCustomers = customers.filter(c => c.bankingUnitId === unit.id);
+        const unitDevices = posDevices.filter(d => unitCustomers.some(c => c.id === d.customerId));
+        
+        const totalRevenue = unitCustomers.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0);
+        const deviceCount = unitDevices.length;
+        const activeDevices = unitDevices.filter(d => d.status === 'active').length;
+        const efficiency = deviceCount > 0 ? (activeDevices / deviceCount) * 100 : 0;
+        
+        return {
+          unitId: unit.id,
+          unitName: unit.name,
+          revenue: totalRevenue,
+          deviceCount,
+          efficiency,
+          customerCount: unitCustomers.length
+        };
+      });
+      
+      // Top performing units
+      const topPerformingUnits = unitPerformance
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5)
+        .map(unit => ({
+          unitId: unit.unitId,
+          unitName: unit.unitName,
+          revenue: unit.revenue,
+          deviceCount: unit.deviceCount,
+          efficiency: unit.efficiency
+        }));
+      
+      // Under performing units - sort by severity score before slicing
+      const underPerformingUnits = unitPerformance
+        .filter(unit => unit.revenue < 10000000 || unit.efficiency < 60)
+        .map(unit => {
+          const issues = [];
+          let severityScore = 0;
+          
+          if (unit.revenue < 10000000) {
+            issues.push('درآمد پایین');
+            severityScore += unit.revenue < 5000000 ? 3 : 2; // Higher penalty for very low revenue
+          }
+          if (unit.efficiency < 60) {
+            issues.push('کارایی ضعیف POS');
+            severityScore += unit.efficiency < 30 ? 3 : 2; // Higher penalty for very low efficiency
+          }
+          if (unit.customerCount < 3) {
+            issues.push('تعداد مشتری کم');
+            severityScore += 1;
+          }
+          
+          return {
+            unitId: unit.unitId,
+            unitName: unit.unitName,
+            revenue: unit.revenue,
+            issues,
+            severityScore
+          };
+        })
+        .sort((a, b) => b.severityScore - a.severityScore) // Sort by most severe first
+        .slice(0, 5)
+        .map(unit => ({
+          unitId: unit.unitId,
+          unitName: unit.unitName,
+          revenue: unit.revenue,
+          issues: unit.issues
+        }));
+      
+      // Calculate centrality metrics (simplified)
+      const centralityMetrics = unitPerformance.map(unit => {
+        // Degree centrality based on customer connections - guard against division by zero
+        const maxCustomers = Math.max(1, ...unitPerformance.map(u => u.customerCount));
+        const degreeCentrality = unit.customerCount / maxCustomers;
+        
+        // Betweenness centrality approximation based on revenue and connections
+        const betweennessCentrality = (unit.revenue / 100000000) * (unit.customerCount / 20);
+        
+        let importance: 'high' | 'medium' | 'low' = 'low';
+        if (degreeCentrality > 0.7 && betweennessCentrality > 0.5) importance = 'high';
+        else if (degreeCentrality > 0.4 || betweennessCentrality > 0.3) importance = 'medium';
+        
+        return {
+          nodeId: unit.unitId,
+          nodeName: unit.unitName,
+          betweennessCentrality: Math.round(betweennessCentrality * 100),
+          degreeCentrality: Math.round(degreeCentrality * 100),
+          importance
+        };
+      }).sort((a, b) => b.degreeCentrality - a.degreeCentrality);
+      
+      // Connection strengths between units and business types
+      const connectionStrengths = [];
+      const businessTypes = [...new Set(customers.map(c => c.businessType))];
+      
+      for (const unit of bankingUnits) {
+        const unitCustomers = customers.filter(c => c.bankingUnitId === unit.id);
+        
+        for (const businessType of businessTypes) {
+          const typeCustomers = unitCustomers.filter(c => c.businessType === businessType);
+          const totalRevenue = typeCustomers.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0);
+          
+          if (totalRevenue > 1000000) {
+            connectionStrengths.push({
+              sourceNode: unit.name,
+              targetNode: businessType,
+              strength: Math.round(totalRevenue / 1000000),
+              type: 'revenue_connection'
+            });
+          }
+        }
+      }
+      
+      // Sort by strength and take top connections
+      connectionStrengths.sort((a, b) => b.strength - a.strength);
+      
+      const performanceAnalytics = {
+        topPerformingUnits,
+        underPerformingUnits,
+        centralityMetrics: centralityMetrics.slice(0, 10),
+        connectionStrengths: connectionStrengths.slice(0, 15)
+      };
+      
+      res.json(performanceAnalytics);
+      
+    } catch (error) {
+      console.error("Network performance analytics error:", error);
+      res.status(500).json({ error: "Failed to generate performance analytics" });
+    }
+  });
+
   // Helper function for business type colors
   function getBusinessTypeColor(businessType: string): string {
     const colorMap: Record<string, string> = {

@@ -63,6 +63,35 @@ interface NetworkStatistics {
   networkDensity: number;
 }
 
+interface PerformanceAnalytics {
+  topPerformingUnits: Array<{
+    unitId: string;
+    unitName: string;
+    revenue: number;
+    deviceCount: number;
+    efficiency: number;
+  }>;
+  underPerformingUnits: Array<{
+    unitId: string;
+    unitName: string;
+    revenue: number;
+    issues: string[];
+  }>;
+  centralityMetrics: Array<{
+    nodeId: string;
+    nodeName: string;
+    betweennessCentrality: number;
+    degreeCentrality: number;
+    importance: 'high' | 'medium' | 'low';
+  }>;
+  connectionStrengths: Array<{
+    sourceNode: string;
+    targetNode: string;
+    strength: number;
+    type: string;
+  }>;
+}
+
 export function SpiderWebNetwork() {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,7 +100,7 @@ export function SpiderWebNetwork() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const [selectedNode, setSelectedNode] = useState<NetworkNode | null>(null);
-  const simulationRef = useRef<d3.Simulation<NetworkNode, NetworkEdge> | null>(null);
+  const simulationRef = useRef<d3.Simulation<NetworkNode, undefined> | null>(null);
 
   const { data: networkData, isLoading, refetch } = useQuery<NetworkData>({
     queryKey: ["/api/network/spider-web"],
@@ -80,6 +109,11 @@ export function SpiderWebNetwork() {
 
   const { data: networkStats } = useQuery<NetworkStatistics>({
     queryKey: ["/api/network/statistics"],
+    refetchInterval: 30000,
+  });
+
+  const { data: performanceAnalytics } = useQuery<PerformanceAnalytics>({
+    queryKey: ["/api/network/performance-analytics"],
     refetchInterval: 30000,
   });
 
@@ -122,23 +156,35 @@ export function SpiderWebNetwork() {
       filteredEdges = filteredEdges.filter(edge => edge.edgeType === selectedEdgeType);
     }
 
-    // Create link data with proper source/target references
-    const linkData = filteredEdges.map(edge => ({
-      ...edge,
-      source: filteredNodes.find(n => n.id === edge.sourceNodeId)!,
-      target: filteredNodes.find(n => n.id === edge.targetNodeId)!,
-    }));
+    // Create link data with proper source/target references - filter out links with missing nodes
+    const nodeIdSet = new Set(filteredNodes.map(n => n.id));
+    const linkData = filteredEdges
+      .filter(edge => nodeIdSet.has(edge.sourceNodeId) && nodeIdSet.has(edge.targetNodeId))
+      .map(edge => {
+        const source = filteredNodes.find(n => n.id === edge.sourceNodeId);
+        const target = filteredNodes.find(n => n.id === edge.targetNodeId);
+        if (!source || !target) return null; // Safety check
+        return {
+          ...edge,
+          source,
+          target,
+        };
+      })
+      .filter(link => link !== null);
 
+    // Helper function to get node size safely
+    const getNodeSize = (node: NetworkNode): number => node.size || 10;
+    
     // Create force simulation
     const simulation = d3.forceSimulation<NetworkNode>(filteredNodes)
-      .force("link", d3.forceLink<NetworkNode, NetworkEdge>(linkData)
-        .id(d => d.id)
+      .force("link", d3.forceLink(linkData)
+        .id((d: any) => d.id)
         .distance(d => 100 + (d.value / 1000000)) // Dynamic distance based on value
         .strength(0.3)
       )
       .force("charge", d3.forceManyBody().strength(-800))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(d => d.size + 5))
+      .force("collision", d3.forceCollide().radius(d => getNodeSize(d as NetworkNode) + 5))
       .force("x", d3.forceX(width / 2).strength(0.1))
       .force("y", d3.forceY(height / 2).strength(0.1));
 
@@ -479,6 +525,163 @@ export function SpiderWebNetwork() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Performance Analytics */}
+      {performanceAnalytics && (
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Top Performing Units */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                برترین واحدهای بانکی
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {performanceAnalytics.topPerformingUnits.map((unit, index) => (
+                  <div 
+                    key={unit.unitId} 
+                    className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg border-l-4 border-l-green-500"
+                    data-testid={`top-unit-${index}`}
+                  >
+                    <div>
+                      <div className="font-medium text-sm">{unit.unitName}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {unit.deviceCount} دستگاه POS • {unit.efficiency.toFixed(1)}% کارایی
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge className="bg-green-600 hover:bg-green-700">
+                        #{index + 1}
+                      </Badge>
+                      <div className="text-sm font-bold text-green-700 mt-1">
+                        {(unit.revenue / 1000000).toFixed(1)}M تومان
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Under Performing Units */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-red-600" />
+                واحدهای نیازمند توجه
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {performanceAnalytics.underPerformingUnits.map((unit, index) => (
+                  <div 
+                    key={unit.unitId} 
+                    className="p-3 bg-red-50 dark:bg-red-950 rounded-lg border-l-4 border-l-red-500"
+                    data-testid={`under-unit-${index}`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-medium text-sm">{unit.unitName}</div>
+                      <div className="text-sm font-bold text-red-700">
+                        {(unit.revenue / 1000000).toFixed(1)}M تومان
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      {unit.issues.map((issue, issueIndex) => (
+                        <Badge 
+                          key={issueIndex}
+                          variant="destructive" 
+                          className="text-xs mr-1"
+                          data-testid={`unit-issue-${index}-${issueIndex}`}
+                        >
+                          {issue}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Centrality and Connection Analysis */}
+      {performanceAnalytics && (
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Network Centrality */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Network className="h-5 w-5 text-blue-600" />
+                مرکزیت شبکه
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {performanceAnalytics.centralityMetrics.slice(0, 5).map((metric, index) => (
+                  <div 
+                    key={metric.nodeId} 
+                    className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg"
+                    data-testid={`centrality-${index}`}
+                  >
+                    <div>
+                      <div className="font-medium text-sm">{metric.nodeName}</div>
+                      <div className="text-xs text-muted-foreground">
+                        اهمیت: {metric.importance === 'high' ? 'بالا' : metric.importance === 'medium' ? 'متوسط' : 'پایین'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-blue-700">
+                        میزان ارتباط: {metric.degreeCentrality}%
+                      </div>
+                      <div className="text-xs text-blue-600">
+                        واسطگی: {metric.betweennessCentrality}%
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Connection Strengths */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-purple-600" />
+                قدرت ارتباطات
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {performanceAnalytics.connectionStrengths.slice(0, 5).map((connection, index) => (
+                  <div 
+                    key={`${connection.sourceNode}-${connection.targetNode}`}
+                    className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-950 rounded-lg"
+                    data-testid={`connection-${index}`}
+                  >
+                    <div>
+                      <div className="font-medium text-sm">
+                        {connection.sourceNode} ← → {connection.targetNode}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {connection.type === 'revenue_connection' ? 'ارتباط درآمدی' : connection.type}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge className="bg-purple-600 hover:bg-purple-700">
+                        {connection.strength}M
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
