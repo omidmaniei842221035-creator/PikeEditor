@@ -1954,7 +1954,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       } catch (error) {
-        console.error('Error in device status simulation:', error);
+        console.warn('⚠️ Device simulation skipped due to database connection issue');
+        // Skip this simulation cycle if database is unavailable
+        return;
       }
     }, 5000); // Update every 5 seconds
   };
