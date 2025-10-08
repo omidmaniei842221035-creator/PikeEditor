@@ -29,6 +29,10 @@ const navigationItems = [
   { path: "/geo-spider-network", label: "نقشه تار عنکبوت شهری", icon: "🕸️" },
 ];
 
+const systemItems = [
+  { path: "/backup", label: "پشتیبان‌گیری و بازیابی", icon: "💾" },
+];
+
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [location, setLocation] = useLocation();
 
@@ -83,6 +87,32 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             تحلیل پیشرفته
           </div>
           {navigationItems.map((item) => (
+            <button
+              key={item.path}
+              onClick={() => handleNavigation(item.path)}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2 text-right rounded-md transition-colors text-sm",
+                location === item.path
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground hover:bg-muted"
+              )}
+              data-testid={`nav-${item.path.replace('/', '')}`}
+            >
+              <span className="text-base">{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Separator */}
+        <div className="my-4 border-t border-border"></div>
+
+        {/* System Items */}
+        <div className="space-y-1">
+          <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            تنظیمات سیستم
+          </div>
+          {systemItems.map((item) => (
             <button
               key={item.path}
               onClick={() => handleNavigation(item.path)}

@@ -11,6 +11,7 @@ import { DashboardBuilder } from "@/components/grafana/dashboard-builder";
 import { SpiderWebNetwork } from "@/components/spider-web-network";
 import { StrategicAnalysisPage } from "@/pages/strategic-analysis";
 import { GeoSpiderNetworkPage } from "@/pages/geo-spider-network";
+import { BackupRestore } from "@/pages/backup-restore";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/spider-web" component={SpiderWebNetwork} />
       <Route path="/strategic-analysis" component={StrategicAnalysisPage} />
       <Route path="/geo-spider-network" component={GeoSpiderNetworkPage} />
+      <Route path="/backup" component={BackupRestore} />
       <Route path="/grafana">
         {() => <DashboardBuilder />}
       </Route>

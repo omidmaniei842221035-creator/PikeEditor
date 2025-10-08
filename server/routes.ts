@@ -1961,6 +1961,259 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }, 5000); // Update every 5 seconds
   };
 
+  // Backup & Restore endpoints
+  app.get("/api/backup", async (req, res) => {
+    try {
+      const backup = {
+        version: "1.0",
+        timestamp: new Date().toISOString(),
+        data: {
+          branches: await storage.getAllBranches(),
+          employees: await storage.getAllEmployees(),
+          customers: await storage.getAllCustomers(),
+          posDevices: await storage.getAllPosDevices(),
+          posMonthlyStats: await storage.getAllPosMonthlyStats(),
+          bankingUnits: await storage.getAllBankingUnits(),
+          alerts: await storage.getAllAlerts(),
+          visits: await storage.getAllVisits(),
+          territories: await storage.getAllTerritories(),
+        }
+      };
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename=pos-backup-${new Date().toISOString().split('T')[0]}.json`);
+      res.json(backup);
+    } catch (error) {
+      console.error('Backup error:', error);
+      res.status(500).json({ error: "Failed to create backup" });
+    }
+  });
+
+  app.post("/api/restore", async (req, res) => {
+    try {
+      const { data, clearExisting = true } = req.body;
+      
+      if (!data) {
+        return res.status(400).json({ error: "No backup data provided" });
+      }
+
+      // Clear existing data if requested
+      if (clearExisting) {
+        // Clear in reverse order of dependencies using delete methods
+        const allAlerts = await storage.getAllAlerts();
+        for (const alert of allAlerts) {
+          try {
+            await storage.deleteAlert(alert.id);
+          } catch (e) {
+            console.warn('Failed to delete alert:', e);
+          }
+        }
+        
+        const allVisits = await storage.getAllVisits();
+        for (const visit of allVisits) {
+          try {
+            await storage.deleteVisit(visit.id);
+          } catch (e) {
+            console.warn('Failed to delete visit:', e);
+          }
+        }
+        
+        const allStats = await storage.getAllPosMonthlyStats();
+        for (const stat of allStats) {
+          try {
+            await storage.deletePosMonthlyStats(stat.id);
+          } catch (e) {
+            console.warn('Failed to delete stat:', e);
+          }
+        }
+        
+        const allDevices = await storage.getAllPosDevices();
+        for (const device of allDevices) {
+          try {
+            await storage.deletePosDevice(device.id);
+          } catch (e) {
+            console.warn('Failed to delete device:', e);
+          }
+        }
+        
+        const allCustomers = await storage.getAllCustomers();
+        for (const customer of allCustomers) {
+          try {
+            await storage.deleteCustomer(customer.id);
+          } catch (e) {
+            console.warn('Failed to delete customer:', e);
+          }
+        }
+        
+        const allTerritories = await storage.getAllTerritories();
+        for (const territory of allTerritories) {
+          try {
+            await storage.deleteTerritory(territory.id);
+          } catch (e) {
+            console.warn('Failed to delete territory:', e);
+          }
+        }
+        
+        const allEmployees = await storage.getAllEmployees();
+        for (const employee of allEmployees) {
+          try {
+            await storage.deleteEmployee(employee.id);
+          } catch (e) {
+            console.warn('Failed to delete employee:', e);
+          }
+        }
+        
+        const allBranches = await storage.getAllBranches();
+        for (const branch of allBranches) {
+          try {
+            await storage.deleteBranch(branch.id);
+          } catch (e) {
+            console.warn('Failed to delete branch:', e);
+          }
+        }
+        
+        const allBankingUnits = await storage.getAllBankingUnits();
+        for (const unit of allBankingUnits) {
+          try {
+            await storage.deleteBankingUnit(unit.id);
+          } catch (e) {
+            console.warn('Failed to delete banking unit:', e);
+          }
+        }
+      }
+
+      // Restore data in correct order
+      const restored: any = {
+        branches: 0,
+        employees: 0,
+        customers: 0,
+        posDevices: 0,
+        posMonthlyStats: 0,
+        bankingUnits: 0,
+        alerts: 0,
+        visits: 0,
+        territories: 0,
+      };
+
+      // Restore banking units first
+      if (data.bankingUnits) {
+        for (const unit of data.bankingUnits) {
+          try {
+            await storage.createBankingUnit(unit);
+            restored.bankingUnits++;
+          } catch (error) {
+            console.warn('Failed to restore banking unit:', error);
+          }
+        }
+      }
+
+      // Restore branches
+      if (data.branches) {
+        for (const branch of data.branches) {
+          try {
+            await storage.createBranch(branch);
+            restored.branches++;
+          } catch (error) {
+            console.warn('Failed to restore branch:', error);
+          }
+        }
+      }
+
+      // Restore employees
+      if (data.employees) {
+        for (const employee of data.employees) {
+          try {
+            await storage.createEmployee(employee);
+            restored.employees++;
+          } catch (error) {
+            console.warn('Failed to restore employee:', error);
+          }
+        }
+      }
+
+      // Restore territories
+      if (data.territories) {
+        for (const territory of data.territories) {
+          try {
+            await storage.createTerritory(territory);
+            restored.territories++;
+          } catch (error) {
+            console.warn('Failed to restore territory:', error);
+          }
+        }
+      }
+
+      // Restore customers
+      if (data.customers) {
+        for (const customer of data.customers) {
+          try {
+            await storage.createCustomer(customer);
+            restored.customers++;
+          } catch (error) {
+            console.warn('Failed to restore customer:', error);
+          }
+        }
+      }
+
+      // Restore POS devices
+      if (data.posDevices) {
+        for (const device of data.posDevices) {
+          try {
+            await storage.createPosDevice(device);
+            restored.posDevices++;
+          } catch (error) {
+            console.warn('Failed to restore POS device:', error);
+          }
+        }
+      }
+
+      // Restore POS monthly stats
+      if (data.posMonthlyStats) {
+        for (const stat of data.posMonthlyStats) {
+          try {
+            await storage.createPosMonthlyStats(stat);
+            restored.posMonthlyStats++;
+          } catch (error) {
+            console.warn('Failed to restore POS monthly stat:', error);
+          }
+        }
+      }
+
+      // Restore alerts
+      if (data.alerts) {
+        for (const alert of data.alerts) {
+          try {
+            await storage.createAlert(alert);
+            restored.alerts++;
+          } catch (error) {
+            console.warn('Failed to restore alert:', error);
+          }
+        }
+      }
+
+      // Restore visits
+      if (data.visits) {
+        for (const visit of data.visits) {
+          try {
+            await storage.createVisit(visit);
+            restored.visits++;
+          } catch (error) {
+            console.warn('Failed to restore visit:', error);
+          }
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Backup restored successfully",
+        restored 
+      });
+    } catch (error) {
+      console.error('Restore error:', error);
+      res.status(500).json({ error: "Failed to restore backup" });
+    }
+  });
+
   // Start the simulation when server starts  
   console.log('🔄 Starting real-time POS device monitoring simulation...');
   startDeviceStatusSimulation();
