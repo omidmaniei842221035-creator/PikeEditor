@@ -62,6 +62,7 @@ Preferred communication style: Simple, everyday language.
 - Comprehensive customer relationship management
 - Employee management with role-based access
 - Branch and territory management
+- **Backup & Restore System**: Complete database export to JSON format with restore capability for data portability and disaster recovery
 
 ### External Dependencies
 
@@ -78,3 +79,4 @@ Preferred communication style: Simple, everyday language.
 - **Type Safety**: Comprehensive TypeScript coverage with strict configuration
 - **Path Mapping**: Organized imports with @ aliases for cleaner code structure
 - **Environment**: Configured for both development and production deployments with Replit-specific optimizations
+- **Data Portability**: Backup/Restore system enabling database export to JSON and restoration on different systems for deployment flexibility
