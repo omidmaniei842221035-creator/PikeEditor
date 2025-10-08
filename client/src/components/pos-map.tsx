@@ -8,6 +8,7 @@ import { RefreshCw, Target, Maximize2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { initializeMap, addCustomerMarker, addBankingUnitMarker, isMarkerInRegion, getRegionStatistics, createDensityVisualization, type MapInstance } from "@/lib/map-utils";
 import { CustomerInfoModal } from "@/components/customers/customer-info-modal";
+import { CustomerFormModal } from "@/components/customers/customer-form-modal";
 import { AddVisitModal } from "@/components/customers/add-visit-modal";
 import { PosMapFullscreen } from "@/components/pos-map-fullscreen";
 import { BankingUnitDetailsModal } from "@/components/banking-units/banking-unit-details-modal";
@@ -37,6 +38,12 @@ export function PosMap() {
   const [selectedBankingUnit, setSelectedBankingUnit] = useState<any>(null);
   const [showBankingUnitModal, setShowBankingUnitModal] = useState(false);
   
+  // Location selection mode states
+  const [isLocationSelectionMode, setIsLocationSelectionMode] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [showCustomerFormModal, setShowCustomerFormModal] = useState(false);
+  const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+  
   // Use refs to avoid stale closures
   const regionAnalysisEnabledRef = useRef(regionAnalysisEnabled);
 
@@ -62,6 +69,50 @@ export function PosMap() {
   useEffect(() => {
     regionAnalysisEnabledRef.current = regionAnalysisEnabled;
   }, [regionAnalysisEnabled]);
+
+  // Handle map click for location selection
+  useEffect(() => {
+    if (mapReady && mapInstanceRef.current?.map && isLocationSelectionMode) {
+      const handleMapClick = (e: any) => {
+        const { lat, lng } = e.latlng;
+        setSelectedLocation({ lat, lng });
+        setShowCustomerFormModal(true);
+        setIsLocationSelectionMode(false);
+        
+        // Optionally add a temporary marker to show selected location
+        if ((window as any).L && mapInstanceRef.current?.map) {
+          const L = (window as any).L;
+          const marker = L.marker([lat, lng], {
+            icon: L.divIcon({
+              className: 'custom-location-marker',
+              html: '<div style="background-color: #3b82f6; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>',
+              iconSize: [32, 32],
+              iconAnchor: [16, 16]
+            })
+          }).addTo(mapInstanceRef.current.map);
+          
+          // Remove marker after a short delay
+          setTimeout(() => marker.remove(), 3000);
+        }
+      };
+      
+      mapInstanceRef.current.map.on('click', handleMapClick);
+      
+      // Change cursor to crosshair when in location selection mode
+      if (mapInstanceRef.current.map.getContainer()) {
+        mapInstanceRef.current.map.getContainer().style.cursor = 'crosshair';
+      }
+      
+      return () => {
+        if (mapInstanceRef.current?.map) {
+          mapInstanceRef.current.map.off('click', handleMapClick);
+          if (mapInstanceRef.current.map.getContainer()) {
+            mapInstanceRef.current.map.getContainer().style.cursor = '';
+          }
+        }
+      };
+    }
+  }, [mapReady, isLocationSelectionMode]);
 
   // Callback to handle region changes
   const handleRegionChange = useCallback((hasRegions: boolean) => {
@@ -373,6 +424,20 @@ export function PosMap() {
             <CardTitle className="text-lg font-semibold">🗺️ نقشه تعاملی POS تبریز</CardTitle>
             <div className="flex items-center gap-4">
               <Button 
+                variant={isLocationSelectionMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setIsLocationSelectionMode(!isLocationSelectionMode);
+                  if (!isLocationSelectionMode) {
+                    setCustomerToEdit(null); // Reset customer to edit when entering location selection mode
+                  }
+                }}
+                className={isLocationSelectionMode ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                data-testid="location-selection-mode-button"
+              >
+                {isLocationSelectionMode ? "✅" : "📍"} {isLocationSelectionMode ? "کلیک کنید برای انتخاب موقعیت" : "افزودن مشتری از نقشه"}
+              </Button>
+              <Button 
                 variant="default"
                 size="sm"
                 onClick={() => setShowFullscreenMap(true)}
@@ -520,6 +585,24 @@ export function PosMap() {
       <PosMapFullscreen
         isOpen={showFullscreenMap}
         onClose={() => setShowFullscreenMap(false)}
+      />
+
+      {/* Customer Form Modal for Adding/Editing with Map Location */}
+      <CustomerFormModal
+        open={showCustomerFormModal}
+        onOpenChange={(open) => {
+          setShowCustomerFormModal(open);
+          if (!open) {
+            setSelectedLocation(null);
+            setCustomerToEdit(null);
+          }
+        }}
+        customer={customerToEdit}
+        initialLocation={selectedLocation}
+        onSelectLocationFromMap={() => {
+          setShowCustomerFormModal(false);
+          setIsLocationSelectionMode(true);
+        }}
       />
 
     </div>

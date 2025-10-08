@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,10 +36,19 @@ type CustomerFormData = z.infer<typeof insertCustomerSchema>;
 interface CustomerFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  customer?: any; // For editing existing customer
+  initialLocation?: {lat: number, lng: number} | null; // For location selected from map
+  onSelectLocationFromMap?: () => void; // Callback to open map location picker
 }
 
-export function CustomerFormModal({ open, onOpenChange }: CustomerFormModalProps) {
-  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
+export function CustomerFormModal({ 
+  open, 
+  onOpenChange, 
+  customer = null,
+  initialLocation = null,
+  onSelectLocationFromMap 
+}: CustomerFormModalProps) {
+  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(initialLocation);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -66,21 +75,72 @@ export function CustomerFormModal({ open, onOpenChange }: CustomerFormModalProps
     },
   });
 
-  const createCustomerMutation = useMutation({
+  // Reset form when customer or modal open state changes
+  useEffect(() => {
+    if (open) {
+      if (customer) {
+        // Editing existing customer
+        form.reset({
+          shopName: customer.shopName || "",
+          ownerName: customer.ownerName || "",
+          phone: customer.phone || "",
+          businessType: customer.businessType || "",
+          address: customer.address || "",
+          monthlyProfit: customer.monthlyProfit || 0,
+          status: customer.status || "active",
+          branchId: customer.branchId || "",
+          supportEmployeeId: customer.supportEmployeeId || "",
+        });
+        // Set location from existing customer if available
+        if (customer.latitude && customer.longitude) {
+          setSelectedLocation({
+            lat: parseFloat(customer.latitude),
+            lng: parseFloat(customer.longitude),
+          });
+        } else {
+          setSelectedLocation(null);
+        }
+      } else {
+        // Creating new customer
+        form.reset({
+          shopName: "",
+          ownerName: "",
+          phone: "",
+          businessType: "",
+          address: "",
+          monthlyProfit: 0,
+          status: "active",
+          branchId: "",
+          supportEmployeeId: "",
+        });
+        // Use initialLocation if provided from map click
+        setSelectedLocation(initialLocation);
+      }
+    }
+  }, [customer, open, initialLocation, form]);
+
+  const saveCustomerMutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
       const customerData = {
         ...data,
-        latitude: selectedLocation?.lat?.toString(),
-        longitude: selectedLocation?.lng?.toString(),
+        latitude: selectedLocation?.lat?.toString() || customer?.latitude,
+        longitude: selectedLocation?.lng?.toString() || customer?.longitude,
       };
-      return apiRequest("POST", "/api/customers", customerData);
+      
+      if (customer) {
+        // Update existing customer
+        return apiRequest("PUT", `/api/customers/${customer.id}`, customerData);
+      } else {
+        // Create new customer
+        return apiRequest("POST", "/api/customers", customerData);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/overview"] });
       toast({
         title: "موفقیت",
-        description: "مشتری جدید با موفقیت اضافه شد",
+        description: customer ? "مشتری با موفقیت به‌روز شد" : "مشتری جدید با موفقیت اضافه شد",
       });
       onOpenChange(false);
       form.reset();
@@ -89,15 +149,32 @@ export function CustomerFormModal({ open, onOpenChange }: CustomerFormModalProps
     onError: () => {
       toast({
         title: "خطا",
-        description: "خطا در افزودن مشتری",
+        description: customer ? "خطا در به‌روزرسانی مشتری" : "خطا در افزودن مشتری",
         variant: "destructive",
       });
     },
   });
 
   const onSubmit = (data: CustomerFormData) => {
-    createCustomerMutation.mutate(data);
+    saveCustomerMutation.mutate(data);
   };
+  
+  // Update selected location when initialLocation changes
+  useEffect(() => {
+    if (initialLocation) {
+      setSelectedLocation(initialLocation);
+    }
+  }, [initialLocation]);
+  
+  // Set initial location from customer data if editing
+  useEffect(() => {
+    if (customer && customer.latitude && customer.longitude) {
+      setSelectedLocation({
+        lat: parseFloat(customer.latitude),
+        lng: parseFloat(customer.longitude)
+      });
+    }
+  }, [customer]);
 
   const businessTypes = [
     // خوراکی و غذایی
@@ -248,8 +325,36 @@ export function CustomerFormModal({ open, onOpenChange }: CustomerFormModalProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
-          <DialogTitle>افزودن مشتری جدید</DialogTitle>
+          <DialogTitle>{customer ? "ویرایش مشتری" : "افزودن مشتری جدید"}</DialogTitle>
         </DialogHeader>
+        
+        {/* Location Selection Section */}
+        <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">📍 موقعیت جغرافیایی</h4>
+              {selectedLocation ? (
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  عرض جغرافیایی: {selectedLocation.lat.toFixed(6)} - طول جغرافیایی: {selectedLocation.lng.toFixed(6)}
+                </p>
+              ) : (
+                <p className="text-sm text-blue-600 dark:text-blue-400">موقعیت جغرافیایی انتخاب نشده</p>
+              )}
+            </div>
+            {onSelectLocationFromMap && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={onSelectLocationFromMap}
+                className="bg-white dark:bg-gray-800"
+                data-testid="select-location-button"
+              >
+                🗺️ انتخاب از نقشه
+              </Button>
+            )}
+          </div>
+        </div>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -449,10 +554,10 @@ export function CustomerFormModal({ open, onOpenChange }: CustomerFormModalProps
             <div className="flex items-center gap-3 pt-4">
               <Button 
                 type="submit" 
-                disabled={createCustomerMutation.isPending}
+                disabled={saveCustomerMutation.isPending}
                 data-testid="save-customer-button"
               >
-                {createCustomerMutation.isPending ? "در حال ذخیره..." : "💾 ذخیره مشتری"}
+                {saveCustomerMutation.isPending ? "در حال ذخیره..." : (customer ? "💾 به‌روزرسانی مشتری" : "💾 ذخیره مشتری")}
               </Button>
               <Button 
                 type="button" 
