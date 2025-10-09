@@ -2303,6 +2303,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Direct download links
+  app.get("/downloads/POS-Standalone.tar.gz", async (req, res) => {
+    try {
+      const path = await import('path');
+      const filePath = path.join(process.cwd(), 'dist/public/downloads/POS-Standalone.tar.gz');
+      res.download(filePath, 'POS-Standalone.tar.gz');
+    } catch (error) {
+      res.status(404).send("File not found");
+    }
+  });
+
+  app.get("/downloads/POS-Portable-Complete.tar.gz", async (req, res) => {
+    try {
+      const path = await import('path');
+      const filePath = path.join(process.cwd(), 'dist/public/downloads/POS-Portable-Complete.tar.gz');
+      res.download(filePath, 'POS-Portable-Complete.tar.gz');
+    } catch (error) {
+      res.status(404).send("File not found");
+    }
+  });
+
+  app.get("/downloads/README-STANDALONE.md", async (req, res) => {
+    try {
+      const path = await import('path');
+      const filePath = path.join(process.cwd(), 'dist/public/downloads/README-STANDALONE.md');
+      res.sendFile(filePath);
+    } catch (error) {
+      res.status(404).send("File not found");
+    }
+  });
+
+  app.get("/downloads/DESKTOP-INSTALL-GUIDE.md", async (req, res) => {
+    try {
+      const path = await import('path');
+      const filePath = path.join(process.cwd(), 'dist/public/downloads/DESKTOP-INSTALL-GUIDE.md');
+      res.sendFile(filePath);
+    } catch (error) {
+      res.status(404).send("File not found");
+    }
+  });
+
+  app.get("/downloads/index.html", async (req, res) => {
+    try {
+      const path = await import('path');
+      const filePath = path.join(process.cwd(), 'dist/public/downloads/index.html');
+      res.sendFile(filePath);
+    } catch (error) {
+      res.status(404).send("File not found");
+    }
+  });
+
   // Start the simulation when server starts  
   console.log('🔄 Starting real-time POS device monitoring simulation...');
   startDeviceStatusSimulation();
