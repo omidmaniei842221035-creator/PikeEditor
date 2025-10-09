@@ -16,7 +16,7 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "electron:compile": "tsc -p electron/tsconfig.json",
-    "electron:dev": "npm run electron:compile && cross-env NODE_ENV=development electron .",
+    "electron:dev": "npm run electron:compile && cross-env NODE_ENV=development DATABASE_PATH=./dev-pos.db electron .",
     "electron:build": "npm run build && npm run electron:compile && electron-builder",
     "electron:build:win": "npm run build && npm run electron:compile && electron-builder --win --x64",
     "pack": "npm run build && npm run electron:compile && electron-builder --dir"
@@ -36,9 +36,11 @@
     "extraResources": [
       {
         "from": "dist",
-        "to": "server",
-        "filter": ["**/*"]
+        "to": "server"
       }
+    ],
+    "asarUnpack": [
+      "dist/**/*"
     ],
     "win": {
       "target": [
