@@ -28,10 +28,14 @@ Preferred communication style: Simple, everyday language.
 - **Real-time Communication**: WebSocket server for live device status updates
 
 ### Database Layer
-- **Primary Database**: PostgreSQL with Neon serverless hosting
+- **Dual-Database Architecture**: 
+  - **Web Version**: PostgreSQL with Neon serverless hosting (shared/schema.ts)
+  - **Desktop Version**: SQLite with better-sqlite3 (shared/schema.sqlite.ts)
 - **ORM**: Drizzle ORM for type-safe database operations
 - **Schema**: Comprehensive schema covering users, branches, employees, customers, POS devices, transactions, and alerts
+- **Extended Schema (Desktop)**: 21 tables including Grafana Enterprise (organizations, dataSources, dashboards, alertRules, mlModels, reports) and Network Analysis (networkNodes, networkEdges)
 - **Migrations**: Managed through Drizzle Kit
+- **Cross-Database Compatibility**: All storage methods use compatible patterns (`.returning()` for deletes, `LOWER() + LIKE` for searches) that work in both PostgreSQL and SQLite
 
 ### Key Features and Components
 
@@ -80,3 +84,16 @@ Preferred communication style: Simple, everyday language.
 - **Path Mapping**: Organized imports with @ aliases for cleaner code structure
 - **Environment**: Configured for both development and production deployments with Replit-specific optimizations
 - **Data Portability**: Backup/Restore system enabling database export to JSON and restoration on different systems for deployment flexibility
+- **Desktop Deployment**: Electron-based desktop application with SQLite database for standalone PC installation via .exe installer
+
+## Recent Changes (October 2025)
+
+### Desktop Version Development - Cross-Database Compatibility
+- ✅ Completed SQLite schema with 21 tables (Base + Grafana + Network Analysis)
+- ✅ Implemented DatabaseStorage class with 148 methods covering all features
+- ✅ Fixed cross-database compatibility issues:
+  - Replaced PostgreSQL-only `ilike` with `LOWER() + LIKE` for case-insensitive searches
+  - Updated all delete methods to use `.returning()` instead of `rowCount` check
+  - 14 delete methods fixed: deleteBranch, deleteEmployee, deleteCustomer, deleteAlert, deletePosDevice, deletePosMonthlyStats, deleteVisit, deleteBankingUnit, deleteOrganization, deleteDataSource, deleteDashboard, deleteAlertRule, deleteMlModel, deleteReport, deleteNetworkNode, deleteNetworkEdge
+- ✅ Build configuration optimized with esbuild externals for better-sqlite3, lightningcss, @babel/*, @neondatabase/serverless, ws
+- 🔄 **Next Step**: Electron build and .exe installer creation
