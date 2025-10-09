@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>راهنمای دانلود نهایی</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+            line-height: 1.8;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #e74c3c;
+            background: #fee;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 30px 0 20px 0;
+        }
+        h3 {
+            color: #27ae60;
+            margin: 25px 0 15px 0;
+            padding-right: 10px;
+            border-right: 4px solid #27ae60;
+        }
+        .option {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        .recommended {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 13px;
+            margin-right: 10px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        .step {
+            background: white;
+            border-right: 4px solid #3498db;
+            padding: 15px 15px 15px 25px;
+            margin: 15px 0;
+        }
+        code {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .button {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .button:hover {
+            background: #2980b9;
+        }
+        ol, ul {
+            margin-right: 25px;
+        }
+        li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 راهنمای کامل دانلود و نصب</h1>
+        <p style="color: #7f8c8d; font-size: 16px;">سامانه مانیتورینگ هوشمند پایانه‌های فروشگاهی - تبریز</p>
+
+        <h2>⚠️ توضیح مشکل فایل‌های قبلی</h2>
+        <p>فایل‌هایی که دانلود کردید نیاز به نصب Node.js و dependency های پیچیده دارند که در Windows مشکل ایجاد می‌کنند.</p>
+
+        <div class="warning">
+            <strong>⚠️ توجه مهم:</strong> نسخه Desktop نیاز به نصب و تنظیمات پیچیده دارد. اگر می‌خواهید از سیستم استفاده کنید، <strong>نسخه Web (همین که الان استفاده می‌کنید)</strong> بهترین گزینه است.
+        </div>
+
+        <h2>✅ راه‌حل‌های پیشنهادی</h2>
+
+        <div class="option recommended">
+            <h3><span class="badge">✅ توصیه می‌شود</span>گزینه 1: استفاده از نسخه Web (همین سایت)</h3>
+            <p><strong>مزایا:</strong></p>
+            <ul>
+                <li>✅ نیازی به نصب ندارد - همین الان کار می‌کند!</li>
+                <li>✅ همیشه به‌روز است</li>
+                <li>✅ از هر دستگاهی قابل دسترسی</li>
+                <li>✅ Backup خودکار</li>
+                <li>✅ پشتیبانی کامل</li>
+            </ul>
+            <p><strong>اطلاعات ورود:</strong></p>
+            <ul>
+                <li>نام کاربری: <code>admin</code></li>
+                <li>رمز عبور: <code>admin123</code></li>
+            </ul>
+            <p style="margin-top: 15px;">
+                <strong>آدرس:</strong> <code>همین سایتی که الان هستید</code>
+            </p>
+        </div>
+
+        <div class="option">
+            <h3>گزینه 2: نصب روی کامپیوتر شخصی (پیچیده)</h3>
+            <p><strong>⚠️ هشدار:</strong> این روش نیاز به دانش فنی دارد!</p>
+            
+            <h4 style="color: #2980b9; margin-top: 20px;">📥 مرحله 1: نصب پیش‌نیازها</h4>
+            <div class="step">
+                <strong>الف) نصب Node.js:</strong>
+                <ol>
+                    <li>به سایت <a href="https://nodejs.org" target="_blank">nodejs.org</a> بروید</li>
+                    <li>نسخه <strong>LTS (18 یا بالاتر)</strong> را دانلود کنید</li>
+                    <li>نصب کنید (Next > Next > Install)</li>
+                    <li>Command Prompt را باز کنید و تست کنید: <code>node --version</code></li>
+                </ol>
+            </div>
+
+            <div class="step">
+                <strong>ب) نصب Build Tools (اختیاری اما توصیه می‌شود):</strong>
+                <ol>
+                    <li>Command Prompt را <strong>به عنوان Administrator</strong> باز کنید</li>
+                    <li>اجرا کنید: <code>npm install --global windows-build-tools</code></li>
+                    <li>صبر کنید تا نصب کامل شود (ممکن است چند دقیقه طول بکشد)</li>
+                </ol>
+            </div>
+
+            <h4 style="color: #2980b9; margin-top: 20px;">📦 مرحله 2: دانلود کد پروژه</h4>
+            <div class="step">
+                <strong>روش دانلود:</strong>
+                <ol>
+                    <li>در Replit، روی منوی <strong>⋮</strong> (3 نقطه) کلیک کنید</li>
+                    <li>گزینه <strong>"Download as ZIP"</strong> را انتخاب کنید</li>
+                    <li>فایل ZIP را در یک پوشه دلخواه Extract کنید</li>
+                </ol>
+            </div>
+
+            <h4 style="color: #2980b9; margin-top: 20px;">🔧 مرحله 3: نصب و اجرا</h4>
+            <div class="step">
+                <strong>دستورات (در Command Prompt):</strong>
+                <ol>
+                    <li>به پوشه پروژه بروید: <code>cd C:\path\to\project</code></li>
+                    <li>نصب کتابخانه‌ها: <code>npm install</code></li>
+                    <li>ساخت پروژه: <code>npm run build</code></li>
+                    <li>اجرا: <code>node dist\index.js</code></li>
+                    <li>مرورگر را باز کنید: <code>http://localhost:5000</code></li>
+                </ol>
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ حل مشکلات احتمالی:</strong>
+                <ul>
+                    <li><strong>خطا در npm install:</strong> نصب Build Tools (مرحله 1-ب) الزامی است</li>
+                    <li><strong>Port 5000 اشغال:</strong> از <code>set PORT=8080</code> استفاده کنید</li>
+                    <li><strong>خطای Python:</strong> Python 3 نصب کنید از python.org</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>🎯 توصیه نهایی</h2>
+        <div style="background: #e8f5e9; padding: 25px; border-radius: 10px; border: 2px solid #4caf50;">
+            <p style="font-size: 18px; color: #2e7d32;">
+                <strong>بهترین گزینه:</strong> از همین نسخه Web استفاده کنید!
+            </p>
+            <p style="margin-top: 15px; color: #555;">
+                نسخه Web تمام ویژگی‌های نسخه Desktop را دارد، بدون نیاز به نصب و پیچیدگی. 
+                فقط یک Bookmark از این صفحه بسازید و از هر کامپیوتری می‌توانید وارد شوید.
+            </p>
+        </div>
+
+        <h2>📞 پشتیبانی</h2>
+        <p>اگر باز هم سوالی دارید یا به کمک نیاز دارید:</p>
+        <ul>
+            <li>📧 ایمیل: support@posmonitoring.ir</li>
+            <li>📱 تلفن: 041-12345678</li>
+        </ul>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #eee;">
+            <p style="color: #7f8c8d;">موفق باشید! 🎉</p>
+        </div>
+    </div>
+</body>
+</html>
