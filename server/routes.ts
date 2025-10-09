@@ -2214,6 +2214,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Desktop download routes
+  app.get("/api/desktop/files", async (req, res) => {
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      const files = [];
+      
+      // Check for portable tar.gz
+      const portablePath = path.join(process.cwd(), 'سامانه-مانیتورینگ-POS-1.0.0-Portable.tar.gz');
+      try {
+        const portableStats = await fs.stat(portablePath);
+        files.push({
+          name: 'سامانه-مانیتورینگ-POS-1.0.0-Portable.tar.gz',
+          size: portableStats.size,
+          sizeFormatted: `${(portableStats.size / 1024 / 1024).toFixed(1)} MB`,
+          type: 'portable',
+          path: '/api/desktop/download/portable'
+        });
+      } catch (err) {
+        console.log('Portable file not found');
+      }
+      
+      // Check for exe
+      const exePath = path.join(process.cwd(), 'release/win-unpacked/electron.exe');
+      try {
+        const exeStats = await fs.stat(exePath);
+        files.push({
+          name: 'electron.exe',
+          size: exeStats.size,
+          sizeFormatted: `${(exeStats.size / 1024 / 1024).toFixed(1)} MB`,
+          type: 'executable',
+          path: '/api/desktop/download/exe'
+        });
+      } catch (err) {
+        console.log('Exe file not found');
+      }
+      
+      res.json({ files });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to list desktop files" });
+    }
+  });
+
+  app.get("/api/desktop/download/portable", async (req, res) => {
+    try {
+      const path = await import('path');
+      const filePath = path.join(process.cwd(), 'سامانه-مانیتورینگ-POS-1.0.0-Portable.tar.gz');
+      
+      res.setHeader('Content-Type', 'application/gzip');
+      res.setHeader('Content-Disposition', 'attachment; filename="POS-Monitoring-Portable.tar.gz"');
+      
+      const fs = await import('fs');
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+      
+      fileStream.on('error', (error) => {
+        console.error('Download error:', error);
+        res.status(500).json({ error: "Download failed" });
+      });
+    } catch (error) {
+      res.status(404).json({ error: "File not found" });
+    }
+  });
+
+  app.get("/api/desktop/download/exe", async (req, res) => {
+    try {
+      const path = await import('path');
+      const filePath = path.join(process.cwd(), 'release/win-unpacked/electron.exe');
+      
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', 'attachment; filename="POS-Monitoring.exe"');
+      
+      const fs = await import('fs');
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+      
+      fileStream.on('error', (error) => {
+        console.error('Download error:', error);
+        res.status(500).json({ error: "Download failed" });
+      });
+    } catch (error) {
+      res.status(404).json({ error: "File not found" });
+    }
+  });
+
   // Start the simulation when server starts  
   console.log('🔄 Starting real-time POS device monitoring simulation...');
   startDeviceStatusSimulation();

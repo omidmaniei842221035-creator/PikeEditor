@@ -12,6 +12,7 @@ import { SpiderWebNetwork } from "@/components/spider-web-network";
 import { StrategicAnalysisPage } from "@/pages/strategic-analysis";
 import { GeoSpiderNetworkPage } from "@/pages/geo-spider-network";
 import { BackupRestore } from "@/pages/backup-restore";
+import DesktopDownload from "@/pages/DesktopDownload";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/strategic-analysis" component={StrategicAnalysisPage} />
       <Route path="/geo-spider-network" component={GeoSpiderNetworkPage} />
       <Route path="/backup" component={BackupRestore} />
+      <Route path="/desktop-download" component={DesktopDownload} />
       <Route path="/grafana">
         {() => <DashboardBuilder />}
       </Route>

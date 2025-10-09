@@ -31,6 +31,7 @@ const navigationItems = [
 
 const systemItems = [
   { path: "/backup", label: "پشتیبان‌گیری و بازیابی", icon: "💾" },
+  { path: "/desktop-download", label: "دانلود نسخه دسکتاپ", icon: "🖥️" },
 ];
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
