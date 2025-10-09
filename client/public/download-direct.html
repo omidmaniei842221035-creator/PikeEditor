@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دانلود مستقیم فایل‌ها</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .download-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            transition: all 0.3s;
+        }
+        .download-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .download-card.recommended {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .download-card h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        .badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        .size {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .download-btn {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 14px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: background 0.3s;
+            font-size: 16px;
+        }
+        .download-btn:hover {
+            background: #218838;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            color: #856404;
+        }
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .info-box h3 {
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+        .info-box ul {
+            margin-right: 20px;
+            color: #0c5460;
+        }
+        .info-box li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖥️ دانلود نسخه دسکتاپ</h1>
+        <p class="subtitle">سامانه مانیتورینگ هوشمند پایانه‌های فروشگاهی</p>
+
+        <div class="download-card recommended">
+            <h2>
+                <span class="badge">✅ توصیه می‌شود</span>
+                نسخه Standalone
+            </h2>
+            <p class="size">📦 حجم: 4.2 مگابایت</p>
+            <p>این نسخه سبک، سریع و 100% کاربردی است.</p>
+            
+            <a href="/files/POS-Standalone.tar.gz" class="download-btn" download>
+                ⬇️ دانلود نسخه Standalone
+            </a>
+            
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #c3e6cb;">
+                <strong>نحوه استفاده:</strong>
+                <ol style="margin-right: 20px; margin-top: 10px; line-height: 1.8;">
+                    <li>فایل را Extract کنید</li>
+                    <li>فایل <code>start-standalone.bat</code> را اجرا کنید</li>
+                    <li>مرورگر را باز کنید: <code>localhost:5000</code></li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="download-card">
+            <h2>⚠️ نسخه Electron Portable</h2>
+            <p class="size">📦 حجم: 124 مگابایت</p>
+            
+            <a href="/files/POS-Portable-Complete.tar.gz" class="download-btn" download style="background: #6c757d;">
+                ⬇️ دانلود نسخه Portable
+            </a>
+            
+            <div class="warning">
+                <strong>⚠️ توجه:</strong> این نسخه ممکن است در Windows کار نکند! 
+                اگر این نسخه مشکل داشت، از نسخه Standalone استفاده کنید.
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>🔐 اطلاعات ورود به سیستم:</h3>
+            <ul>
+                <li><strong>نام کاربری:</strong> admin</li>
+                <li><strong>رمز عبور:</strong> admin123</li>
+                <li style="color: #d32f2f;">⚠️ حتماً پس از اولین ورود رمز را تغییر دهید</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
