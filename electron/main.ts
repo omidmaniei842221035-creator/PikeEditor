@@ -48,14 +48,17 @@ function startServer() {
     return;
   }
 
+  const dbPath = path.join(app.getPath('userData'), 'pos-system.db');
   const serverPath = path.join(process.resourcesPath, 'server', 'index.js');
+  
+  console.log(`🚀 Starting server with SQLite database at: ${dbPath}`);
   
   serverProcess = spawn('node', [serverPath], {
     env: {
       ...process.env,
       NODE_ENV: 'production',
       PORT: SERVER_PORT.toString(),
-      DATABASE_PATH: path.join(app.getPath('userData'), 'pos-system.db')
+      DATABASE_PATH: dbPath
     },
     stdio: 'inherit'
   });

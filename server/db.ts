@@ -3,7 +3,8 @@ import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzleSQLite } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import ws from "ws";
-import * as schema from "@shared/schema";
+import * as pgSchema from "@shared/schema";
+import * as sqliteSchema from "@shared/schema.sqlite";
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -27,7 +28,7 @@ if (isElectronMode) {
   console.log(`📦 Using SQLite database at: ${dbPath}`);
   sqlite = new Database(dbPath);
   sqlite.pragma('journal_mode = WAL'); // Enable Write-Ahead Logging for better performance
-  db = drizzleSQLite(sqlite, { schema });
+  db = drizzleSQLite(sqlite, { schema: sqliteSchema });
 } else {
   // Web mode: Use PostgreSQL
   if (!process.env.DATABASE_URL) {
@@ -39,7 +40,7 @@ if (isElectronMode) {
   neonConfig.webSocketConstructor = ws;
   console.log('🐘 Using PostgreSQL database');
   pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  db = drizzleNeon({ client: pool, schema });
+  db = drizzleNeon({ client: pool, schema: pgSchema });
 }
 
-export { db, pool, sqlite };
+export { db, pool, sqlite, isElectronMode };
