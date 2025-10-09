@@ -153,6 +153,153 @@ export const territories = sqliteTable("territories", {
   createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
+// ======================
+// GRAFANA ENTERPRISE SCHEMA
+// ======================
+
+export const organizations = sqliteTable("organizations", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  settings: text("settings"), // JSON as text
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
+export const dataSources = sqliteTable("data_sources", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  organizationId: text("organization_id").references(() => organizations.id),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  url: text("url"),
+  settings: text("settings"), // JSON as text
+  credentials: text("credentials"), // JSON as text (encrypted)
+  isDefault: integer("is_default", { mode: 'boolean' }).default(false),
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
+export const dashboards = sqliteTable("dashboards", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  organizationId: text("organization_id").references(() => organizations.id),
+  uid: text("uid").notNull().unique(),
+  title: text("title").notNull(),
+  tags: text("tags"), // JSON as text
+  panels: text("panels"), // JSON as text
+  timeRange: text("time_range"), // JSON as text
+  variables: text("variables"), // JSON as text
+  version: integer("version").default(1),
+  isStarred: integer("is_starred", { mode: 'boolean' }).default(false),
+  folderId: text("folder_id"),
+  createdBy: text("created_by").references(() => users.id),
+  updatedBy: text("updated_by").references(() => users.id),
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
+export const dashboardVersions = sqliteTable("dashboard_versions", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  dashboardId: text("dashboard_id").references(() => dashboards.id),
+  version: integer("version").notNull(),
+  data: text("data").notNull(), // JSON as text
+  message: text("message"),
+  createdBy: text("created_by").references(() => users.id),
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
+export const alertRules = sqliteTable("alert_rules", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  organizationId: text("organization_id").references(() => organizations.id),
+  title: text("title").notNull(),
+  condition: text("condition").notNull(),
+  data: text("data").notNull(), // JSON as text
+  intervalSeconds: integer("interval_seconds").default(60),
+  maxDataPoints: integer("max_data_points").default(43200),
+  noDataState: text("no_data_state").default("NoData"),
+  execErrState: text("exec_err_state").default("Alerting"),
+  forDuration: text("for_duration").default("5m"),
+  annotations: text("annotations"), // JSON as text
+  labels: text("labels"), // JSON as text
+  isPaused: integer("is_paused", { mode: 'boolean' }).default(false),
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
+export const mlModels = sqliteTable("ml_models", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  organizationId: text("organization_id").references(() => organizations.id),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  endpoint: text("endpoint"),
+  version: text("version"),
+  metadata: text("metadata"), // JSON as text
+  isActive: integer("is_active", { mode: 'boolean' }).default(true),
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
+export const mlPredictions = sqliteTable("ml_predictions", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  modelId: text("model_id").references(() => mlModels.id),
+  inputData: text("input_data").notNull(), // JSON as text
+  prediction: text("prediction").notNull(), // JSON as text
+  confidence: real("confidence"),
+  explanation: text("explanation"), // JSON as text (SHAP values)
+  deviceId: text("device_id").references(() => posDevices.id),
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
+export const reports = sqliteTable("reports", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  organizationId: text("organization_id").references(() => organizations.id),
+  dashboardId: text("dashboard_id").references(() => dashboards.id),
+  name: text("name").notNull(),
+  format: text("format").default("pdf"),
+  schedule: text("schedule"),
+  recipients: text("recipients"), // JSON as text
+  settings: text("settings"), // JSON as text
+  isEnabled: integer("is_enabled", { mode: 'boolean' }).default(true),
+  lastRun: integer("last_run", { mode: 'timestamp' }),
+  nextRun: integer("next_run", { mode: 'timestamp' }),
+  createdBy: text("created_by").references(() => users.id),
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
+// ======================
+// NETWORK ANALYSIS SCHEMA
+// ======================
+
+export const networkNodes = sqliteTable("network_nodes", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  nodeType: text("node_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  label: text("label").notNull(),
+  value: real("value").default(0),
+  properties: text("properties"), // JSON as text
+  x: real("x"),
+  y: real("y"),
+  group: text("group"),
+  color: text("color").default("#3b82f6"),
+  size: integer("size").default(10),
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
+export const networkEdges = sqliteTable("network_edges", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  sourceNodeId: text("source_node_id").notNull().references(() => networkNodes.id),
+  targetNodeId: text("target_node_id").notNull().references(() => networkNodes.id),
+  edgeType: text("edge_type").notNull(),
+  weight: real("weight").default(1),
+  value: real("value").default(0),
+  properties: text("properties"), // JSON as text
+  color: text("color").default("#64748b"),
+  width: integer("width").default(2),
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertBranchSchema = createInsertSchema(branches).omit({ id: true, createdAt: true });
@@ -165,6 +312,20 @@ export const insertPosMonthlyStatsSchema = createInsertSchema(posMonthlyStats).o
 export const insertVisitSchema = createInsertSchema(visits).omit({ id: true, createdAt: true });
 export const insertBankingUnitSchema = createInsertSchema(bankingUnits).omit({ id: true, createdAt: true });
 export const insertTerritorySchema = createInsertSchema(territories).omit({ id: true, createdAt: true });
+
+// Grafana Enterprise insert schemas
+export const insertOrganizationSchema = createInsertSchema(organizations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDataSourceSchema = createInsertSchema(dataSources).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDashboardSchema = createInsertSchema(dashboards).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDashboardVersionSchema = createInsertSchema(dashboardVersions).omit({ id: true, createdAt: true });
+export const insertAlertRuleSchema = createInsertSchema(alertRules).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMlModelSchema = createInsertSchema(mlModels).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMlPredictionSchema = createInsertSchema(mlPredictions).omit({ id: true, createdAt: true });
+export const insertReportSchema = createInsertSchema(reports).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Network Analysis insert schemas
+export const insertNetworkNodeSchema = createInsertSchema(networkNodes).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertNetworkEdgeSchema = createInsertSchema(networkEdges).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -190,3 +351,35 @@ export type PosMonthlyStats = typeof posMonthlyStats.$inferSelect;
 export type Visit = typeof visits.$inferSelect;
 export type BankingUnit = typeof bankingUnits.$inferSelect;
 export type Territory = typeof territories.$inferSelect;
+
+// Grafana Enterprise types
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+
+export type DataSource = typeof dataSources.$inferSelect;
+export type InsertDataSource = z.infer<typeof insertDataSourceSchema>;
+
+export type Dashboard = typeof dashboards.$inferSelect;
+export type InsertDashboard = z.infer<typeof insertDashboardSchema>;
+
+export type DashboardVersion = typeof dashboardVersions.$inferSelect;
+export type InsertDashboardVersion = z.infer<typeof insertDashboardVersionSchema>;
+
+export type AlertRule = typeof alertRules.$inferSelect;
+export type InsertAlertRule = z.infer<typeof insertAlertRuleSchema>;
+
+export type MlModel = typeof mlModels.$inferSelect;
+export type InsertMlModel = z.infer<typeof insertMlModelSchema>;
+
+export type MlPrediction = typeof mlPredictions.$inferSelect;
+export type InsertMlPrediction = z.infer<typeof insertMlPredictionSchema>;
+
+export type Report = typeof reports.$inferSelect;
+export type InsertReport = z.infer<typeof insertReportSchema>;
+
+// Network Analysis types
+export type NetworkNode = typeof networkNodes.$inferSelect;
+export type InsertNetworkNode = z.infer<typeof insertNetworkNodeSchema>;
+
+export type NetworkEdge = typeof networkEdges.$inferSelect;
+export type InsertNetworkEdge = z.infer<typeof insertNetworkEdgeSchema>;

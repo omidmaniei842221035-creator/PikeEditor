@@ -180,8 +180,147 @@ if (isElectronMode) {
         assigned_employee_id TEXT REFERENCES employees(id),
         created_at INTEGER
       );
+
+      CREATE TABLE IF NOT EXISTS organizations (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        slug TEXT NOT NULL UNIQUE,
+        settings TEXT,
+        created_at INTEGER,
+        updated_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS data_sources (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT REFERENCES organizations(id),
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        url TEXT,
+        settings TEXT,
+        credentials TEXT,
+        is_default INTEGER DEFAULT 0,
+        created_at INTEGER,
+        updated_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS dashboards (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT REFERENCES organizations(id),
+        uid TEXT NOT NULL UNIQUE,
+        title TEXT NOT NULL,
+        tags TEXT,
+        panels TEXT,
+        time_range TEXT,
+        variables TEXT,
+        version INTEGER DEFAULT 1,
+        is_starred INTEGER DEFAULT 0,
+        folder_id TEXT,
+        created_by TEXT REFERENCES users(id),
+        updated_by TEXT REFERENCES users(id),
+        created_at INTEGER,
+        updated_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS dashboard_versions (
+        id TEXT PRIMARY KEY,
+        dashboard_id TEXT REFERENCES dashboards(id),
+        version INTEGER NOT NULL,
+        data TEXT NOT NULL,
+        message TEXT,
+        created_by TEXT REFERENCES users(id),
+        created_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS alert_rules (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT REFERENCES organizations(id),
+        title TEXT NOT NULL,
+        condition TEXT NOT NULL,
+        data TEXT NOT NULL,
+        interval_seconds INTEGER DEFAULT 60,
+        max_data_points INTEGER DEFAULT 43200,
+        no_data_state TEXT DEFAULT 'NoData',
+        exec_err_state TEXT DEFAULT 'Alerting',
+        for_duration TEXT DEFAULT '5m',
+        annotations TEXT,
+        labels TEXT,
+        is_paused INTEGER DEFAULT 0,
+        created_at INTEGER,
+        updated_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS ml_models (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT REFERENCES organizations(id),
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        endpoint TEXT,
+        version TEXT,
+        metadata TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at INTEGER,
+        updated_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS ml_predictions (
+        id TEXT PRIMARY KEY,
+        model_id TEXT REFERENCES ml_models(id),
+        input_data TEXT NOT NULL,
+        prediction TEXT NOT NULL,
+        confidence REAL,
+        explanation TEXT,
+        device_id TEXT REFERENCES pos_devices(id),
+        created_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS reports (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT REFERENCES organizations(id),
+        dashboard_id TEXT REFERENCES dashboards(id),
+        name TEXT NOT NULL,
+        format TEXT DEFAULT 'pdf',
+        schedule TEXT,
+        recipients TEXT,
+        settings TEXT,
+        is_enabled INTEGER DEFAULT 1,
+        last_run INTEGER,
+        next_run INTEGER,
+        created_by TEXT REFERENCES users(id),
+        created_at INTEGER,
+        updated_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS network_nodes (
+        id TEXT PRIMARY KEY,
+        node_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        label TEXT NOT NULL,
+        value REAL DEFAULT 0,
+        properties TEXT,
+        x REAL,
+        y REAL,
+        "group" TEXT,
+        color TEXT DEFAULT '#3b82f6',
+        size INTEGER DEFAULT 10,
+        created_at INTEGER,
+        updated_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS network_edges (
+        id TEXT PRIMARY KEY,
+        source_node_id TEXT NOT NULL REFERENCES network_nodes(id),
+        target_node_id TEXT NOT NULL REFERENCES network_nodes(id),
+        edge_type TEXT NOT NULL,
+        weight REAL DEFAULT 1,
+        value REAL DEFAULT 0,
+        properties TEXT,
+        color TEXT DEFAULT '#64748b',
+        width INTEGER DEFAULT 2,
+        created_at INTEGER,
+        updated_at INTEGER
+      );
     `);
-    console.log('✅ SQLite database initialized with all tables');
+    console.log('✅ SQLite database initialized with all 21 tables (Base + Grafana + Network)');
   } catch (err) {
     console.warn('SQLite initialization warning:', err);
   }
