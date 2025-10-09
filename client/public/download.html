@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دانلود فایل‌های نسخه دسکتاپ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .download-box {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .download-box.warning {
+            background: #fff3e0;
+            border-color: #ff9800;
+        }
+        .download-btn {
+            display: inline-block;
+            background: #4caf50;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        .download-btn:hover {
+            background: #45a049;
+        }
+        .warning-btn {
+            background: #ff9800;
+        }
+        .warning-btn:hover {
+            background: #f57c00;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖥️ دانلود نسخه دسکتاپ</h1>
+        <p style="color: #666; font-size: 16px;">سامانه مانیتورینگ هوشمند پایانه‌های فروشگاهی</p>
+        
+        <hr style="margin: 30px 0;">
+        
+        <div class="download-box">
+            <h2>✅ نسخه Standalone (توصیه می‌شود)</h2>
+            <p><strong>حجم:</strong> 4.2 مگابایت</p>
+            <p>این نسخه سبک، سریع و 100% کاربردی است.</p>
+            
+            <a href="/api/desktop/download/standalone" class="download-btn" download>
+                ⬇️ دانلود نسخه Standalone
+            </a>
+            
+            <h3>نحوه استفاده:</h3>
+            <ol>
+                <li>فایل را extract کنید</li>
+                <li>فایل <code>start-standalone.bat</code> را اجرا کنید</li>
+                <li>مرورگر را باز کنید: <code>localhost:5000</code></li>
+                <li>نیاز به Node.js 18+ دارد</li>
+            </ol>
+        </div>
+        
+        <div class="download-box warning">
+            <h2>⚠️ نسخه Electron Portable</h2>
+            <p><strong>حجم:</strong> 124 مگابایت</p>
+            <p style="color: #d84315;">
+                <strong>توجه:</strong> این نسخه ممکن است در Windows کار نکند!
+            </p>
+            
+            <a href="/api/desktop/download/portable" class="download-btn warning-btn" download>
+                ⬇️ دانلود نسخه Portable
+            </a>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 15px;">
+                💡 اگر این نسخه کار نکرد، از نسخه Standalone استفاده کنید.
+            </p>
+        </div>
+        
+        <hr style="margin: 30px 0;">
+        
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
+            <h3>📋 اطلاعات ورود:</h3>
+            <ul>
+                <li>Username: <code>admin</code></li>
+                <li>Password: <code>admin123</code></li>
+                <li style="color: #d32f2f;">⚠️ حتماً پس از اولین ورود رمز را تغییر دهید</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
