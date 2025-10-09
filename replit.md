@@ -102,3 +102,9 @@ Preferred communication style: Simple, everyday language.
   - Compressed archive: سامانه-مانیتورینگ-POS-1.0.0-Portable.tar.gz (121MB)
   - Complete documentation: README-DESKTOP.md with installation & usage guide
   - **Note**: Full Windows installer (.exe) requires building on Windows machine (Wine/Docker limitations in Replit)
+- ✅ Desktop Download Feature completed:
+  - API endpoints: `/api/desktop/files`, `/api/desktop/download/portable`, `/api/desktop/download/exe`
+  - Frontend download page: `/desktop-download` with RTL UI and complete instructions
+  - Navigation link added to sidebar under "تنظیمات سیستم"
+  - Critical fix: Vite middleware now properly allows API routes (was blocking with 404)
+  - Users can now download both portable archive (121MB) and electron.exe (201.4MB) directly from web interface
