@@ -22,12 +22,16 @@ import {
   type Report, type InsertReport,
   // Network Analysis Types
   type NetworkNode, type InsertNetworkNode,
-  type NetworkEdge, type InsertNetworkEdge,
+  type NetworkEdge, type InsertNetworkEdge
+} from "@shared/schema";
+import { db, schema } from "./db";
+
+// Get tables from the active schema (PostgreSQL or SQLite)
+const {
   users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits, customerAccessLogs, bankingUnits, territories,
   organizations, dataSources, dashboards, dashboardVersions, alertRules, mlModels, mlPredictions, reports,
   networkNodes, networkEdges
-} from "@shared/schema";
-import { db } from "./db";
+} = schema;
 import { eq, and, gte, lte, ilike, or, desc } from "drizzle-orm";
 
 export interface IStorage {
