@@ -8,8 +8,11 @@ interface DesktopFile {
   name: string;
   size: number;
   sizeFormatted: string;
-  type: 'portable' | 'executable';
+  type: 'standalone' | 'portable' | 'executable';
   path: string;
+  recommended?: boolean;
+  warning?: string;
+  description?: string;
 }
 
 export default function DesktopDownload() {
@@ -64,17 +67,24 @@ export default function DesktopDownload() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
           {data.files.map((file) => (
-            <Card key={file.path} className="hover:shadow-lg transition-shadow" data-testid={`card-download-${file.type}`}>
+            <Card 
+              key={file.path} 
+              className={`hover:shadow-lg transition-shadow ${file.recommended ? 'border-2 border-green-500' : ''}`} 
+              data-testid={`card-download-${file.type}`}
+            >
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  {file.type === 'portable' ? (
-                    <FileArchive className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  {file.type === 'standalone' ? (
+                    <FileCode className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  ) : file.type === 'portable' ? (
+                    <FileArchive className="h-8 w-8 text-amber-600 dark:text-amber-400" />
                   ) : (
                     <FileCode className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                   )}
                   <div className="flex-1">
-                    <CardTitle className="text-lg">
-                      {file.type === 'portable' ? 'نسخه Portable' : 'فایل اجرایی'}
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {file.type === 'standalone' ? 'نسخه Standalone' : file.type === 'portable' ? 'نسخه Electron Portable' : 'فایل اجرایی'}
+                      {file.recommended && <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded">توصیه می‌شود</span>}
                     </CardTitle>
                     <CardDescription>
                       {file.sizeFormatted}
@@ -89,15 +99,42 @@ export default function DesktopDownload() {
                   </p>
                 </div>
 
-                {file.type === 'portable' ? (
+                {file.description && (
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    ℹ️ {file.description}
+                  </p>
+                )}
+
+                {file.warning && (
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 rounded-md">
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      ⚠️ {file.warning}
+                    </p>
+                  </div>
+                )}
+
+                {file.type === 'standalone' ? (
                   <div className="text-sm text-muted-foreground space-y-2">
                     <p className="font-semibold text-foreground">✅ نحوه استفاده:</p>
+                    <ol className="list-decimal list-inside space-y-1 mr-4">
+                      <li>فایل را extract کنید</li>
+                      <li>فایل <code className="bg-muted px-1 rounded">start-standalone.bat</code> را اجرا کنید</li>
+                      <li>مرورگر را باز کنید: <code className="bg-muted px-1 rounded">localhost:5000</code></li>
+                      <li>نیاز به Node.js 18+ دارد</li>
+                    </ol>
+                  </div>
+                ) : file.type === 'portable' ? (
+                  <div className="text-sm text-muted-foreground space-y-2">
+                    <p className="font-semibold text-foreground">⚠️ نحوه استفاده (ممکن است کار نکند):</p>
                     <ol className="list-decimal list-inside space-y-1 mr-4">
                       <li>فایل را با 7-Zip یا WinRAR استخراج کنید</li>
                       <li>وارد پوشه <code className="bg-muted px-1 rounded">win-unpacked</code> شوید</li>
                       <li>فایل <code className="bg-muted px-1 rounded">electron.exe</code> را اجرا کنید</li>
-                      <li>سیستم به صورت خودکار راه‌اندازی می‌شود</li>
+                      <li>⚠️ SQLite ممکن است کار نکند (native deps)</li>
                     </ol>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                      💡 برای اطمینان از کارکرد، از نسخه Standalone استفاده کنید
+                    </p>
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground space-y-2">
@@ -113,12 +150,12 @@ export default function DesktopDownload() {
 
                 <Button 
                   onClick={() => handleDownload(file)}
-                  className="w-full"
+                  className={`w-full ${file.recommended ? 'bg-green-600 hover:bg-green-700' : ''}`}
                   size="lg"
                   data-testid={`button-download-${file.type}`}
                 >
                   <Download className="ml-2 h-5 w-5" />
-                  دانلود {file.type === 'portable' ? 'نسخه Portable' : 'فایل اجرایی'}
+                  دانلود {file.type === 'standalone' ? 'نسخه Standalone' : file.type === 'portable' ? 'نسخه Portable' : 'فایل اجرایی'}
                 </Button>
               </CardContent>
             </Card>

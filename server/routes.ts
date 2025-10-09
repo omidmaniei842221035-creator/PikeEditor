@@ -2222,34 +2222,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const files = [];
       
-      // Check for portable tar.gz
-      const portablePath = path.join(process.cwd(), 'سامانه-مانیتورینگ-POS-1.0.0-Portable.tar.gz');
+      // Check for Standalone (recommended)
+      const standalonePath = path.join(process.cwd(), 'POS-Standalone.tar.gz');
       try {
-        const portableStats = await fs.stat(portablePath);
+        const standaloneStats = await fs.stat(standalonePath);
         files.push({
-          name: 'سامانه-مانیتورینگ-POS-1.0.0-Portable.tar.gz',
+          name: 'POS-Standalone.tar.gz',
+          size: standaloneStats.size,
+          sizeFormatted: `${(standaloneStats.size / 1024 / 1024).toFixed(1)} MB`,
+          type: 'standalone',
+          path: '/api/desktop/download/standalone',
+          recommended: true,
+          description: 'نسخه سبک و سریع - بدون Electron (نیاز به Node.js)'
+        });
+      } catch (err) {
+        console.log('Standalone file not found');
+      }
+      
+      // Check for Complete Portable (with Electron but may not work)
+      const portableCompletePath = path.join(process.cwd(), 'POS-Portable-Complete.tar.gz');
+      try {
+        const portableStats = await fs.stat(portableCompletePath);
+        files.push({
+          name: 'POS-Portable-Complete.tar.gz',
           size: portableStats.size,
           sizeFormatted: `${(portableStats.size / 1024 / 1024).toFixed(1)} MB`,
           type: 'portable',
-          path: '/api/desktop/download/portable'
+          path: '/api/desktop/download/portable',
+          warning: 'ممکن است در Windows کار نکند (native dependencies مشکل دارد)'
         });
       } catch (err) {
-        console.log('Portable file not found');
-      }
-      
-      // Check for exe
-      const exePath = path.join(process.cwd(), 'release/win-unpacked/electron.exe');
-      try {
-        const exeStats = await fs.stat(exePath);
-        files.push({
-          name: 'electron.exe',
-          size: exeStats.size,
-          sizeFormatted: `${(exeStats.size / 1024 / 1024).toFixed(1)} MB`,
-          type: 'executable',
-          path: '/api/desktop/download/exe'
-        });
-      } catch (err) {
-        console.log('Exe file not found');
+        console.log('Portable Complete file not found');
       }
       
       res.json({ files });
@@ -2258,13 +2261,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/desktop/download/portable", async (req, res) => {
+  app.get("/api/desktop/download/standalone", async (req, res) => {
     try {
       const path = await import('path');
-      const filePath = path.join(process.cwd(), 'سامانه-مانیتورینگ-POS-1.0.0-Portable.tar.gz');
+      const filePath = path.join(process.cwd(), 'POS-Standalone.tar.gz');
       
       res.setHeader('Content-Type', 'application/gzip');
-      res.setHeader('Content-Disposition', 'attachment; filename="POS-Monitoring-Portable.tar.gz"');
+      res.setHeader('Content-Disposition', 'attachment; filename="POS-Standalone.tar.gz"');
       
       const fs = await import('fs');
       const fileStream = fs.createReadStream(filePath);
@@ -2279,13 +2282,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/desktop/download/exe", async (req, res) => {
+  app.get("/api/desktop/download/portable", async (req, res) => {
     try {
       const path = await import('path');
-      const filePath = path.join(process.cwd(), 'release/win-unpacked/electron.exe');
+      const filePath = path.join(process.cwd(), 'POS-Portable-Complete.tar.gz');
       
-      res.setHeader('Content-Type', 'application/octet-stream');
-      res.setHeader('Content-Disposition', 'attachment; filename="POS-Monitoring.exe"');
+      res.setHeader('Content-Type', 'application/gzip');
+      res.setHeader('Content-Disposition', 'attachment; filename="POS-Portable-Complete.tar.gz"');
       
       const fs = await import('fs');
       const fileStream = fs.createReadStream(filePath);
