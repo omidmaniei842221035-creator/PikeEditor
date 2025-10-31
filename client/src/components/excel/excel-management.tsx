@@ -35,12 +35,12 @@ export function ExcelManagement() {
       
       setUploadProgress(100);
       
-      // Map server response to expected format
+      // Map server response to expected format with safe guards
       const result = {
-        success: response.summary.success,
-        errors: response.summary.errors,
-        total: response.summary.total,
-        errorsList: response.summary.errorDetails.map((err: any) => 
+        success: response?.summary?.success || 0,
+        errors: response?.summary?.errors || 0,
+        total: response?.summary?.total || 0,
+        errorsList: (response?.summary?.errorDetails || []).map((err: any) => 
           `ردیف ${err.row}: ${err.message}`
         ),
       };
