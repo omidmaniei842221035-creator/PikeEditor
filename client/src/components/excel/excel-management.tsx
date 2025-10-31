@@ -25,65 +25,27 @@ export function ExcelManagement() {
 
   const uploadMutation = useMutation({
     mutationFn: async (data: any[]) => {
-      // Simulate upload progress
       setIsUploading(true);
-      setUploadProgress(0);
+      setUploadProgress(30);
       
-      // Process data in chunks for progress simulation
-      const chunkSize = 10;
-      const chunks = [];
-      for (let i = 0; i < data.length; i += chunkSize) {
-        chunks.push(data.slice(i, i + chunkSize));
-      }
+      // Use the bulk import endpoint
+      const response = await apiRequest("POST", "/api/excel/import", { 
+        customers: data 
+      });
       
-      let success = 0;
-      let errors = 0;
-      const errorsList: string[] = [];
+      setUploadProgress(100);
       
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        
-        // Process each customer in chunk
-        for (const customer of chunk) {
-          try {
-            // Validate required fields
-            if (!customer.shopName || !customer.ownerName || !customer.phone) {
-              errors++;
-              errorsList.push(`ردیف ${i * chunkSize + chunk.indexOf(customer) + 1}: فیلدهای ضروری کامل نیست`);
-              continue;
-            }
-            
-            // Create customer via API
-            await apiRequest("POST", "/api/customers", {
-              shopName: customer.shopName,
-              ownerName: customer.ownerName,
-              phone: customer.phone,
-              businessType: customer.businessType || "سایر",
-              address: customer.address || "",
-              monthlyProfit: customer.monthlyProfit || 0,
-              status: customer.status || "active",
-            });
-            
-            success++;
-          } catch (error) {
-            errors++;
-            errorsList.push(`ردیف ${i * chunkSize + chunk.indexOf(customer) + 1}: خطا در ثبت اطلاعات`);
-          }
-        }
-        
-        // Update progress
-        setUploadProgress(Math.round(((i + 1) / chunks.length) * 100));
-        
-        // Add delay for visual feedback
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
-      return {
-        success,
-        errors,
-        total: success + errors,
-        errorsList,
+      // Map server response to expected format
+      const result = {
+        success: response.summary.success,
+        errors: response.summary.errors,
+        total: response.summary.total,
+        errorsList: response.summary.errorDetails.map((err: any) => 
+          `ردیف ${err.row}: ${err.message}`
+        ),
       };
+      
+      return result;
     },
     onSuccess: (result) => {
       setUploadResult(result);
