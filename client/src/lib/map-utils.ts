@@ -752,6 +752,19 @@ export function addCustomerMarker(
   statusP.appendChild(statusSpan);
   popupContainer.appendChild(statusP);
 
+  // Monthly Status Timeline (placeholder that will be loaded async)
+  const timelineDiv = document.createElement('div');
+  timelineDiv.id = `customer-timeline-${customer.id}`;
+  timelineDiv.style.cssText = 'margin: 12px 0; padding: 12px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;';
+  timelineDiv.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+      <strong style="font-size: 13px; color: #1f2937;">📊 تاریخچه وضعیت (6 ماه اخیر)</strong>
+      <span style="font-size: 11px; color: #9ca3af;" id="timeline-loader-${customer.id}">در حال بارگذاری...</span>
+    </div>
+    <div style="display: flex; gap: 4px; height: 28px; border-radius: 6px; overflow: hidden;" id="timeline-bars-${customer.id}"></div>
+  `;
+  popupContainer.appendChild(timelineDiv);
+
   // Address (if available)
   if (customer.address) {
     const addressP = document.createElement('p');
@@ -784,11 +797,88 @@ export function addCustomerMarker(
   popupContainer.appendChild(actionsDiv);
 
   marker.bindPopup(popupContainer, { 
-    maxWidth: 280,
+    maxWidth: 300,
     className: 'custom-popup',
     closeButton: true,
     autoClose: true,
     closeOnEscapeKey: true 
+  });
+
+  // Fetch and display monthly status history when popup opens
+  marker.on('popupopen', async () => {
+    try {
+      const response = await fetch(`/api/pos-stats/customer/${customer.id}`);
+      if (response.ok) {
+        const monthlyStats = await response.json();
+        
+        // Get last 6 months
+        const recentStats = monthlyStats
+          .sort((a: any, b: any) => {
+            if (a.year !== b.year) return b.year - a.year;
+            return b.month - a.month;
+          })
+          .slice(0, 6)
+          .reverse();
+        
+        const timelineBars = document.getElementById(`timeline-bars-${customer.id}`);
+        const timelineLoader = document.getElementById(`timeline-loader-${customer.id}`);
+        
+        if (timelineBars && timelineLoader) {
+          if (recentStats.length === 0) {
+            timelineLoader.textContent = 'بدون داده';
+            timelineLoader.style.color = '#9ca3af';
+          } else {
+            timelineLoader.textContent = '';
+            
+            const persianMonths = ['فر', 'ار', 'خر', 'تی', 'مر', 'شه', 'مه', 'آب', 'آذ', 'دی', 'به', 'اس'];
+            
+            recentStats.forEach((stat: any) => {
+              const statusColors = {
+                active: '#10b981',
+                normal: '#fbbf24', 
+                marketing: '#9ca3af',
+                loss: '#ef4444',
+                collected: '#6b7280'
+              };
+              const color = statusColors[stat.status as keyof typeof statusColors] || '#9ca3af';
+              
+              const bar = document.createElement('div');
+              bar.style.cssText = `flex: 1; background: ${color}; position: relative; cursor: pointer; transition: all 0.2s;`;
+              bar.title = `${persianMonths[stat.month - 1]} ${stat.year}: ${
+                stat.status === 'active' ? 'کارآمد' :
+                stat.status === 'marketing' ? 'بازاریابی' :
+                stat.status === 'loss' ? 'زیان‌ده' :
+                stat.status === 'collected' ? 'جمع‌آوری شده' : 'معمولی'
+              }\nدرآمد: ${Math.round(stat.revenue / 1000000)}M تومان`;
+              
+              bar.onmouseenter = () => {
+                bar.style.transform = 'translateY(-4px)';
+                bar.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+              };
+              bar.onmouseleave = () => {
+                bar.style.transform = '';
+                bar.style.boxShadow = '';
+              };
+              
+              timelineBars.appendChild(bar);
+            });
+          }
+        }
+      } else {
+        const timelineLoader = document.getElementById(`timeline-loader-${customer.id}`);
+        if (timelineLoader) {
+          timelineLoader.textContent = 'خطا در بارگذاری';
+          timelineLoader.style.color = '#ef4444';
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching monthly stats:', error);
+      const timelineLoader = document.getElementById(`timeline-loader-${customer.id}`);
+      if (timelineLoader) {
+        timelineLoader.textContent = 'خطا در بارگذاری';
+        timelineLoader.style.color = '#ef4444';
+      }
+    }
   });
 
   // Add click handlers for action buttons
