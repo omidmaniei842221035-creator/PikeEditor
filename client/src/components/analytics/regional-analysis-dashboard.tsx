@@ -156,7 +156,14 @@ export function RegionalAnalysisDashboard({ className }: RegionalAnalysisDashboa
     let mounted = true;
     
     const initMap = async () => {
-      if (mapRef.current && !mapInstanceRef.current && mounted && activeTab === 'analysis') {
+      if (activeTab !== 'analysis') {
+        return;
+      }
+
+      // Wait for DOM to render the tab content
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      if (mapRef.current && !mapInstanceRef.current && mounted) {
         try {
           mapInstanceRef.current = await initializeMap(mapRef.current);
           if (mounted && mapInstanceRef.current?.map) {
