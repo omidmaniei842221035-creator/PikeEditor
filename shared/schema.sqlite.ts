@@ -24,8 +24,8 @@ export const branches = sqliteTable("branches", {
   manager: text("manager"),
   phone: text("phone"),
   address: text("address"),
-  latitude: real("latitude"),
-  longitude: real("longitude"),
+  latitude: text("latitude"), // Changed from real to text to match PG decimal→string
+  longitude: text("longitude"), // Changed from real to text to match PG decimal→string
   coverageRadius: integer("coverage_radius").default(5),
   monthlyTarget: integer("monthly_target").default(0),
   performance: integer("performance").default(0),
@@ -54,8 +54,8 @@ export const customers = sqliteTable("customers", {
   phone: text("phone").notNull(),
   businessType: text("business_type").notNull(),
   address: text("address"),
-  latitude: real("latitude"),
-  longitude: real("longitude"),
+  latitude: text("latitude"), // Changed from real to text to match PG decimal→string
+  longitude: text("longitude"), // Changed from real to text to match PG decimal→string
   monthlyProfit: integer("monthly_profit").default(0),
   status: text("status").notNull().default("active"),
   branchId: text("branch_id").references(() => branches.id),
@@ -126,31 +126,37 @@ export const customerAccessLogs = sqliteTable("customer_access_logs", {
   accessType: text("access_type").notNull().$type<'view_details' | 'add_visit'>(),
   userAgent: text("user_agent"),
   ipAddress: text("ip_address"),
-  customerSummary: text("customer_summary"), // JSON as text
-  employeeId: text("employee_id").references(() => employees.id),
-  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  customerSummary: text("customer_summary"), // JSON as text (matches PG jsonb)
+  accessTime: integer("access_time", { mode: 'timestamp' }).$defaultFn(() => new Date()), // Added to match PG
 });
 
 export const bankingUnits = sqliteTable("banking_units", {
   id: text("id").primaryKey().$defaultFn(() => uuidv4()),
   code: text("code").notNull().unique(),
   name: text("name").notNull(),
-  type: text("type").notNull(),
-  bankId: text("bank_id"),
-  branchId: text("branch_id").references(() => branches.id),
-  latitude: real("latitude"),
-  longitude: real("longitude"),
+  unitType: text("unit_type").notNull().$type<'branch' | 'counter' | 'shahrbnet_kiosk'>(), // Matches PG field name
+  managerName: text("manager_name"), // Matches PG
+  phone: text("phone"),
   address: text("address"),
+  latitude: text("latitude"), // Changed from real to text to match PG decimal→string
+  longitude: text("longitude"), // Changed from real to text to match PG decimal→string
+  isActive: integer("is_active", { mode: 'boolean' }).default(true),
   createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
 });
 
 export const territories = sqliteTable("territories", {
   id: text("id").primaryKey().$defaultFn(() => uuidv4()),
   name: text("name").notNull(),
-  coordinates: text("coordinates").notNull(), // JSON as text
-  color: text("color").notNull().default("#3b82f6"),
-  assignedEmployeeId: text("assigned_employee_id").references(() => employees.id),
+  geometry: text("geometry").notNull(), // JSON as text (matches PG jsonb)
+  bbox: text("bbox").notNull(), // JSON as text (matches PG jsonb)
+  isActive: integer("is_active", { mode: 'boolean' }).default(true),
+  color: text("color").default("#3b82f6"),
+  assignedBankingUnitId: text("assigned_banking_unit_id").references(() => bankingUnits.id), // Matches PG
+  businessFocus: text("business_focus"),
+  autoNamed: integer("auto_named", { mode: 'boolean' }).default(false),
   createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date())
 });
 
 // ======================
@@ -310,9 +316,15 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({ i
 export const insertAlertSchema = createInsertSchema(alerts).omit({ id: true, createdAt: true });
 export const insertPosMonthlyStatsSchema = createInsertSchema(posMonthlyStats).omit({ id: true, createdAt: true });
 export const insertVisitSchema = createInsertSchema(visits).omit({ id: true, createdAt: true });
-export const insertCustomerAccessLogSchema = createInsertSchema(customerAccessLogs).omit({ id: true, createdAt: true });
-export const insertBankingUnitSchema = createInsertSchema(bankingUnits).omit({ id: true, createdAt: true });
-export const insertTerritorySchema = createInsertSchema(territories).omit({ id: true, createdAt: true });
+export const insertCustomerAccessLogSchema = createInsertSchema(customerAccessLogs).omit({ id: true, accessTime: true }).extend({
+  accessType: z.enum(['view_details', 'add_visit'])
+});
+export const insertBankingUnitSchema = createInsertSchema(bankingUnits).omit({ id: true, createdAt: true, updatedAt: true }).extend({
+  unitType: z.enum(['branch', 'counter', 'shahrbnet_kiosk'])
+});
+export const insertTerritorySchema = createInsertSchema(territories).omit({ id: true, createdAt: true, updatedAt: true }).extend({
+  color: z.string().optional()
+});
 
 // Grafana Enterprise insert schemas
 export const insertOrganizationSchema = createInsertSchema(organizations).omit({ id: true, createdAt: true, updatedAt: true });
