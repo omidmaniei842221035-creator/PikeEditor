@@ -88,13 +88,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 2025)
 
-### Complete Windows EXE Installer - Completed ✅ (November 20, 2025)
+### Windows Installer Development - Blocked by Environment Limitations ⚠️ (November 20, 2025)
 - ✅ **Fixed all TypeScript compilation errors** (reduced from 16 to 0):
   - Added `target: ES2017` and `downlevelIteration: true` to tsconfig.json for Set iteration support
   - Fixed schema type mismatches in insertCustomerAccessLogSchema and insertBankingUnitSchema
   - Added union type validation for `accessType` and `unitType` fields
   - Resolved color nullable type issues in territories schema
-- ✅ **Built Complete Windows Portable Application**:
+- ⚠️ **NSIS Installer Status**: Cannot be built in Replit due to Wine requirement (Linux limitation)
+- ✅ **All Code Ready for Windows Build**: electron/main.ts fixed, package.json configured, icon.ico prepared
+- ✅ **Portable Application Ready**:
   - Executable: `سامانه-مانیتورینگ-POS.exe` (202MB) - ready to run!
   - Full package: `release/win-unpacked/` (501MB) with all dependencies
   - Compressed archive: `سامانه-مانیتورینگ-POS-Portable.tar.gz` (121MB)
