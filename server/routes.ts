@@ -380,8 +380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logWithIP = {
         ...logData,
         ipAddress: req.ip || req.connection.remoteAddress || '',
-        // Truncate userAgent to prevent large payloads
-        userAgent: logData.userAgent?.substring(0, 500) || ''
+        userAgent: logData.userAgent?.substring(0, 500)
       };
       
       const log = await storage.createCustomerAccessLog(logWithIP);

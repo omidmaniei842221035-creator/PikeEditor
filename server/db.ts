@@ -79,8 +79,8 @@ if (isElectronMode) {
         manager TEXT,
         phone TEXT,
         address TEXT,
-        latitude REAL,
-        longitude REAL,
+        latitude TEXT,
+        longitude TEXT,
         coverage_radius INTEGER DEFAULT 5,
         monthly_target INTEGER DEFAULT 0,
         performance INTEGER DEFAULT 0,
@@ -105,13 +105,15 @@ if (isElectronMode) {
         id TEXT PRIMARY KEY,
         code TEXT NOT NULL UNIQUE,
         name TEXT NOT NULL,
-        type TEXT NOT NULL,
-        bank_id TEXT,
-        branch_id TEXT REFERENCES branches(id),
-        latitude REAL,
-        longitude REAL,
+        unit_type TEXT NOT NULL,
+        manager_name TEXT,
+        phone TEXT,
         address TEXT,
-        created_at INTEGER
+        latitude TEXT,
+        longitude TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at INTEGER,
+        updated_at INTEGER
       );
 
       CREATE TABLE IF NOT EXISTS customers (
@@ -122,8 +124,8 @@ if (isElectronMode) {
         phone TEXT NOT NULL,
         business_type TEXT NOT NULL,
         address TEXT,
-        latitude REAL,
-        longitude REAL,
+        latitude TEXT,
+        longitude TEXT,
         monthly_profit INTEGER DEFAULT 0,
         status TEXT NOT NULL DEFAULT 'active',
         branch_id TEXT REFERENCES branches(id),
@@ -195,17 +197,22 @@ if (isElectronMode) {
         user_agent TEXT,
         ip_address TEXT,
         customer_summary TEXT,
-        employee_id TEXT REFERENCES employees(id),
+        access_time INTEGER,
         created_at INTEGER
       );
 
       CREATE TABLE IF NOT EXISTS territories (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
-        coordinates TEXT NOT NULL,
-        color TEXT NOT NULL DEFAULT '#3b82f6',
-        assigned_employee_id TEXT REFERENCES employees(id),
-        created_at INTEGER
+        geometry TEXT NOT NULL,
+        bbox TEXT NOT NULL,
+        is_active INTEGER DEFAULT 1,
+        color TEXT DEFAULT '#3b82f6',
+        assigned_banking_unit_id TEXT REFERENCES banking_units(id),
+        business_focus TEXT,
+        auto_named INTEGER DEFAULT 0,
+        created_at INTEGER,
+        updated_at INTEGER
       );
 
       CREATE TABLE IF NOT EXISTS organizations (
