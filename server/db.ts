@@ -8,6 +8,33 @@ import * as sqliteSchema from "@shared/schema.sqlite";
 import * as path from 'path';
 import * as fs from 'fs';
 
+// Import insert schemas from both schema files
+import {
+  insertCustomerSchema as pgInsertCustomerSchema,
+  insertEmployeeSchema as pgInsertEmployeeSchema,
+  insertBranchSchema as pgInsertBranchSchema,
+  insertAlertSchema as pgInsertAlertSchema,
+  insertPosDeviceSchema as pgInsertPosDeviceSchema,
+  insertPosMonthlyStatsSchema as pgInsertPosMonthlyStatsSchema,
+  insertVisitSchema as pgInsertVisitSchema,
+  insertCustomerAccessLogSchema as pgInsertCustomerAccessLogSchema,
+  insertBankingUnitSchema as pgInsertBankingUnitSchema,
+  insertTerritorySchema as pgInsertTerritorySchema,
+} from "@shared/schema";
+
+import {
+  insertCustomerSchema as sqliteInsertCustomerSchema,
+  insertEmployeeSchema as sqliteInsertEmployeeSchema,
+  insertBranchSchema as sqliteInsertBranchSchema,
+  insertAlertSchema as sqliteInsertAlertSchema,
+  insertPosDeviceSchema as sqliteInsertPosDeviceSchema,
+  insertPosMonthlyStatsSchema as sqliteInsertPosMonthlyStatsSchema,
+  insertVisitSchema as sqliteInsertVisitSchema,
+  insertCustomerAccessLogSchema as sqliteInsertCustomerAccessLogSchema,
+  insertBankingUnitSchema as sqliteInsertBankingUnitSchema,
+  insertTerritorySchema as sqliteInsertTerritorySchema,
+} from "@shared/schema.sqlite";
+
 // Check if we're in Electron mode with SQLite
 const isElectronMode = !!process.env.DATABASE_PATH;
 
@@ -341,5 +368,17 @@ if (isElectronMode) {
   db = drizzleNeon({ client: pool, schema: pgSchema });
   schema = pgSchema;
 }
+
+// Export insert schemas based on runtime environment
+export const insertCustomerSchema = isElectronMode ? sqliteInsertCustomerSchema : pgInsertCustomerSchema;
+export const insertEmployeeSchema = isElectronMode ? sqliteInsertEmployeeSchema : pgInsertEmployeeSchema;
+export const insertBranchSchema = isElectronMode ? sqliteInsertBranchSchema : pgInsertBranchSchema;
+export const insertAlertSchema = isElectronMode ? sqliteInsertAlertSchema : pgInsertAlertSchema;
+export const insertPosDeviceSchema = isElectronMode ? sqliteInsertPosDeviceSchema : pgInsertPosDeviceSchema;
+export const insertPosMonthlyStatsSchema = isElectronMode ? sqliteInsertPosMonthlyStatsSchema : pgInsertPosMonthlyStatsSchema;
+export const insertVisitSchema = isElectronMode ? sqliteInsertVisitSchema : pgInsertVisitSchema;
+export const insertCustomerAccessLogSchema = isElectronMode ? sqliteInsertCustomerAccessLogSchema : pgInsertCustomerAccessLogSchema;
+export const insertBankingUnitSchema = isElectronMode ? sqliteInsertBankingUnitSchema : pgInsertBankingUnitSchema;
+export const insertTerritorySchema = isElectronMode ? sqliteInsertTerritorySchema : pgInsertTerritorySchema;
 
 export { db, pool, sqlite, isElectronMode, schema };

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema, insertTerritorySchema } from "@shared/schema";
+import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema, insertTerritorySchema } from "./db";
 import { z } from "zod";
 import { grafanaRouter } from "./routes/grafana";
 

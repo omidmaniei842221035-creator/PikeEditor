@@ -310,6 +310,7 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({ i
 export const insertAlertSchema = createInsertSchema(alerts).omit({ id: true, createdAt: true });
 export const insertPosMonthlyStatsSchema = createInsertSchema(posMonthlyStats).omit({ id: true, createdAt: true });
 export const insertVisitSchema = createInsertSchema(visits).omit({ id: true, createdAt: true });
+export const insertCustomerAccessLogSchema = createInsertSchema(customerAccessLogs).omit({ id: true, createdAt: true });
 export const insertBankingUnitSchema = createInsertSchema(bankingUnits).omit({ id: true, createdAt: true });
 export const insertTerritorySchema = createInsertSchema(territories).omit({ id: true, createdAt: true });
 
@@ -337,6 +338,7 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertAlert = z.infer<typeof insertAlertSchema>;
 export type InsertPosMonthlyStats = z.infer<typeof insertPosMonthlyStatsSchema>;
 export type InsertVisit = z.infer<typeof insertVisitSchema>;
+export type InsertCustomerAccessLog = z.infer<typeof insertCustomerAccessLogSchema>;
 export type InsertBankingUnit = z.infer<typeof insertBankingUnitSchema>;
 export type InsertTerritory = z.infer<typeof insertTerritorySchema>;
 

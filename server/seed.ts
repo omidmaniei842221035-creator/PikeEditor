@@ -1,5 +1,7 @@
-import { db } from "./db";
-import { users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, bankingUnits } from "@shared/schema";
+import { db, schema } from "./db";
+
+// Use schema from db.ts which switches between PostgreSQL and SQLite based on environment
+const { users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, bankingUnits } = schema;
 
 export async function seedDatabase() {
   console.log("🌱 Seeding database with sample data...");
@@ -677,7 +679,7 @@ export async function seedDatabase() {
       const year = date.getFullYear();
 
       // Find customers for this branch
-      const branchCustomers = sampleCustomers.filter(c => c.branchId === branch.id);
+      const branchCustomers = sampleCustomers.filter((c: any) => c.branchId === branch.id);
       
       for (const customer of branchCustomers) {
         // Generate varying stats based on branch performance and randomness
