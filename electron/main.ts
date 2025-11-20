@@ -52,23 +52,31 @@ function startServer() {
   const serverPath = path.join(process.resourcesPath, 'server', 'index.js');
   
   console.log(`🚀 Starting server with SQLite database at: ${dbPath}`);
+  console.log(`📂 Server path: ${serverPath}`);
+  console.log(`📂 Resources path: ${process.resourcesPath}`);
   
-  serverProcess = spawn('node', [serverPath], {
+  // Use process.execPath (Electron's embedded Node.js) instead of external 'node'
+  serverProcess = spawn(process.execPath, [serverPath], {
     env: {
       ...process.env,
       NODE_ENV: 'production',
       PORT: SERVER_PORT.toString(),
-      DATABASE_PATH: dbPath
+      DATABASE_PATH: dbPath,
+      ELECTRON_RUN_AS_NODE: '1'
     },
     stdio: 'inherit'
   });
 
   serverProcess.on('error', (err) => {
-    console.error('Failed to start server:', err);
+    console.error('❌ Failed to start server:', err);
   });
 
   serverProcess.on('exit', (code) => {
-    console.log(`Server process exited with code ${code}`);
+    if (code !== 0) {
+      console.error(`❌ Server process exited with code ${code}`);
+    } else {
+      console.log(`✅ Server process exited cleanly`);
+    }
   });
 }
 
