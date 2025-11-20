@@ -94,13 +94,15 @@ Preferred communication style: Simple, everyday language.
   - Fixed schema type mismatches in insertCustomerAccessLogSchema and insertBankingUnitSchema
   - Added union type validation for `accessType` and `unitType` fields
   - Resolved color nullable type issues in territories schema
-- ⚠️ **NSIS Installer Status**: Cannot be built in Replit due to Wine requirement (Linux limitation)
+- ❌ **Critical Discovery**: Portable exe built in Replit (Linux) does NOT work on Windows due to native module incompatibility
+  - Root cause: `better-sqlite3.node` compiled for Linux, not Windows (causes "not a valid Win32 application" error)
+  - Cross-compilation from Linux to Windows is impossible for native Electron modules
+  - Wine cannot solve this - MSVC toolchain required on actual Windows
 - ✅ **All Code Ready for Windows Build**: electron/main.ts fixed, package.json configured, icon.ico prepared
-- ✅ **Portable Application Ready**:
-  - Executable: `سامانه-مانیتورینگ-POS.exe` (202MB) - ready to run!
-  - Full package: `release/win-unpacked/` (501MB) with all dependencies
-  - Compressed archive: `سامانه-مانیتورینگ-POS-Portable.tar.gz` (121MB)
-  - Complete Persian installation guide: `release/راهنمای-نصب-و-استفاده.md`
+- ⚠️ **Portable exe MUST be built on Windows**:
+  - Command: `npm install && npm run electron:build:win -- --target portable`
+  - Output: Single .exe file (200-300MB) that works on any Windows without prerequisites
+  - Alternative: Full NSIS installer with `npm run electron:build:win`
 - ✅ **Electron-builder configuration finalized**:
   - NSIS installer configuration (assisted install with custom directory selection)
   - Portable exe target for no-install deployment
