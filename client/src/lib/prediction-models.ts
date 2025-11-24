@@ -1,23 +1,50 @@
 // Machine Learning Prediction Models Library
 // Advanced What-If Simulation System for POS Management
 
-// TensorFlow is optional - only used in web version for advanced AI features
+// TensorFlow is optional - only loaded via CDN for web version
 // Desktop version uses simpler statistical models
 let tf: any = null;
-try {
-  // Dynamic import - will fail gracefully if @tensorflow/tfjs is not installed
-  // This is expected in desktop builds
-  if (typeof window !== 'undefined') {
-    // Only load in browser context (not during SSR or desktop builds)
-    import('@tensorflow/tfjs').then(module => {
-      tf = module;
-    }).catch(() => {
-      console.log('TensorFlow not available - using fallback statistical models');
-    });
+
+// Promise that resolves when TensorFlow is ready (or rejects if not available)
+const tfReadyPromise: Promise<any> = new Promise((resolve, reject) => {
+  // Load TensorFlow from CDN at runtime (web version only)
+  // This avoids bundler trying to resolve @tensorflow/tfjs at build time
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    // Only in browser context - Electron/Desktop will skip this
+    const isElectron = navigator.userAgent.toLowerCase().includes('electron');
+    
+    if (!isElectron) {
+      // Web version: Load TensorFlow from CDN
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js';
+      script.async = true;
+      script.onload = () => {
+        // @ts-ignore - tf is loaded globally from CDN
+        tf = window.tf;
+        console.log('✅ TensorFlow loaded from CDN for advanced AI predictions');
+        resolve(tf);
+      };
+      script.onerror = () => {
+        console.log('⚠️ TensorFlow CDN failed - using statistical fallback models');
+        reject(new Error('TensorFlow CDN failed'));
+      };
+      document.head.appendChild(script);
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        if (!tf) {
+          reject(new Error('TensorFlow load timeout'));
+        }
+      }, 10000);
+    } else {
+      console.log('📊 Desktop mode - using statistical prediction models');
+      reject(new Error('Desktop mode - statistical only'));
+    }
+  } else {
+    // SSR or build context
+    reject(new Error('Not in browser context'));
   }
-} catch (e) {
-  // Silently fail - desktop version doesn't need TensorFlow
-}
+});
 
 import { standardDeviation, mean, median } from 'simple-statistics';
 
@@ -135,14 +162,19 @@ export class MLPredictionEngine {
   private satisfactionModel: any = null;
   private costModel: any = null;
   private isInitialized: boolean = false;
+  private initPromise: Promise<void> | null = null;
 
   constructor() {
-    this.initializeModels();
+    // Start initialization asynchronously
+    this.initPromise = this.initializeModels();
   }
 
   private async initializeModels(): Promise<void> {
     try {
-      // Skip if TensorFlow is not available (desktop build)
+      // Wait for TensorFlow to load (or fail)
+      await tfReadyPromise;
+      
+      // Skip if TensorFlow is not available
       if (!tf || !tf.ready) {
         console.log('⚠️  TensorFlow not available - using statistical fallback models');
         this.isInitialized = false;
@@ -346,8 +378,11 @@ export class MLPredictionEngine {
   }
 
   public async predictScenario(input: ScenarioInput, regionData: RegionData): Promise<ScenarioPrediction> {
-    if (!this.isInitialized) {
-      await this.initializeModels();
+    // Wait for initialization to complete (TensorFlow or fallback)
+    if (this.initPromise) {
+      await this.initPromise.catch(() => {
+        // Initialization failed - will use statistical fallback
+      });
     }
 
     const scenarioId = `scenario_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
