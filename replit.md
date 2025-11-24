@@ -103,6 +103,7 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes (November 2025)
 
 ### Windows Build Fixed - Ready for Production ✅ (November 24, 2025)
+- ✅ **ES Module Error FIXED**: Changed main.js to main.cjs to fix "exports is not defined" error
 - ✅ **TensorFlow/Rollup Error FIXED**: Removed @tensorflow/tfjs from package.json, replaced with CDN loader
 - ✅ **Canvas Dependency Removed**: Eliminated cairo.h build requirements
 - ✅ **Server Path Corrected**: Fixed from app.asar (non-executable) to resources/server/index.js
@@ -110,7 +111,8 @@ Preferred communication style: Simple, everyday language.
 - ✅ **Error Dialogs Implemented**: User-friendly Persian error messages when server fails
 - ✅ **Startup Delay Increased**: From 3s to 5s for reliable server initialization
 - ✅ **Path Validation**: Server checks if files exist before attempting to spawn
-- ✅ **Documentation Complete**: BUILD_FINAL_VERSION.md and DEBUG_WINDOWS.md added
+- ✅ **Electron Compile Script**: Auto-converts .js to .cjs to prevent CommonJS/ESM conflicts
+- ✅ **Documentation Complete**: FINAL_BUILD_STEPS.md, BUILD_FINAL_VERSION.md, and DEBUG_WINDOWS.md added
 
 ### Windows Installer Development - Blocked by Environment Limitations ⚠️ (November 20, 2025)
 - ✅ **Fixed all TypeScript compilation errors** (reduced from 16 to 0):
