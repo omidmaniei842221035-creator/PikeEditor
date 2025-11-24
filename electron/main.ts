@@ -1,8 +1,10 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
-import isDev from 'electron-is-dev';
 import { spawn, ChildProcess } from 'child_process';
 import { initLogger, closeLogger, getLogFilePath } from './logger';
+
+// Check if running in development mode
+const isDev = !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
 let serverProcess: ChildProcess | null = null;
