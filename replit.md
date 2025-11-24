@@ -86,6 +86,20 @@ Preferred communication style: Simple, everyday language.
 - **Data Portability**: Backup/Restore system enabling database export to JSON and restoration on different systems for deployment flexibility
 - **Desktop Deployment**: Electron-based desktop application with SQLite database for standalone PC installation via .exe installer
 
+## Project Cleanup & Final Preparation (November 24, 2025)
+
+✅ **Repository Cleanup:**
+- Removed temporary files: GIT_SETUP.md, push-to-github.sh, build-icon.* files
+- Consolidated old documentation versions (BUILD_GUIDE.md, DESKTOP-INSTALL-GUIDE.md, INSTALL-WINDOWS.md, ELECTRON_USAGE.md, README-DESKTOP.md, README-STANDALONE.md)
+- Created comprehensive primary documentation:
+  - `راهنمای-ساخت-portable-ویندوز.md` (612 lines) - Complete Persian guide for building portable Windows exe
+  - `BUILD_ON_WINDOWS.md` - Step-by-step English guide
+  - `BUILD_COMMANDS.txt` - Quick reference commands
+  - `BUILD_PORTABLE_ON_WINDOWS.md` - Portable-specific build instructions
+  - `README.md` - Project overview in English + Persian
+- Updated `.gitignore` with proper patterns (dist/, release/, build/, node_modules/, *.db, etc.)
+- **Status**: Ready for GitHub push - all temporary and build files are properly ignored
+
 ## Recent Changes (November 2025)
 
 ### Windows Installer Development - Blocked by Environment Limitations ⚠️ (November 20, 2025)

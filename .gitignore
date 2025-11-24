@@ -1,11 +1,43 @@
-node_modules
-dist
-dist-electron
-release
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Build outputs
+dist/
+dist-electron/
+release/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+Thumbs.db
+.windows
+
+# Logs
+logs/
+*.log
+
+# Temporary
+*.tmp
+*.bak
+
+# Database
 *.db
-*.db-shm
-*.db-wal
+*.sqlite
+*.sqlite3
+
+# Build cache
+.turbo/
+.cache/
