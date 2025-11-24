@@ -1,10 +1,28 @@
 // Machine Learning Prediction Models Library
 // Advanced What-If Simulation System for POS Management
 
-import * as tf from '@tensorflow/tfjs';
+// TensorFlow is optional - only used in web version for advanced AI features
+// Desktop version uses simpler statistical models
+let tf: any = null;
+try {
+  // Dynamic import - will fail gracefully if @tensorflow/tfjs is not installed
+  // This is expected in desktop builds
+  if (typeof window !== 'undefined') {
+    // Only load in browser context (not during SSR or desktop builds)
+    import('@tensorflow/tfjs').then(module => {
+      tf = module;
+    }).catch(() => {
+      console.log('TensorFlow not available - using fallback statistical models');
+    });
+  }
+} catch (e) {
+  // Silently fail - desktop version doesn't need TensorFlow
+}
+
 import { standardDeviation, mean, median } from 'simple-statistics';
 
-// Type declaration for ml-regression
+// Type declaration for ml-regression (optional dependency)
+// @ts-ignore - ml-regression may not be available in all builds
 declare module 'ml-regression' {
   export const regression: any;
 }
@@ -112,10 +130,10 @@ export interface RegionData {
 }
 
 export class MLPredictionEngine {
-  private revenueModel: tf.LayersModel | null = null;
-  private transactionModel: tf.LayersModel | null = null;
-  private satisfactionModel: tf.LayersModel | null = null;
-  private costModel: tf.LayersModel | null = null;
+  private revenueModel: any = null;
+  private transactionModel: any = null;
+  private satisfactionModel: any = null;
+  private costModel: any = null;
   private isInitialized: boolean = false;
 
   constructor() {
@@ -124,6 +142,13 @@ export class MLPredictionEngine {
 
   private async initializeModels(): Promise<void> {
     try {
+      // Skip if TensorFlow is not available (desktop build)
+      if (!tf || !tf.ready) {
+        console.log('⚠️  TensorFlow not available - using statistical fallback models');
+        this.isInitialized = false;
+        return;
+      }
+      
       await tf.ready();
       
       // Create simple regression models for prediction
@@ -142,7 +167,8 @@ export class MLPredictionEngine {
     }
   }
 
-  private createRevenueModel(): tf.LayersModel {
+  private createRevenueModel(): any {
+    if (!tf) return null;
     const model = tf.sequential({
       layers: [
         tf.layers.dense({ inputShape: [8], units: 32, activation: 'relu' }),
@@ -162,7 +188,8 @@ export class MLPredictionEngine {
     return model;
   }
 
-  private createTransactionModel(): tf.LayersModel {
+  private createTransactionModel(): any {
+    if (!tf) return null;
     const model = tf.sequential({
       layers: [
         tf.layers.dense({ inputShape: [8], units: 24, activation: 'relu' }),
@@ -181,7 +208,8 @@ export class MLPredictionEngine {
     return model;
   }
 
-  private createSatisfactionModel(): tf.LayersModel {
+  private createSatisfactionModel(): any {
+    if (!tf) return null;
     const model = tf.sequential({
       layers: [
         tf.layers.dense({ inputShape: [8], units: 16, activation: 'relu' }),
@@ -199,7 +227,8 @@ export class MLPredictionEngine {
     return model;
   }
 
-  private createCostModel(): tf.LayersModel {
+  private createCostModel(): any {
+    if (!tf) return null;
     const model = tf.sequential({
       layers: [
         tf.layers.dense({ inputShape: [8], units: 20, activation: 'relu' }),
@@ -403,6 +432,11 @@ export class MLPredictionEngine {
   }
 
   private async makePredictions(currentFeatures: number[], modifiedFeatures: number[], regionData: RegionData) {
+    // Fallback if TensorFlow is not available
+    if (!tf || !tf.tensor2d) {
+      return this.makeStatisticalPredictions(currentFeatures, modifiedFeatures, regionData);
+    }
+    
     const currentTensor = tf.tensor2d([currentFeatures]);
     const modifiedTensor = tf.tensor2d([modifiedFeatures]);
 
@@ -419,25 +453,25 @@ export class MLPredictionEngine {
 
     try {
       if (this.revenueModel) {
-        const revenueResult = this.revenueModel.predict(modifiedTensor) as tf.Tensor;
+        const revenueResult = this.revenueModel.predict(modifiedTensor) as any;
         predictedRevenue = (await revenueResult.data())[0] * 1000000;
         revenueResult.dispose();
       }
 
       if (this.transactionModel) {
-        const transactionResult = this.transactionModel.predict(modifiedTensor) as tf.Tensor;
+        const transactionResult = this.transactionModel.predict(modifiedTensor) as any;
         predictedTransactions = (await transactionResult.data())[0] * 1000;
         transactionResult.dispose();
       }
 
       if (this.satisfactionModel) {
-        const satisfactionResult = this.satisfactionModel.predict(modifiedTensor) as tf.Tensor;
+        const satisfactionResult = this.satisfactionModel.predict(modifiedTensor) as any;
         predictedSatisfaction = (await satisfactionResult.data())[0];
         satisfactionResult.dispose();
       }
 
       if (this.costModel) {
-        const costResult = this.costModel.predict(modifiedTensor) as tf.Tensor;
+        const costResult = this.costModel.predict(modifiedTensor) as any;
         predictedCosts = (await costResult.data())[0] * 100000;
         costResult.dispose();
       }
@@ -493,6 +527,68 @@ export class MLPredictionEngine {
         predicted: roi,
         paybackPeriod: paybackPeriod,
         confidence: this.calculateConfidence('roi', modifiedFeatures)
+      }
+    };
+  }
+
+  // Statistical fallback when TensorFlow is not available
+  private makeStatisticalPredictions(currentFeatures: number[], modifiedFeatures: number[], regionData: RegionData) {
+    // Simple statistical model using feature changes
+    const featureRatio = modifiedFeatures.reduce((a, b) => a + b, 0) / currentFeatures.reduce((a, b) => a + b, 0);
+    
+    const currentRevenue = regionData.currentMetrics.revenue;
+    const currentTransactions = regionData.currentMetrics.transactions;
+    const currentSatisfaction = regionData.currentMetrics.customerSatisfaction;
+    const currentCosts = regionData.currentMetrics.operationalCosts;
+
+    // Simple proportional predictions
+    const predictedRevenue = currentRevenue * featureRatio;
+    const predictedTransactions = currentTransactions * featureRatio;
+    const predictedSatisfaction = Math.min(10, currentSatisfaction * (1 + (featureRatio - 1) * 0.5));
+    const predictedCosts = currentCosts * (1 + (featureRatio - 1) * 0.8);
+
+    const revenueChange = predictedRevenue - currentRevenue;
+    const transactionChange = predictedTransactions - currentTransactions;
+    const satisfactionChange = predictedSatisfaction - currentSatisfaction;
+    const costChange = predictedCosts - currentCosts;
+
+    const investment = this.calculateInvestment(modifiedFeatures, currentFeatures);
+    const roi = investment > 0 ? ((revenueChange - costChange) / investment) * 100 : 0;
+    const paybackPeriod = investment > 0 ? investment / Math.max(1, (revenueChange - costChange) / 12) : 0;
+
+    return {
+      revenue: {
+        current: currentRevenue,
+        predicted: predictedRevenue,
+        change: revenueChange,
+        changePercent: currentRevenue > 0 ? (revenueChange / currentRevenue) * 100 : 0,
+        confidence: 0.75 // Lower confidence for statistical model
+      },
+      transactions: {
+        current: currentTransactions,
+        predicted: predictedTransactions,
+        change: transactionChange,
+        changePercent: currentTransactions > 0 ? (transactionChange / currentTransactions) * 100 : 0,
+        confidence: 0.75
+      },
+      customerSatisfaction: {
+        current: currentSatisfaction,
+        predicted: predictedSatisfaction,
+        change: satisfactionChange,
+        changePercent: currentSatisfaction > 0 ? (satisfactionChange / currentSatisfaction) * 100 : 0,
+        confidence: 0.70
+      },
+      operationalCosts: {
+        current: currentCosts,
+        predicted: predictedCosts,
+        change: costChange,
+        changePercent: currentCosts > 0 ? (costChange / currentCosts) * 100 : 0,
+        confidence: 0.75
+      },
+      roi: {
+        predicted: roi,
+        paybackPeriod: paybackPeriod,
+        confidence: 0.70
       }
     };
   }
