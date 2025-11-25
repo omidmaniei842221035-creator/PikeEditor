@@ -1,6 +1,6 @@
 {
   "name": "pos-monitoring-system",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "سامانه مانیتورینگ هوشمند پایانه‌های فروشگاهی",
   "main": "dist-electron/main.cjs",
   "type": "module",
