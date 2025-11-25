@@ -1,6 +1,6 @@
 {
   "name": "pos-monitoring-system",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "سامانه مانیتورینگ هوشمند پایانه‌های فروشگاهی",
   "main": "dist-electron/main.cjs",
   "type": "module",
@@ -34,7 +34,11 @@
       "node_modules/better-sqlite3/**/*",
       "node_modules/@neondatabase/**/*",
       "node_modules/ws/**/*",
-      "package.json"
+      "!package.json",
+      {
+        "from": "electron-package.json",
+        "to": "package.json"
+      }
     ],
     "extraResources": [
       {

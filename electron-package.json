@@ -1,0 +1,11 @@
+{
+  "name": "pos-monitoring-system",
+  "version": "1.0.2",
+  "description": "سامانه مانیتورینگ هوشمند پایانه‌های فروشگاهی",
+  "main": "dist-electron/main.cjs",
+  "author": {
+    "name": "POS Monitoring Team",
+    "email": "info@posmonitoring.ir"
+  },
+  "license": "MIT"
+}
