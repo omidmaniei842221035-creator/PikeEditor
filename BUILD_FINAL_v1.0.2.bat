@@ -1,79 +1,129 @@
 @echo off
 chcp 65001 >nul
+title سامانه مانیتورینگ POS - نسخه 1.0.2
 color 0A
+
 echo.
-echo ╔════════════════════════════════════════════════════════════════╗
-echo ║   سامانه مانیتورینگ POS - نسخه 1.0.2 (نسخه نهایی)            ║
-echo ║   Build کامل برای Windows                                      ║
-echo ╚════════════════════════════════════════════════════════════════╝
+echo ╔════════════════════════════════════════════════════════════════════╗
+echo ║                                                                    ║
+echo ║   ███████╗ ██████╗ ███████╗    ███╗   ███╗ ██████╗ ███╗   ██╗     ║
+echo ║   ██╔══██║██╔═══██╗██╔════╝    ████╗ ████║██╔═══██╗████╗  ██║     ║
+echo ║   ███████║██║   ██║███████╗    ██╔████╔██║██║   ██║██╔██╗ ██║     ║
+echo ║   ██╔════╝██║   ██║╚════██║    ██║╚██╔╝██║██║   ██║██║╚██╗██║     ║
+echo ║   ██║     ╚██████╔╝███████║    ██║ ╚═╝ ██║╚██████╔╝██║ ╚████║     ║
+echo ║   ╚═╝      ╚═════╝ ╚══════╝    ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝     ║
+echo ║                                                                    ║
+echo ║            سامانه مانیتورینگ هوشمند پایانه‌های فروشگاهی           ║
+echo ║                    نسخه نهایی 1.0.2                               ║
+echo ╚════════════════════════════════════════════════════════════════════╝
 echo.
 
-echo ═══════════════════════════════════════════════════════════════════
-echo مرحله 1: Uninstall نسخه قدیمی
-echo ═══════════════════════════════════════════════════════════════════
-echo.
-echo لطفاً این کارها را انجام دهید:
-echo.
-echo   1. برنامه را ببندید (اگر باز است)
-echo.
-echo   2. Settings -^> Apps -^> "سامانه مانیتورینگ POS" -^> Uninstall
-echo.
-echo   3. این فولدرها را دستی پاک کنید:
-echo      - %LOCALAPPDATA%\Programs\pos-monitoring-system
-echo      - %APPDATA%\سامانه مانیتورینگ POS
-echo.
-pause
+:: ═══════════════════════════════════════════════════════════════════
+:: مرحله 0: پیش‌نیازها
+:: ═══════════════════════════════════════════════════════════════════
+echo [پیش‌نیازها] بررسی محیط...
 echo.
 
-echo ═══════════════════════════════════════════════════════════════════
-echo مرحله 2: پاکسازی کامل
-echo ═══════════════════════════════════════════════════════════════════
-echo.
-
-echo [2.1] پاک کردن فولدرهای build...
-if exist release rmdir /s /q release 2>nul
-if exist dist rmdir /s /q dist 2>nul
-if exist dist-electron rmdir /s /q dist-electron 2>nul
-echo ✅ فولدرهای build پاک شدند
-echo.
-
-echo [2.2] پاک کردن cache electron-builder...
-if exist "%USERPROFILE%\AppData\Local\electron-builder\cache" (
-    rmdir /s /q "%USERPROFILE%\AppData\Local\electron-builder\cache" 2>nul
-    echo ✅ Cache electron-builder پاک شد
-) else (
-    echo ⚪ Cache electron-builder وجود نداشت
+where node >nul 2>&1
+if errorlevel 1 (
+    color 0C
+    echo ❌ خطا: Node.js نصب نیست!
+    echo.
+    echo لطفاً از این لینک نصب کنید:
+    echo https://nodejs.org/en/download/
+    echo.
+    pause
+    exit /b 1
 )
 
-if exist "%USERPROFILE%\AppData\Local\electron\Cache" (
-    rmdir /s /q "%USERPROFILE%\AppData\Local\electron\Cache" 2>nul
-    echo ✅ Cache electron پاک شد
+echo ✅ Node.js: 
+node --version
+
+echo ✅ npm:
+npm --version
+echo.
+
+:: ═══════════════════════════════════════════════════════════════════
+:: مرحله 1: پاکسازی نسخه قبلی
+:: ═══════════════════════════════════════════════════════════════════
+echo ═══════════════════════════════════════════════════════════════════
+echo [مرحله 1/6] پاکسازی کامل...
+echo ═══════════════════════════════════════════════════════════════════
+echo.
+
+if exist release (
+    echo پاک کردن release...
+    rmdir /s /q release 2>nul
+)
+if exist dist (
+    echo پاک کردن dist...
+    rmdir /s /q dist 2>nul
+)
+if exist dist-electron (
+    echo پاک کردن dist-electron...
+    rmdir /s /q dist-electron 2>nul
+)
+
+echo ✅ پاکسازی انجام شد
+echo.
+
+:: ═══════════════════════════════════════════════════════════════════
+:: مرحله 2: نصب Dependencies (اگر لازم باشد)
+:: ═══════════════════════════════════════════════════════════════════
+echo ═══════════════════════════════════════════════════════════════════
+echo [مرحله 2/6] بررسی Dependencies...
+echo ═══════════════════════════════════════════════════════════════════
+echo.
+
+if not exist node_modules (
+    echo نصب dependencies... (این کار 5-10 دقیقه طول می‌کشد)
+    call npm install
+    if errorlevel 1 (
+        color 0C
+        echo.
+        echo ❌ خطا در نصب dependencies
+        echo.
+        echo اگر در ایران هستید، این دستورات را اجرا کنید:
+        echo   npm config set registry https://registry.npmmirror.com
+        echo   npm config set strict-ssl false
+        echo.
+        pause
+        exit /b 1
+    )
 ) else (
-    echo ⚪ Cache electron وجود نداشت
+    echo ✅ Dependencies موجود است
 )
 echo.
 
+:: ═══════════════════════════════════════════════════════════════════
+:: مرحله 3: Build Frontend و Backend
+:: ═══════════════════════════════════════════════════════════════════
 echo ═══════════════════════════════════════════════════════════════════
-echo مرحله 3: Build Frontend و Backend
+echo [مرحله 3/6] Build Frontend و Backend...
 echo ═══════════════════════════════════════════════════════════════════
 echo.
+
 call npm run build
 if errorlevel 1 (
     color 0C
     echo.
-    echo ❌ خطا در build frontend/backend
-    echo لطفاً خطاها را بررسی کنید
+    echo ❌ خطا در build
     pause
     exit /b 1
 )
+
 echo.
-echo ✅ Build frontend/backend موفق
+echo ✅ Build Frontend/Backend موفق
 echo.
 
+:: ═══════════════════════════════════════════════════════════════════
+:: مرحله 4: Compile Electron
+:: ═══════════════════════════════════════════════════════════════════
 echo ═══════════════════════════════════════════════════════════════════
-echo مرحله 4: Compile Electron
+echo [مرحله 4/6] Compile Electron...
 echo ═══════════════════════════════════════════════════════════════════
 echo.
+
 call npm run electron:compile
 if errorlevel 1 (
     color 0C
@@ -82,67 +132,81 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+
 echo.
 echo ✅ Compile Electron موفق
 echo.
-
-echo بررسی فایل‌های Electron:
-echo ─────────────────────────
-dir dist-electron\*.cjs dist-electron\*.js 2>nul
+echo فایل‌های ساخته شده:
+dir /b dist-electron\*.cjs dist-electron\*.js 2>nul
 echo.
 
-echo ⚠️  مهم: آیا فایل‌های زیر را می‌بینید؟
-echo     - main.cjs
-echo     - preload.cjs
-echo     - logger.js
-echo.
-pause
-echo.
-
+:: ═══════════════════════════════════════════════════════════════════
+:: مرحله 5: Build Windows Installer
+:: ═══════════════════════════════════════════════════════════════════
 echo ═══════════════════════════════════════════════════════════════════
-echo مرحله 5: Build Windows Installer (نسخه 1.0.2)
+echo [مرحله 5/6] ساخت Windows Installer...
 echo ═══════════════════════════════════════════════════════════════════
 echo.
 echo ⏱️  این مرحله 5-10 دقیقه طول می‌کشد...
+echo    لطفاً صبر کنید...
 echo.
+
 call npm run electron:build:win
 if errorlevel 1 (
     color 0C
     echo.
-    echo ❌ خطا در build installer
+    echo ❌ خطا در ساخت installer
+    echo.
+    echo راه‌حل‌های احتمالی:
+    echo 1. Visual Studio Build Tools نصب شده؟
+    echo 2. "Desktop development with C++" انتخاب شده؟
+    echo.
     pause
     exit /b 1
 )
+
+echo.
+
+:: ═══════════════════════════════════════════════════════════════════
+:: مرحله 6: نمایش نتیجه
+:: ═══════════════════════════════════════════════════════════════════
+echo ═══════════════════════════════════════════════════════════════════
+echo [مرحله 6/6] نتیجه Build
+echo ═══════════════════════════════════════════════════════════════════
 echo.
 
 color 0A
 echo.
-echo ╔════════════════════════════════════════════════════════════════╗
-echo ║               ✅ BUILD موفقیت‌آمیز بود! ✅                     ║
-echo ╚════════════════════════════════════════════════════════════════╝
+echo ╔════════════════════════════════════════════════════════════════════╗
+echo ║                                                                    ║
+echo ║   ✅ ✅ ✅   BUILD موفقیت‌آمیز بود!   ✅ ✅ ✅                    ║
+echo ║                                                                    ║
+echo ╚════════════════════════════════════════════════════════════════════╝
 echo.
 
-echo فایل installer جدید:
-echo ─────────────────────
-dir release\*1.0.2*.exe 2>nul
-if errorlevel 1 (
-    dir release\*.exe 2>nul
-)
+echo فایل‌های ساخته شده در پوشه release:
+echo ─────────────────────────────────────
+dir /b release\*.exe 2>nul
 echo.
 
 echo ═══════════════════════════════════════════════════════════════════
-echo مراحل بعدی:
+echo مراحل نصب:
 echo ═══════════════════════════════════════════════════════════════════
 echo.
-echo   1. رفتن به فولدر release
+echo   1. به پوشه "release" بروید
 echo.
-echo   2. پیدا کردن فایل: 
-echo      "سامانه مانیتورینگ POS-Setup-1.0.2.exe"
+echo   2. فایل "سامانه مانیتورینگ POS-Setup-1.0.2.exe" را پیدا کنید
 echo.
-echo   3. راست‌کلیک روی فایل -^> Run as Administrator
+echo   3. روی فایل راست‌کلیک کنید و "Run as administrator" را بزنید
 echo.
-echo   4. نصب برنامه
+echo   4. نصب را تکمیل کنید
+echo.
+echo   5. برنامه را از دسکتاپ یا منوی استارت اجرا کنید
 echo.
 echo ═══════════════════════════════════════════════════════════════════
 echo.
+
+:: Open release folder
+start "" "release"
+
 pause

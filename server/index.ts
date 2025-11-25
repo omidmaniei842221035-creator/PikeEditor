@@ -59,7 +59,7 @@ async function autoSeedIfEmpty() {
     }
     console.log("✅ Database connection successful");
   } catch (error) {
-    console.warn("⚠️ Database connection issue (this may be temporary):", error.message || error);
+    console.warn("⚠️ Database connection issue (this may be temporary):", (error as Error).message || error);
     console.log("🔄 Application will continue running, database operations may be limited");
     // Don't throw the error, just log it and continue
   }
