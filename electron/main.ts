@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
 import { spawn, ChildProcess } from 'child_process';
-import { initLogger, closeLogger, getLogFilePath } from './logger';
+const { initLogger, closeLogger, getLogFilePath } = require('./logger.cjs');
 
 // Check if running in development mode
 const isDev = !app.isPackaged;
