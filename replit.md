@@ -102,7 +102,39 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 2025)
 
-### Windows Build Fixed - Ready for Production ✅ (November 24, 2025)
+### Version 1.0.2 - FINAL BUILD ✅ (November 25, 2025)
+**Critical Fix: Dual package.json Architecture**
+
+The main issue was that `package.json` has `"type": "module"` for the web app, but Electron requires CommonJS. When electron-builder copied package.json into app.asar, Node.js treated .cjs files as ES modules and threw "exports is not defined" error.
+
+**Solution Implemented:**
+- ✅ **electron-package.json** - CommonJS package.json (no "type": "module") → copied into app.asar
+- ✅ **server-package.json** - ESM package.json (`"type": "module"`) → copied to resources/server/
+- ✅ **electron-builder config updated**:
+  - `files`: excludes root package.json, copies electron-package.json as package.json
+  - `extraResources`: copies server-package.json to server/package.json
+- ✅ **Server remains ESM format** (required for import.meta and top-level await)
+- ✅ **Electron compiles to CommonJS** (.cjs extension)
+
+**File Structure in Packaged App:**
+```
+app.asar/
+  ├── dist-electron/main.cjs, preload.cjs, logger.js
+  └── package.json (from electron-package.json, NO "type": "module")
+
+resources/
+  ├── server/
+  │   ├── index.js (ESM format)
+  │   └── package.json (from server-package.json, HAS "type": "module")
+  └── node_modules/better-sqlite3/
+```
+
+**Build Files:**
+- `BUILD_FINAL_v1.0.2.bat` - Complete build script
+- `FIX_NPM_IRAN.bat` - npm configuration for Iran
+- `WINDOWS_BUILD_README.md` - Comprehensive documentation
+
+### Previous: Windows Build Fixed ✅ (November 24, 2025)
 - ✅ **ES Module Error FIXED**: Changed main.js to main.cjs to fix "exports is not defined" error
 - ✅ **TensorFlow/Rollup Error FIXED**: Removed @tensorflow/tfjs from package.json, replaced with CDN loader
 - ✅ **Canvas Dependency Removed**: Eliminated cairo.h build requirements
