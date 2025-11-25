@@ -46,6 +46,10 @@
         "to": "server"
       },
       {
+        "from": "server-package.json",
+        "to": "server/package.json"
+      },
+      {
         "from": "node_modules/better-sqlite3",
         "to": "node_modules/better-sqlite3"
       }
