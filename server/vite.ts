@@ -73,13 +73,35 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  // Try multiple paths for static files (works for both web and Electron)
+  let distPath = path.resolve(import.meta.dirname, "public");
+  
+  // Electron packaged app: try resources/server/public
+  if (!fs.existsSync(distPath) && process.env.DATABASE_PATH) {
+    const electronPath = path.resolve(import.meta.dirname, "..", "public");
+    if (fs.existsSync(electronPath)) {
+      distPath = electronPath;
+    }
+  }
+  
+  // Another fallback for different directory structures
+  if (!fs.existsSync(distPath)) {
+    const altPath = path.join(process.cwd(), "dist", "public");
+    if (fs.existsSync(altPath)) {
+      distPath = altPath;
+    }
+  }
 
   if (!fs.existsSync(distPath)) {
+    console.error(`Could not find static files at: ${distPath}`);
+    console.error(`Current directory: ${process.cwd()}`);
+    console.error(`import.meta.dirname: ${import.meta.dirname}`);
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`,
     );
   }
+  
+  console.log(`Serving static files from: ${distPath}`);
 
   app.use(express.static(distPath));
 
