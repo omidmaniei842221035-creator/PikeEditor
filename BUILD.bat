@@ -4,12 +4,13 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ========================================
-echo    POS Monitoring System - Build v1.0.2
+echo    POS Monitoring System - Build v1.0.3
+echo    Frontend is PRE-BUILT (faster build)
 echo ========================================
 echo.
 
 REM Step 1: Check Node.js
-echo [1/6] Checking Node.js...
+echo [1/4] Checking Node.js...
 where node >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: Node.js is not installed!
@@ -21,51 +22,42 @@ for /f "tokens=*" %%i in ('node -v') do echo       Node.js version: %%i
 echo       OK
 echo.
 
-REM Step 2: Clean old builds
-echo [2/6] Cleaning old builds...
-if exist "dist" rmdir /s /q "dist"
-if exist "dist-electron" rmdir /s /q "dist-electron"
-if exist "release" rmdir /s /q "release"
-echo       OK
-echo.
-
-REM Step 3: Install dependencies
-echo [3/6] Installing dependencies (this may take 5-10 minutes)...
-call npm install
-if %errorlevel% neq 0 (
+REM Step 2: Install dependencies
+echo [2/4] Installing dependencies...
+call npm install --ignore-scripts 2>nul
+call npm install better-sqlite3 --build-from-source 2>nul
+if not exist "node_modules" (
     echo ERROR: npm install failed!
-    echo Try running FIX_NPM.bat first if you are in Iran
+    echo Try running FIX_NPM.bat first
     pause
     exit /b 1
 )
 echo       OK
 echo.
 
-REM Step 4: Build frontend
-echo [4/6] Building frontend...
-call npm run build
+REM Step 3: Compile Electron
+echo [3/4] Compiling Electron...
+call npx tsc -p electron/tsconfig.json
 if %errorlevel% neq 0 (
-    echo ERROR: Frontend build failed!
+    echo ERROR: Electron compile failed!
     pause
     exit /b 1
 )
+call node scripts/rename-to-cjs.cjs
 echo       OK
 echo.
 
-REM Step 5: Build Electron
-echo [5/6] Building Electron app...
-call npm run electron:build:win
+REM Step 4: Build Windows installer
+echo [4/4] Building Windows installer...
+call npx electron-builder --win --x64
 if %errorlevel% neq 0 (
-    echo ERROR: Electron build failed!
+    echo ERROR: Electron builder failed!
     pause
     exit /b 1
 )
 echo       OK
 echo.
 
-REM Step 6: Done
-echo [6/6] Build complete!
-echo.
 echo ========================================
 echo    BUILD SUCCESSFUL!
 echo ========================================
@@ -73,9 +65,7 @@ echo.
 echo Installer location:
 echo    release\*.exe
 echo.
-echo.
 
-REM Open release folder
 if exist "release" (
     echo Opening release folder...
     explorer release
