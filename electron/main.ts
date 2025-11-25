@@ -53,25 +53,23 @@ function startServer() {
 
   const dbPath = path.join(app.getPath('userData'), 'pos-system.db');
   
-  // In packaged app, electron-builder copies dist to resources/server via extraResources
-  // Try primary path first, fallback to alternative if needed
-  let serverPath = path.join(process.resourcesPath, 'server', 'index.js');
+  // Server is bundled as CommonJS (.cjs) for compatibility with ELECTRON_RUN_AS_NODE
+  let serverPath = path.join(process.resourcesPath, 'server', 'index.cjs');
   
-  // Fallback: check if server is in app path (for portable builds)
   const fs = require('fs');
   if (!fs.existsSync(serverPath)) {
-    const altPath = path.join(app.getAppPath(), 'dist', 'index.js');
+    const altPath = path.join(app.getAppPath(), 'dist', 'index.cjs');
     if (fs.existsSync(altPath)) {
       serverPath = altPath;
       console.log('⚠️ Using fallback server path');
     } else {
-      console.error('❌ CRITICAL ERROR: Server file not found at any expected location!');
-      console.error(`   Primary path: ${serverPath}`);
-      console.error(`   Fallback path: ${altPath}`);
+      console.error('❌ CRITICAL ERROR: Server file not found!');
+      console.error(`   Primary: ${serverPath}`);
+      console.error(`   Fallback: ${altPath}`);
       
       dialog.showErrorBox(
         'خطای بحرانی',
-        `فایل سرور یافت نشد!\n\nلطفاً برنامه را دوباره نصب کنید.\n\nمسیر مورد انتظار:\n${serverPath}`
+        `فایل سرور یافت نشد!\n\nلطفاً برنامه را دوباره نصب کنید.\n\nمسیر:\n${serverPath}`
       );
       app.quit();
       return;

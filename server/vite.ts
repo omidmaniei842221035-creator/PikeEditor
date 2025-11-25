@@ -1,10 +1,23 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 
 const isProduction = process.env.NODE_ENV === 'production' || !!process.env.DATABASE_PATH;
+
+// Cross-compatible __dirname for both ESM and CommonJS
+const getCurrentDir = () => {
+  try {
+    // ESM
+    if (typeof import.meta !== 'undefined' && import.meta.url) {
+      return path.dirname(fileURLToPath(import.meta.url));
+    }
+  } catch {}
+  // CommonJS fallback
+  return typeof __dirname !== 'undefined' ? __dirname : process.cwd();
+};
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -56,12 +69,8 @@ export async function setupVite(app: Express, server: Server) {
     }
 
     try {
-      const clientTemplate = path.resolve(
-        import.meta.dirname,
-        "..",
-        "client",
-        "index.html",
-      );
+      const currentDir = getCurrentDir();
+      const clientTemplate = path.resolve(currentDir, "..", "client", "index.html");
 
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
@@ -78,29 +87,29 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  let distPath = path.resolve(import.meta.dirname, "public");
+  const currentDir = getCurrentDir();
+  console.log(`Current directory: ${currentDir}`);
   
-  if (!fs.existsSync(distPath) && process.env.DATABASE_PATH) {
-    const electronPath = path.resolve(import.meta.dirname, "..", "public");
-    if (fs.existsSync(electronPath)) {
-      distPath = electronPath;
-    }
-  }
+  // Try multiple paths for Electron packaged app
+  const possiblePaths = [
+    path.resolve(currentDir, "public"),           // Same folder as index.cjs
+    path.resolve(currentDir, "..", "public"),     // Parent folder
+    path.join(process.cwd(), "dist", "public"),   // From working directory
+    path.join(process.cwd(), "public"),           // Direct public folder
+  ];
   
-  if (!fs.existsSync(distPath)) {
-    const altPath = path.join(process.cwd(), "dist", "public");
-    if (fs.existsSync(altPath)) {
-      distPath = altPath;
+  let distPath: string | null = null;
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      distPath = p;
+      break;
     }
   }
 
-  if (!fs.existsSync(distPath)) {
-    console.error(`Could not find static files at: ${distPath}`);
-    console.error(`Current directory: ${process.cwd()}`);
-    console.error(`import.meta.dirname: ${import.meta.dirname}`);
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
+  if (!distPath) {
+    console.error(`Could not find static files. Tried paths:`);
+    possiblePaths.forEach(p => console.error(`  - ${p} (exists: ${fs.existsSync(p)})`));
+    throw new Error(`Could not find the build directory, make sure to build the client first`);
   }
   
   console.log(`Serving static files from: ${distPath}`);
@@ -108,6 +117,6 @@ export function serveStatic(app: Express) {
   app.use(express.static(distPath));
 
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.sendFile(path.resolve(distPath!, "index.html"));
   });
 }
