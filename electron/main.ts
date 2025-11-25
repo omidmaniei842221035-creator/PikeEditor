@@ -52,28 +52,37 @@ function startServer() {
   }
 
   const dbPath = path.join(app.getPath('userData'), 'pos-system.db');
-  
-  // Server is bundled as CommonJS (.cjs) for compatibility with ELECTRON_RUN_AS_NODE
-  let serverPath = path.join(process.resourcesPath, 'server', 'index.cjs');
-  
   const fs = require('fs');
-  if (!fs.existsSync(serverPath)) {
-    const altPath = path.join(app.getAppPath(), 'dist', 'index.cjs');
-    if (fs.existsSync(altPath)) {
-      serverPath = altPath;
-      console.log('⚠️ Using fallback server path');
-    } else {
-      console.error('❌ CRITICAL ERROR: Server file not found!');
-      console.error(`   Primary: ${serverPath}`);
-      console.error(`   Fallback: ${altPath}`);
-      
-      dialog.showErrorBox(
-        'خطای بحرانی',
-        `فایل سرور یافت نشد!\n\nلطفاً برنامه را دوباره نصب کنید.\n\nمسیر:\n${serverPath}`
-      );
-      app.quit();
-      return;
+  
+  // Try multiple paths for server file
+  const possiblePaths = [
+    path.join(process.resourcesPath, 'server', 'index.cjs'),
+    path.join(process.resourcesPath, 'index.cjs'),
+    path.join(app.getAppPath(), 'dist', 'index.cjs'),
+    path.join(app.getAppPath(), 'server', 'index.cjs'),
+    path.join(app.getAppPath(), 'resources', 'server', 'index.cjs'),
+    path.join(__dirname, '..', 'dist', 'index.cjs'),
+    path.join(__dirname, '..', 'server', 'index.cjs'),
+  ];
+  
+  let serverPath: string | null = null;
+  console.log('🔍 Searching for server file...');
+  for (const p of possiblePaths) {
+    console.log(`   Checking: ${p} -> ${fs.existsSync(p) ? 'FOUND' : 'not found'}`);
+    if (fs.existsSync(p)) {
+      serverPath = p;
+      break;
     }
+  }
+  
+  if (!serverPath) {
+    console.error('❌ CRITICAL ERROR: Server file not found!');
+    dialog.showErrorBox(
+      'خطای بحرانی',
+      `فایل سرور یافت نشد!\n\nمسیرهای بررسی شده:\n${possiblePaths.slice(0,3).join('\n')}\n\nلطفاً برنامه را دوباره نصب کنید.`
+    );
+    app.quit();
+    return;
   }
   
   console.log(`🚀 Starting POS Monitoring Server...`);
