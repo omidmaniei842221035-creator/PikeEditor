@@ -10,12 +10,10 @@ const isProduction = process.env.NODE_ENV === 'production' || !!process.env.DATA
 // Cross-compatible __dirname for both ESM and CommonJS
 const getCurrentDir = () => {
   try {
-    // ESM
     if (typeof import.meta !== 'undefined' && import.meta.url) {
       return path.dirname(fileURLToPath(import.meta.url));
     }
   } catch {}
-  // CommonJS fallback
   return typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 };
 
@@ -26,7 +24,6 @@ export function log(message: string, source = "express") {
     second: "2-digit",
     hour12: true,
   });
-
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
@@ -40,12 +37,6 @@ export async function setupVite(app: Express, server: Server) {
   const viteConfig = (await import("../vite.config")).default;
   const viteLogger = createLogger();
 
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true as const,
-  };
-
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
@@ -56,27 +47,24 @@ export async function setupVite(app: Express, server: Server) {
         process.exit(1);
       },
     },
-    server: serverOptions,
+    server: {
+      middlewareMode: true,
+      hmr: { server },
+      allowedHosts: true as const,
+    },
     appType: "custom",
   });
 
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
-
-    if (url.startsWith('/api')) {
-      return next();
-    }
+    if (url.startsWith('/api')) return next();
 
     try {
       const currentDir = getCurrentDir();
       const clientTemplate = path.resolve(currentDir, "..", "client", "index.html");
-
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`,
-      );
+      template = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid()}"`);
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
@@ -88,34 +76,36 @@ export async function setupVite(app: Express, server: Server) {
 
 export function serveStatic(app: Express) {
   const currentDir = getCurrentDir();
-  console.log(`Current directory: ${currentDir}`);
+  console.log(`[Static] Current directory: ${currentDir}`);
+  console.log(`[Static] Is Electron: ${!!process.env.DATABASE_PATH}`);
   
-  // Try multiple paths for Electron packaged app
+  // For Electron: static files are in resources/public/ (extraResources)
+  // For dev/web: static files are in dist-public/ or dist/public/
   const possiblePaths = [
-    path.resolve(currentDir, "public"),           // Same folder as index.cjs
-    path.resolve(currentDir, "..", "public"),     // Parent folder
-    path.join(process.cwd(), "dist", "public"),   // From working directory
-    path.join(process.cwd(), "public"),           // Direct public folder
+    // Electron packaged app (process.resourcesPath points to resources/)
+    path.join(currentDir, '..', 'public'),           // resources/server/../public = resources/public
+    path.resolve(currentDir, 'public'),              // Same folder
+    // Development/Web paths
+    path.join(process.cwd(), 'dist-public'),
+    path.join(process.cwd(), 'dist', 'public'),
   ];
   
+  console.log('[Static] Checking paths:');
   let distPath: string | null = null;
   for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
+    const exists = fs.existsSync(p);
+    console.log(`  - ${p}: ${exists ? 'FOUND' : 'not found'}`);
+    if (exists && !distPath) {
       distPath = p;
-      break;
     }
   }
 
   if (!distPath) {
-    console.error(`Could not find static files. Tried paths:`);
-    possiblePaths.forEach(p => console.error(`  - ${p} (exists: ${fs.existsSync(p)})`));
-    throw new Error(`Could not find the build directory, make sure to build the client first`);
+    throw new Error(`Static files not found. Checked: ${possiblePaths.join(', ')}`);
   }
   
-  console.log(`Serving static files from: ${distPath}`);
-
+  console.log(`[Static] Serving from: ${distPath}`);
   app.use(express.static(distPath));
-
   app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath!, "index.html"));
   });
