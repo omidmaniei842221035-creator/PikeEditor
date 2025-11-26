@@ -54,32 +54,27 @@ function startServer() {
   const dbPath = path.join(app.getPath('userData'), 'pos-system.db');
   const fs = require('fs');
   
-  // Try multiple paths for server file
-  const possiblePaths = [
-    path.join(process.resourcesPath, 'server', 'index.cjs'),
-    path.join(process.resourcesPath, 'index.cjs'),
-    path.join(app.getAppPath(), 'dist', 'index.cjs'),
-    path.join(app.getAppPath(), 'server', 'index.cjs'),
-    path.join(app.getAppPath(), 'resources', 'server', 'index.cjs'),
-    path.join(__dirname, '..', 'dist', 'index.cjs'),
-    path.join(__dirname, '..', 'server', 'index.cjs'),
-  ];
+  // Server is in resources/server/index.cjs (extraResources copies dist-server/ to server/)
+  const serverPath = path.join(process.resourcesPath, 'server', 'index.cjs');
   
-  let serverPath: string | null = null;
-  console.log('🔍 Searching for server file...');
-  for (const p of possiblePaths) {
-    console.log(`   Checking: ${p} -> ${fs.existsSync(p) ? 'FOUND' : 'not found'}`);
-    if (fs.existsSync(p)) {
-      serverPath = p;
-      break;
-    }
-  }
+  console.log('🔍 Looking for server at:', serverPath);
+  console.log('   Exists:', fs.existsSync(serverPath));
   
-  if (!serverPath) {
-    console.error('❌ CRITICAL ERROR: Server file not found!');
+  if (!fs.existsSync(serverPath)) {
+    // List what's actually in resources folder for debugging
+    const resourcesDir = process.resourcesPath;
+    let contents = 'Cannot read directory';
+    try {
+      contents = fs.readdirSync(resourcesDir).join(', ');
+    } catch (e) {}
+    
+    console.error('❌ Server not found!');
+    console.error('Resources path:', resourcesDir);
+    console.error('Contents:', contents);
+    
     dialog.showErrorBox(
       'خطای بحرانی',
-      `فایل سرور یافت نشد!\n\nمسیرهای بررسی شده:\n${possiblePaths.slice(0,3).join('\n')}\n\nلطفاً برنامه را دوباره نصب کنید.`
+      `فایل سرور یافت نشد!\n\nمسیر: ${serverPath}\n\nمحتویات resources:\n${contents}`
     );
     app.quit();
     return;
