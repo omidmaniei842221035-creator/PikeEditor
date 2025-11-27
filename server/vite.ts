@@ -76,31 +76,39 @@ export async function setupVite(app: Express, server: Server) {
 
 export function serveStatic(app: Express) {
   const currentDir = getCurrentDir();
+  const isElectron = !!process.env.DATABASE_PATH;
+  const cwd = process.cwd();
+  
   console.log(`[Static] Current directory: ${currentDir}`);
-  console.log(`[Static] Is Electron: ${!!process.env.DATABASE_PATH}`);
+  console.log(`[Static] CWD: ${cwd}`);
+  console.log(`[Static] Is Electron: ${isElectron}`);
   
   // For Electron: static files are in resources/public/ (extraResources)
-  // For dev/web: static files are in dist-public/ or dist/public/
+  // For dev/web: static files are in dist-public/
   const possiblePaths = [
-    // Electron packaged app (process.resourcesPath points to resources/)
+    // Electron packaged app paths (cwd is resources/)
+    path.join(cwd, 'public'),                        // resources/public
     path.join(currentDir, '..', 'public'),           // resources/server/../public = resources/public
-    path.resolve(currentDir, 'public'),              // Same folder
     // Development/Web paths
+    path.join(cwd, 'dist-public'),
     path.join(process.cwd(), 'dist-public'),
-    path.join(process.cwd(), 'dist', 'public'),
+    path.resolve('dist-public'),
   ];
   
   console.log('[Static] Checking paths:');
   let distPath: string | null = null;
   for (const p of possiblePaths) {
     const exists = fs.existsSync(p);
-    console.log(`  - ${p}: ${exists ? 'FOUND' : 'not found'}`);
-    if (exists && !distPath) {
+    const hasIndex = exists && fs.existsSync(path.join(p, 'index.html'));
+    console.log(`  - ${p}: ${exists ? (hasIndex ? 'FOUND+index' : 'FOUND-noindex') : 'not found'}`);
+    if (hasIndex && !distPath) {
       distPath = p;
     }
   }
 
   if (!distPath) {
+    console.error('[Static] ERROR: Static files not found!');
+    console.error('[Static] Checked paths:', possiblePaths);
     throw new Error(`Static files not found. Checked: ${possiblePaths.join(', ')}`);
   }
   
