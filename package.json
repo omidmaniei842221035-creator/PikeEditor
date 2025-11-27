@@ -30,9 +30,6 @@
     },
     "files": [
       "dist-electron/**/*",
-      "node_modules/better-sqlite3/**/*",
-      "node_modules/@neondatabase/**/*",
-      "node_modules/ws/**/*",
       "!package.json",
       {
         "from": "electron-package.json",
@@ -53,35 +50,15 @@
         "to": "node_modules/better-sqlite3"
       }
     ],
-    "asarUnpack": [
-      "node_modules/better-sqlite3/**/*"
-    ],
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
+      "target": "portable",
       "icon": "build/icon.ico",
-      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
       "signAndEditExecutable": false
     },
-    "compression": "store",
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "سامانه مانیتورینگ POS",
-      "perMachine": false,
-      "allowElevation": true,
-      "runAfterFinish": true,
-      "deleteAppDataOnUninstall": false,
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+    "portable": {
+      "artifactName": "POS-Monitoring-${version}.${ext}"
     },
+    "compression": "store",
     "mac": {
       "target": [
         "dmg",
