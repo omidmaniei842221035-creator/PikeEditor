@@ -1,89 +1,78 @@
 @echo off
+chcp 65001 >nul 2>&1
 
 echo.
 echo ========================================
-echo    POS Monitoring System - Build v1.0.5
-echo    Frontend is PRE-BUILT
+echo   POS Monitoring System - Windows Build
 echo ========================================
 echo.
 
-REM Set mirrors for Iran
+REM Disable code signing
+set CSC_IDENTITY_AUTO_DISCOVERY=false
+
+REM NPM config for Iran
+echo [1/4] Setting up npm...
+call npm config set registry https://registry.npmmirror.com
+call npm config set strict-ssl false
+echo Done.
+echo.
+
+REM Electron mirrors
 set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
 set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
 
-REM Step 1: Check Node.js
-echo [1/4] Checking Node.js...
-where node >nul 2>&1
+REM Clear old cache
+echo [2/4] Clearing cache...
+rmdir /s /q "%LOCALAPPDATA%\electron-builder\Cache\winCodeSign" 2>nul
+echo Done.
+echo.
+
+REM Install packages
+echo [3/5] Installing packages...
+call npm install
 if %errorlevel% neq 0 (
-    echo       ERROR: Node.js not installed!
-    echo       Download from: https://nodejs.org
+    echo ERROR: npm install failed
     pause
     exit /b 1
 )
-for /f "tokens=*" %%i in ('node -v') do echo       Node.js version: %%i
-echo       OK
+echo Done.
 echo.
 
-REM Step 2: Install dependencies
-echo [2/4] Installing dependencies...
-call npm install --prefer-offline 2>nul
+REM Build frontend and server
+echo [4/5] Building frontend and server...
+call npm run build
 if %errorlevel% neq 0 (
-    echo       Trying online install...
-    call npm install 2>nul
-)
-call npm install better-sqlite3 --build-from-source 2>nul
-if not exist "node_modules" (
-    echo       ERROR: npm install failed!
-    echo       Run FIX_NPM.bat first
+    echo ERROR: Build failed
     pause
     exit /b 1
 )
-echo       OK
+echo Done.
 echo.
 
-REM Step 3: Compile Electron
-echo [3/4] Compiling Electron...
+REM Build exe
+echo [5/5] Building portable exe...
+echo This takes about 5 minutes...
+echo.
+
 call npx tsc -p electron/tsconfig.json
+call node scripts/rename-to-cjs.cjs
+call npx electron-builder --win portable
+
 if %errorlevel% neq 0 (
-    echo       ERROR: Electron compile failed!
+    echo.
+    echo ERROR: Build failed
     pause
     exit /b 1
 )
-call node scripts/rename-to-cjs.cjs 2>nul
-echo       OK
-echo.
 
-REM Step 4: Build Windows installer
-echo [4/4] Building Windows installer...
-echo       (This may take several minutes)
 echo.
-call npx electron-builder --win --x64
-if %errorlevel% neq 0 (
-    echo.
-    echo ========================================
-    echo    ERROR: Build failed!
-    echo.
-    echo    If you see "zip: not a valid zip file":
-    echo    1. Close this terminal
-    echo    2. Run FIX_NPM.bat
-    echo    3. Close terminal and reopen
-    echo    4. Run BUILD.bat again
-    echo ========================================
-    pause
-    exit /b 1
-)
-echo       OK
-echo.
-
 echo ========================================
-echo    BUILD SUCCESSFUL!
-echo    Installer is in: release folder
+echo   BUILD SUCCESSFUL!
+echo   
+echo   Your exe file is in: release folder
 echo ========================================
 echo.
 
-if exist "release" (
-    echo Opening release folder...
-    explorer release
-)
+if exist "release" explorer release
 
 pause
