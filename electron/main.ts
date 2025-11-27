@@ -87,6 +87,13 @@ function startServer() {
   console.log(`📂 SQLite database: ${dbPath}`);
   console.log(`📂 Server path: ${serverPath}`);
   
+  // Set up NODE_PATH so the server can find better-sqlite3 in resources
+  const nodeModulesPath = path.join(process.resourcesPath, 'node_modules');
+  const existingNodePath = process.env.NODE_PATH || '';
+  const newNodePath = existingNodePath ? `${nodeModulesPath}${path.delimiter}${existingNodePath}` : nodeModulesPath;
+  
+  console.log('📦 NODE_PATH:', newNodePath);
+  
   // Use process.execPath (Electron's embedded Node.js) instead of external 'node'
   serverProcess = spawn(process.execPath, [serverPath], {
     env: {
@@ -94,8 +101,10 @@ function startServer() {
       NODE_ENV: 'production',
       PORT: SERVER_PORT.toString(),
       DATABASE_PATH: dbPath,
-      ELECTRON_RUN_AS_NODE: '1'
+      ELECTRON_RUN_AS_NODE: '1',
+      NODE_PATH: newNodePath
     },
+    cwd: process.resourcesPath,
     stdio: ['ignore', 'pipe', 'pipe']
   });
 
