@@ -161,6 +161,11 @@ export const insertEmployeeSchema = createInsertSchema(employees).omit({
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
   createdAt: true,
+}).extend({
+  shopName: z.string().min(2, "نام فروشگاه باید حداقل ۲ کاراکتر باشد"),
+  ownerName: z.string().min(2, "نام مالک باید حداقل ۲ کاراکتر باشد"),
+  phone: z.string().regex(/^09\d{9}$/, "شماره تلفن باید ۱۱ رقم و با 09 شروع شود"),
+  businessType: z.string().min(1, "نوع کسب‌وکار باید انتخاب شود"),
 });
 
 export const insertPosDeviceSchema = createInsertSchema(posDevices).omit({

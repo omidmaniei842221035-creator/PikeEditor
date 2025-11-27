@@ -235,8 +235,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customerData = insertCustomerSchema.parse(req.body);
       const customer = await storage.createCustomer(customerData);
       res.json(customer);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid customer data" });
+    } catch (error: any) {
+      if (error.errors) {
+        const issues = error.errors.map((e: any) => ({
+          field: e.path.join('.'),
+          message: e.message
+        }));
+        console.error("Customer validation errors:", issues);
+        return res.status(422).json({ 
+          error: "خطا در اعتبارسنجی اطلاعات مشتری",
+          issues 
+        });
+      }
+      console.error("Customer creation error:", error);
+      res.status(400).json({ error: "خطا در ذخیره اطلاعات مشتری" });
     }
   });
 
@@ -253,11 +265,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateData = insertCustomerSchema.partial().parse(req.body);
       const customer = await storage.updateCustomer(req.params.id, updateData);
       if (!customer) {
-        return res.status(404).json({ error: "Customer not found" });
+        return res.status(404).json({ error: "مشتری یافت نشد" });
       }
       res.json(customer);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid customer data" });
+    } catch (error: any) {
+      if (error.errors) {
+        const issues = error.errors.map((e: any) => ({
+          field: e.path.join('.'),
+          message: e.message
+        }));
+        console.error("Customer update validation errors:", issues);
+        return res.status(422).json({ 
+          error: "خطا در اعتبارسنجی اطلاعات مشتری",
+          issues 
+        });
+      }
+      console.error("Customer update error:", error);
+      res.status(400).json({ error: "خطا در به‌روزرسانی اطلاعات مشتری" });
     }
   });
 
@@ -524,10 +548,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updates: z.array(z.object({
           id: z.string().min(1),
           data: insertBankingUnitSchema.partial()
-        })).max(100) // Limit batch size
+        })).max(100)
       });
       const { updates } = bulkUpdateSchema.parse(req.body);
-      const updatedUnits = await storage.bulkUpdateBankingUnits(updates);
+      const validUpdates = updates.map(u => ({
+        id: u.id,
+        data: u.data
+      }));
+      const updatedUnits = await storage.bulkUpdateBankingUnits(validUpdates);
       res.json(updatedUnits);
     } catch (error) {
       res.status(400).json({ error: "Invalid banking units data" });
@@ -1710,6 +1738,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
+          // Process and validate geo-location data
+          let latitude: string | null = null;
+          let longitude: string | null = null;
+          
+          if (customerData.latitude && customerData.longitude) {
+            const lat = parseFloat(customerData.latitude);
+            const lng = parseFloat(customerData.longitude);
+            
+            // Validate coordinates are within valid range
+            if (!isNaN(lat) && !isNaN(lng) && 
+                lat >= -90 && lat <= 90 && 
+                lng >= -180 && lng <= 180) {
+              latitude = lat.toString();
+              longitude = lng.toString();
+            }
+          }
+
           // Validate customer data against schema
           const validatedData = insertCustomerSchema.parse({
             shopName: customerData.shopName,
@@ -1717,10 +1762,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             phone: customerData.phone,
             businessType: customerData.businessType || 'سایر',
             address: customerData.address || '',
+            latitude: latitude,
+            longitude: longitude,
             monthlyProfit: customerData.monthlyProfit || 0,
             status: customerData.status || 'active',
             branchId: branchId,
-            supportEmployeeId: null // TODO: Add employee validation in future
+            supportEmployeeId: null
           });
 
           // Create customer in database
@@ -1815,6 +1862,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             required: false,
             type: "text",
             description: "نام کارمند پشتیبان"
+          },
+          {
+            name: "عرض جغرافیایی",
+            required: false,
+            type: "number",
+            description: "مختصات عرض جغرافیایی (latitude) - مثال: 38.0792"
+          },
+          {
+            name: "طول جغرافیایی",
+            required: false,
+            type: "number",
+            description: "مختصات طول جغرافیایی (longitude) - مثال: 46.2887"
           }
         ],
         sampleDownloadUrl: "/api/excel/sample-download"

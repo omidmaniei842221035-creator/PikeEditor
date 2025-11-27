@@ -310,7 +310,12 @@ export const networkEdges = sqliteTable("network_edges", {
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertBranchSchema = createInsertSchema(branches).omit({ id: true, createdAt: true });
 export const insertEmployeeSchema = createInsertSchema(employees).omit({ id: true, createdAt: true });
-export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
+export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true }).extend({
+  shopName: z.string().min(2, "نام فروشگاه باید حداقل ۲ کاراکتر باشد"),
+  ownerName: z.string().min(2, "نام مالک باید حداقل ۲ کاراکتر باشد"),
+  phone: z.string().regex(/^09\d{9}$/, "شماره تلفن باید ۱۱ رقم و با 09 شروع شود"),
+  businessType: z.string().min(1, "نوع کسب‌وکار باید انتخاب شود"),
+});
 export const insertPosDeviceSchema = createInsertSchema(posDevices).omit({ id: true, createdAt: true });
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true });
 export const insertAlertSchema = createInsertSchema(alerts).omit({ id: true, createdAt: true });
