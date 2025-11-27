@@ -48,6 +48,10 @@
       {
         "from": "node_modules/better-sqlite3",
         "to": "node_modules/better-sqlite3"
+      },
+      {
+        "from": "node_modules/ws",
+        "to": "node_modules/ws"
       }
     ],
     "win": {
