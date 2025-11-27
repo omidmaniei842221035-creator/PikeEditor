@@ -11,7 +11,7 @@ REM Disable code signing
 set CSC_IDENTITY_AUTO_DISCOVERY=false
 
 REM NPM config for Iran
-echo [1/4] Setting up npm...
+echo [1/6] Setting up npm...
 call npm config set registry https://registry.npmmirror.com
 call npm config set strict-ssl false
 echo Done.
@@ -22,13 +22,13 @@ set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
 set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
 
 REM Clear old cache
-echo [2/4] Clearing cache...
+echo [2/6] Clearing cache...
 rmdir /s /q "%LOCALAPPDATA%\electron-builder\Cache\winCodeSign" 2>nul
 echo Done.
 echo.
 
 REM Install packages
-echo [3/5] Installing packages...
+echo [3/6] Installing packages...
 call npm install
 if %errorlevel% neq 0 (
     echo ERROR: npm install failed
@@ -38,11 +38,22 @@ if %errorlevel% neq 0 (
 echo Done.
 echo.
 
-REM Build frontend and server
-echo [4/5] Building frontend and server...
-call npm run build
+REM Build frontend
+echo [4/6] Building frontend...
+call npx vite build --outDir dist-public
 if %errorlevel% neq 0 (
-    echo ERROR: Build failed
+    echo ERROR: Frontend build failed
+    pause
+    exit /b 1
+)
+echo Done.
+echo.
+
+REM Build server with electron-entry.ts (NOT index.ts!)
+echo [5/6] Building Electron server...
+call npx esbuild server/electron-entry.ts --platform=node --packages=bundle --bundle --format=cjs --outfile=dist-server/index.cjs --external:better-sqlite3 --external:@neondatabase/serverless --external:ws --external:lightningcss
+if %errorlevel% neq 0 (
+    echo ERROR: Server build failed
     pause
     exit /b 1
 )
@@ -50,7 +61,7 @@ echo Done.
 echo.
 
 REM Build exe
-echo [5/5] Building portable exe...
+echo [6/6] Building portable exe...
 echo This takes about 5 minutes...
 echo.
 
