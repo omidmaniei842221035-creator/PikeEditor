@@ -10,6 +10,8 @@ export interface ExcelCustomerData {
   status?: string;
   branch?: string;
   supportEmployee?: string;
+  latitude?: string;
+  longitude?: string;
 }
 
 export interface ExcelBankingUnitData {
@@ -207,7 +209,9 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
       'سود ماهانه': 'monthlyProfit',
       'وضعیت': 'status',
       'شعبه': 'branch',
-      'کارمند پشتیبان': 'supportEmployee'
+      'کارمند پشتیبان': 'supportEmployee',
+      'عرض جغرافیایی': 'latitude',
+      'طول جغرافیایی': 'longitude'
     };
 
     // Find column indices
@@ -255,7 +259,11 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
         branch: columnIndices.branch !== undefined ? 
           row[columnIndices.branch]?.toString().trim() || '' : '',
         supportEmployee: columnIndices.supportEmployee !== undefined ? 
-          row[columnIndices.supportEmployee]?.toString().trim() || '' : ''
+          row[columnIndices.supportEmployee]?.toString().trim() || '' : '',
+        latitude: columnIndices.latitude !== undefined ? 
+          row[columnIndices.latitude]?.toString().trim() || '' : '',
+        longitude: columnIndices.longitude !== undefined ? 
+          row[columnIndices.longitude]?.toString().trim() || '' : ''
       };
 
       customers.push(customer);
@@ -269,7 +277,7 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
 }
 
 export function downloadSampleExcel(): void {
-  // Create sample data structure
+  // Create sample data structure with geo-location
   const sampleData = [
     {
       "نام فروشگاه": "سوپرمارکت نمونه",
@@ -281,6 +289,8 @@ export function downloadSampleExcel(): void {
       "وضعیت": "active",
       "شعبه": "شعبه مرکزی تبریز",
       "کارمند پشتیبان": "علی احمدی",
+      "عرض جغرافیایی": 38.0792,
+      "طول جغرافیایی": 46.2887,
     },
     {
       "نام فروشگاه": "رستوران طعم",
@@ -292,6 +302,8 @@ export function downloadSampleExcel(): void {
       "وضعیت": "marketing",
       "شعبه": "شعبه بازار تبریز",
       "کارمند پشتیبان": "زهرا کریمی",
+      "عرض جغرافیایی": 38.0756,
+      "طول جغرافیایی": 46.2915,
     },
     {
       "نام فروشگاه": "داروخانه سلامت",
@@ -303,6 +315,8 @@ export function downloadSampleExcel(): void {
       "وضعیت": "loss",
       "شعبه": "شعبه شهرک صنعتی",
       "کارمند پشتیبان": "محمد رضایی",
+      "عرض جغرافیایی": 38.0823,
+      "طول جغرافیایی": 46.2956,
     },
   ];
 
@@ -323,6 +337,8 @@ export function downloadSampleExcel(): void {
     { wch: 12 }, // وضعیت
     { wch: 20 }, // شعبه
     { wch: 20 }, // کارمند پشتیبان
+    { wch: 15 }, // عرض جغرافیایی
+    { wch: 15 }, // طول جغرافیایی
   ];
   worksheet['!cols'] = columnWidths;
   

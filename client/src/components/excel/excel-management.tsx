@@ -53,6 +53,19 @@ export function ExcelManagement() {
               continue;
             }
             
+            // Process geo-location data if available
+            let latitude: string | null = null;
+            let longitude: string | null = null;
+            
+            if (customer.latitude && customer.longitude) {
+              const lat = parseFloat(customer.latitude);
+              const lng = parseFloat(customer.longitude);
+              if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                latitude = lat.toString();
+                longitude = lng.toString();
+              }
+            }
+            
             // Create customer via API
             await apiRequest("POST", "/api/customers", {
               shopName: customer.shopName,
@@ -60,6 +73,8 @@ export function ExcelManagement() {
               phone: customer.phone,
               businessType: customer.businessType || "سایر",
               address: customer.address || "",
+              latitude: latitude,
+              longitude: longitude,
               monthlyProfit: customer.monthlyProfit || 0,
               status: customer.status || "active",
             });
@@ -175,6 +190,8 @@ export function ExcelManagement() {
     "وضعیت",
     "شعبه",
     "کارمند پشتیبان",
+    "عرض جغرافیایی (latitude)",
+    "طول جغرافیایی (longitude)",
   ];
 
   return (

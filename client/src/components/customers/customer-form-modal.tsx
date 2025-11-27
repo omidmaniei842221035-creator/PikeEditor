@@ -128,10 +128,8 @@ export function CustomerFormModal({
       };
       
       if (customer) {
-        // Update existing customer
         return apiRequest("PUT", `/api/customers/${customer.id}`, customerData);
       } else {
-        // Create new customer
         return apiRequest("POST", "/api/customers", customerData);
       }
     },
@@ -146,10 +144,19 @@ export function CustomerFormModal({
       form.reset();
       setSelectedLocation(null);
     },
-    onError: () => {
+    onError: (error: any) => {
+      let errorMessage = customer ? "خطا در به‌روزرسانی مشتری" : "خطا در افزودن مشتری";
+      
+      if (error?.issues && Array.isArray(error.issues)) {
+        const fieldErrors = error.issues.map((i: any) => i.message).join("، ");
+        errorMessage = fieldErrors;
+      } else if (error?.error) {
+        errorMessage = error.error;
+      }
+      
       toast({
         title: "خطا",
-        description: customer ? "خطا در به‌روزرسانی مشتری" : "خطا در افزودن مشتری",
+        description: errorMessage,
         variant: "destructive",
       });
     },
