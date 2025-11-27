@@ -74,7 +74,8 @@ async function startServer() {
   });
 
   const port = parseInt(process.env.PORT || "5000", 10);
-  const host = process.env.DATABASE_PATH ? "127.0.0.1" : "0.0.0.0";
+  const host = "127.0.0.1";
+  console.log(`[Electron] Binding to ${host}:${port}`);
   server.listen(port, host, () => {
     console.log(`Server running on http://${host}:${port}`);
   });
