@@ -1,7 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { storage } from "./storage";
+import { dbReady } from "./db";
+
+let storage: any;
 
 const app = express();
 app.use(express.json());
@@ -66,6 +68,9 @@ async function autoSeedIfEmpty() {
 }
 
 (async () => {
+  await dbReady;
+  const storageModule = await import("./storage");
+  storage = storageModule.storage;
   await autoSeedIfEmpty();
   const server = await registerRoutes(app);
 

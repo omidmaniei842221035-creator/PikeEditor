@@ -1,26 +1,8 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzleSQLite } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
-import ws from "ws";
-import * as pgSchema from "@shared/schema";
 import * as sqliteSchema from "@shared/schema.sqlite";
 import * as path from 'path';
 import * as fs from 'fs';
-
-// Import insert schemas from both schema files
-import {
-  insertCustomerSchema as pgInsertCustomerSchema,
-  insertEmployeeSchema as pgInsertEmployeeSchema,
-  insertBranchSchema as pgInsertBranchSchema,
-  insertAlertSchema as pgInsertAlertSchema,
-  insertPosDeviceSchema as pgInsertPosDeviceSchema,
-  insertPosMonthlyStatsSchema as pgInsertPosMonthlyStatsSchema,
-  insertVisitSchema as pgInsertVisitSchema,
-  insertCustomerAccessLogSchema as pgInsertCustomerAccessLogSchema,
-  insertBankingUnitSchema as pgInsertBankingUnitSchema,
-  insertTerritorySchema as pgInsertTerritorySchema,
-} from "@shared/schema";
 
 import {
   insertCustomerSchema as sqliteInsertCustomerSchema,
@@ -35,31 +17,36 @@ import {
   insertTerritorySchema as sqliteInsertTerritorySchema,
 } from "@shared/schema.sqlite";
 
-// Check if we're in Electron mode with SQLite
 const isElectronMode = !!process.env.DATABASE_PATH;
 
 let db: any;
-let pool: Pool | null = null;
+let pool: any = null;
 let sqlite: Database.Database | null = null;
+let schema: any = sqliteSchema;
 
-// Schema object that will be used throughout the app
-let schema: any;
+let insertCustomerSchema: any = sqliteInsertCustomerSchema;
+let insertEmployeeSchema: any = sqliteInsertEmployeeSchema;
+let insertBranchSchema: any = sqliteInsertBranchSchema;
+let insertAlertSchema: any = sqliteInsertAlertSchema;
+let insertPosDeviceSchema: any = sqliteInsertPosDeviceSchema;
+let insertPosMonthlyStatsSchema: any = sqliteInsertPosMonthlyStatsSchema;
+let insertVisitSchema: any = sqliteInsertVisitSchema;
+let insertCustomerAccessLogSchema: any = sqliteInsertCustomerAccessLogSchema;
+let insertBankingUnitSchema: any = sqliteInsertBankingUnitSchema;
+let insertTerritorySchema: any = sqliteInsertTerritorySchema;
 
 if (isElectronMode) {
-  // Electron mode: Use SQLite
   const dbPath = process.env.DATABASE_PATH!;
   const dbDir = path.dirname(dbPath);
   
-  // Ensure directory exists
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
   
-  console.log(`📦 Using SQLite database at: ${dbPath}`);
+  console.log(`Using SQLite database at: ${dbPath}`);
   sqlite = new Database(dbPath);
   sqlite.pragma('journal_mode = WAL');
   
-  // Initialize all tables if they don't exist
   try {
     sqlite.exec(`
       CREATE TABLE IF NOT EXISTS users (
@@ -354,38 +341,62 @@ if (isElectronMode) {
         updated_at INTEGER
       );
     `);
-    console.log('✅ SQLite database initialized with all 21 tables (Base + Grafana + Network)');
+    console.log('SQLite database initialized');
   } catch (err) {
     console.warn('SQLite initialization warning:', err);
   }
   
   db = drizzleSQLite(sqlite, { schema: sqliteSchema });
   schema = sqliteSchema;
-} else {
-  // Web mode: Use PostgreSQL
-  if (!process.env.DATABASE_URL) {
-    throw new Error(
-      "DATABASE_URL must be set. Did you forget to provision a database?",
-    );
-  }
-  
-  neonConfig.webSocketConstructor = ws;
-  console.log('🐘 Using PostgreSQL database');
-  pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  db = drizzleNeon({ client: pool, schema: pgSchema });
-  schema = pgSchema;
 }
 
-// Export insert schemas based on runtime environment
-export const insertCustomerSchema = isElectronMode ? sqliteInsertCustomerSchema : pgInsertCustomerSchema;
-export const insertEmployeeSchema = isElectronMode ? sqliteInsertEmployeeSchema : pgInsertEmployeeSchema;
-export const insertBranchSchema = isElectronMode ? sqliteInsertBranchSchema : pgInsertBranchSchema;
-export const insertAlertSchema = isElectronMode ? sqliteInsertAlertSchema : pgInsertAlertSchema;
-export const insertPosDeviceSchema = isElectronMode ? sqliteInsertPosDeviceSchema : pgInsertPosDeviceSchema;
-export const insertPosMonthlyStatsSchema = isElectronMode ? sqliteInsertPosMonthlyStatsSchema : pgInsertPosMonthlyStatsSchema;
-export const insertVisitSchema = isElectronMode ? sqliteInsertVisitSchema : pgInsertVisitSchema;
-export const insertCustomerAccessLogSchema = isElectronMode ? sqliteInsertCustomerAccessLogSchema : pgInsertCustomerAccessLogSchema;
-export const insertBankingUnitSchema = isElectronMode ? sqliteInsertBankingUnitSchema : pgInsertBankingUnitSchema;
-export const insertTerritorySchema = isElectronMode ? sqliteInsertTerritorySchema : pgInsertTerritorySchema;
+async function initPostgres() {
+  if (!isElectronMode) {
+    const { Pool, neonConfig } = await import('@neondatabase/serverless');
+    const { drizzle: drizzleNeon } = await import('drizzle-orm/neon-serverless');
+    const ws = await import('ws');
+    const pgSchema = await import('@shared/schema');
+    
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL must be set.");
+    }
+    
+    neonConfig.webSocketConstructor = ws.default;
+    console.log('Using PostgreSQL database');
+    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    db = drizzleNeon({ client: pool, schema: pgSchema });
+    schema = pgSchema;
+    
+    insertCustomerSchema = pgSchema.insertCustomerSchema;
+    insertEmployeeSchema = pgSchema.insertEmployeeSchema;
+    insertBranchSchema = pgSchema.insertBranchSchema;
+    insertAlertSchema = pgSchema.insertAlertSchema;
+    insertPosDeviceSchema = pgSchema.insertPosDeviceSchema;
+    insertPosMonthlyStatsSchema = pgSchema.insertPosMonthlyStatsSchema;
+    insertVisitSchema = pgSchema.insertVisitSchema;
+    insertCustomerAccessLogSchema = pgSchema.insertCustomerAccessLogSchema;
+    insertBankingUnitSchema = pgSchema.insertBankingUnitSchema;
+    insertTerritorySchema = pgSchema.insertTerritorySchema;
+  }
+}
 
-export { db, pool, sqlite, isElectronMode, schema };
+const dbReady = initPostgres();
+
+export { 
+  db, 
+  pool, 
+  sqlite, 
+  isElectronMode, 
+  schema,
+  dbReady,
+  insertCustomerSchema,
+  insertEmployeeSchema,
+  insertBranchSchema,
+  insertAlertSchema,
+  insertPosDeviceSchema,
+  insertPosMonthlyStatsSchema,
+  insertVisitSchema,
+  insertCustomerAccessLogSchema,
+  insertBankingUnitSchema,
+  insertTerritorySchema
+};
