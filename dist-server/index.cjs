@@ -44644,11 +44644,6 @@ async function setupVite(app2, server) {
   const { createServer: createViteServer, createLogger } = await import("vite");
   const viteConfig = (await import("../vite.config")).default;
   const viteLogger = createLogger();
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true
-  };
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
@@ -44659,23 +44654,22 @@ async function setupVite(app2, server) {
         process.exit(1);
       }
     },
-    server: serverOptions,
+    server: {
+      middlewareMode: true,
+      hmr: { server },
+      allowedHosts: true
+    },
     appType: "custom"
   });
   app2.use(vite.middlewares);
   app2.use("*", async (req, res, next) => {
     const url = req.originalUrl;
-    if (url.startsWith("/api")) {
-      return next();
-    }
+    if (url.startsWith("/api")) return next();
     try {
       const currentDir = getCurrentDir();
       const clientTemplate = import_path.default.resolve(currentDir, "..", "client", "index.html");
       let template = await import_fs.default.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
+      template = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid()}"`);
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
@@ -44686,30 +44680,38 @@ async function setupVite(app2, server) {
 }
 function serveStatic(app2) {
   const currentDir = getCurrentDir();
-  console.log(`Current directory: ${currentDir}`);
+  const isElectron = !!process.env.DATABASE_PATH;
+  const cwd = process.cwd();
+  console.log(`[Static] Current directory: ${currentDir}`);
+  console.log(`[Static] CWD: ${cwd}`);
+  console.log(`[Static] Is Electron: ${isElectron}`);
   const possiblePaths = [
-    import_path.default.resolve(currentDir, "public"),
-    // Same folder as index.cjs
-    import_path.default.resolve(currentDir, "..", "public"),
-    // Parent folder
-    import_path.default.join(process.cwd(), "dist", "public"),
-    // From working directory
-    import_path.default.join(process.cwd(), "public")
-    // Direct public folder
+    // Electron packaged app paths (cwd is resources/)
+    import_path.default.join(cwd, "public"),
+    // resources/public
+    import_path.default.join(currentDir, "..", "public"),
+    // resources/server/../public = resources/public
+    // Development/Web paths
+    import_path.default.join(cwd, "dist-public"),
+    import_path.default.join(process.cwd(), "dist-public"),
+    import_path.default.resolve("dist-public")
   ];
+  console.log("[Static] Checking paths:");
   let distPath = null;
   for (const p of possiblePaths) {
-    if (import_fs.default.existsSync(p)) {
+    const exists2 = import_fs.default.existsSync(p);
+    const hasIndex = exists2 && import_fs.default.existsSync(import_path.default.join(p, "index.html"));
+    console.log(`  - ${p}: ${exists2 ? hasIndex ? "FOUND+index" : "FOUND-noindex" : "not found"}`);
+    if (hasIndex && !distPath) {
       distPath = p;
-      break;
     }
   }
   if (!distPath) {
-    console.error(`Could not find static files. Tried paths:`);
-    possiblePaths.forEach((p) => console.error(`  - ${p} (exists: ${import_fs.default.existsSync(p)})`));
-    throw new Error(`Could not find the build directory, make sure to build the client first`);
+    console.error("[Static] ERROR: Static files not found!");
+    console.error("[Static] Checked paths:", possiblePaths);
+    throw new Error(`Static files not found. Checked: ${possiblePaths.join(", ")}`);
   }
-  console.log(`Serving static files from: ${distPath}`);
+  console.log(`[Static] Serving from: ${distPath}`);
   app2.use(import_express2.default.static(distPath));
   app2.use("*", (_req, res) => {
     res.sendFile(import_path.default.resolve(distPath, "index.html"));
