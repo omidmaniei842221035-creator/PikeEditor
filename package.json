@@ -67,8 +67,7 @@
       ],
       "icon": "build/icon.ico",
       "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
-      "signAndEditExecutable": false,
-      "sign": null
+      "signAndEditExecutable": false
     },
     "compression": "store",
     "nsis": {
