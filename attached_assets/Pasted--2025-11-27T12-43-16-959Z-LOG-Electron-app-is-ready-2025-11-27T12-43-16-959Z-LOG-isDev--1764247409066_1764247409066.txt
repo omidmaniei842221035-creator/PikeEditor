@@ -1,0 +1,41 @@
+[2025-11-27T12:43:16.959Z] [LOG] 🎯 Electron app is ready
+[2025-11-27T12:43:16.959Z] [LOG] 📌 isDev: false
+[2025-11-27T12:43:16.959Z] [LOG] 📌 __dirname: C:\Users\PC\AppData\Local\Temp\363tgrOU0Dh45APFYa2evp0miT1\resources\app.asar\dist-electron
+[2025-11-27T12:43:16.959Z] [LOG] 📌 process.cwd(): C:\Users\PC\AppData\Local\Temp\363tgrOU0Dh45APFYa2evp0miT1
+[2025-11-27T12:43:16.959Z] [LOG] 📝 Log file: C:\Users\PC\AppData\Roaming\pos-monitoring-system\logs\electron-2025-11-27T12-43-16-958Z.log
+[2025-11-27T12:43:16.959Z] [LOG] 🔍 Looking for server at: C:\Users\PC\AppData\Local\Temp\363tgrOU0Dh45APFYa2evp0miT1\resources\server\index.cjs
+[2025-11-27T12:43:16.959Z] [LOG]    Exists: true
+[2025-11-27T12:43:16.960Z] [LOG] 🚀 Starting POS Monitoring Server...
+[2025-11-27T12:43:16.960Z] [LOG] 📂 App path: C:\Users\PC\AppData\Local\Temp\363tgrOU0Dh45APFYa2evp0miT1\resources\app.asar
+[2025-11-27T12:43:16.960Z] [LOG] 📂 Resources path: C:\Users\PC\AppData\Local\Temp\363tgrOU0Dh45APFYa2evp0miT1\resources
+[2025-11-27T12:43:16.960Z] [LOG] 📂 User data path: C:\Users\PC\AppData\Roaming\pos-monitoring-system
+[2025-11-27T12:43:16.960Z] [LOG] 📂 SQLite database: C:\Users\PC\AppData\Roaming\pos-monitoring-system\pos-system.db
+[2025-11-27T12:43:16.960Z] [LOG] 📂 Server path: C:\Users\PC\AppData\Local\Temp\363tgrOU0Dh45APFYa2evp0miT1\resources\server\index.cjs
+[2025-11-27T12:43:16.960Z] [LOG] 📦 NODE_PATH: C:\Users\PC\AppData\Local\Temp\363tgrOU0Dh45APFYa2evp0miT1\resources\node_modules
+[2025-11-27T12:43:16.967Z] [LOG] ✅ Server process spawned
+[2025-11-27T12:43:16.967Z] [LOG] ⏱️  Waiting 5000ms for server to start...
+[2025-11-27T12:43:17.316Z] [ERROR] [SERVER ERROR] node:internal/modules/cjs/loader:1393
+  throw err;
+  ^
+
+Error: Cannot find module 'ws'
+Require stack:
+- C:\Users\PC\AppData\Local\Temp\363tgrOU0Dh45APFYa2evp0miT1\resources\server\index.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1390:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1032:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1037:22)
+    at Module._load (node:internal/modules/cjs/loader:1199:37)
+    at c._load (node:electron/js2c/node_init:2:17993)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+    at Module.require (node:internal/modules/cjs/loader:1470:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (C:\Users\PC\AppData\Local\Temp\363tgrOU0Dh45APFYa2evp0miT1\resources\server\index.cjs:41568:18) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\PC\\AppData\\Local\\Temp\\363tgrOU0Dh45APFYa2evp0miT1\\resources\\server\\index.cjs'
+  ]
+}
+
+Node.js v22.19.0
+[2025-11-27T12:43:17.321Z] [ERROR] ❌ Server process exited with code 1, signal: null
