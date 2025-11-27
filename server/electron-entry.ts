@@ -74,8 +74,9 @@ async function startServer() {
   });
 
   const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen(port, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${port}`);
+  const host = process.env.DATABASE_PATH ? "127.0.0.1" : "0.0.0.0";
+  server.listen(port, host, () => {
+    console.log(`Server running on http://${host}:${port}`);
   });
 }
 
