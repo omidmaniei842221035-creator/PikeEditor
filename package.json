@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "vite build --outDir dist-public && esbuild server/index.ts --platform=node --packages=bundle --bundle --format=cjs --outfile=dist-server/index.cjs --external:better-sqlite3 --external:@neondatabase/serverless --external:ws --external:lightningcss --external:@babel/* --external:vite --external:../vite.config",
-    "start": "NODE_ENV=production node dist/index.js",
+    "start": "NODE_ENV=production node dist-server/index.cjs",
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "electron:compile": "tsc -p electron/tsconfig.json && node scripts/rename-to-cjs.cjs",
