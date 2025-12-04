@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema, insertTerritorySchema } from "./db";
+import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema, insertTerritorySchema, insertTransactionSchema } from "./db";
 import { z } from "zod";
 import { grafanaRouter } from "./routes/grafana";
 
@@ -372,6 +372,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "Alert not found" });
     }
     res.json(alert);
+  });
+
+  // Transactions routes
+  app.get("/api/transactions", async (req, res) => {
+    const transactions = await storage.getAllTransactions();
+    res.json(transactions);
+  });
+
+  app.get("/api/transactions/device/:deviceId", async (req, res) => {
+    const transactions = await storage.getTransactionsByDevice(req.params.deviceId);
+    res.json(transactions);
+  });
+
+  app.post("/api/transactions", async (req, res) => {
+    try {
+      const transactionData = insertTransactionSchema.parse(req.body);
+      const transaction = await storage.createTransaction(transactionData);
+      res.json(transaction);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid transaction data" });
+    }
   });
 
   // Visits routes

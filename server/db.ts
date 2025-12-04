@@ -15,6 +15,7 @@ import {
   insertCustomerAccessLogSchema as sqliteInsertCustomerAccessLogSchema,
   insertBankingUnitSchema as sqliteInsertBankingUnitSchema,
   insertTerritorySchema as sqliteInsertTerritorySchema,
+  insertTransactionSchema as sqliteInsertTransactionSchema,
 } from "@shared/schema.sqlite";
 
 const isElectronMode = !!process.env.DATABASE_PATH;
@@ -34,6 +35,7 @@ let insertVisitSchema: any = sqliteInsertVisitSchema;
 let insertCustomerAccessLogSchema: any = sqliteInsertCustomerAccessLogSchema;
 let insertBankingUnitSchema: any = sqliteInsertBankingUnitSchema;
 let insertTerritorySchema: any = sqliteInsertTerritorySchema;
+let insertTransactionSchema: any = sqliteInsertTransactionSchema;
 
 if (isElectronMode) {
   const dbPath = process.env.DATABASE_PATH!;
@@ -377,6 +379,7 @@ async function initPostgres() {
     insertCustomerAccessLogSchema = pgSchema.insertCustomerAccessLogSchema;
     insertBankingUnitSchema = pgSchema.insertBankingUnitSchema;
     insertTerritorySchema = pgSchema.insertTerritorySchema;
+    insertTransactionSchema = pgSchema.insertTransactionSchema;
   }
 }
 
@@ -398,5 +401,6 @@ export {
   insertVisitSchema,
   insertCustomerAccessLogSchema,
   insertBankingUnitSchema,
-  insertTerritorySchema
+  insertTerritorySchema,
+  insertTransactionSchema
 };
