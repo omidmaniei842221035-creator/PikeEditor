@@ -51,7 +51,7 @@ export const customers = sqliteTable("customers", {
   nationalId: text("national_id"),
   shopName: text("shop_name").notNull(),
   ownerName: text("owner_name").notNull(),
-  phone: text("phone").notNull(),
+  phone: text("phone"), // Made optional for quick save from map
   businessType: text("business_type").notNull(),
   address: text("address"),
   latitude: text("latitude"), // Changed from real to text to match PG decimal→string
@@ -313,7 +313,13 @@ export const insertEmployeeSchema = createInsertSchema(employees).omit({ id: tru
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true }).extend({
   shopName: z.string().min(2, "نام فروشگاه باید حداقل ۲ کاراکتر باشد"),
   ownerName: z.string().min(2, "نام مالک باید حداقل ۲ کاراکتر باشد"),
-  phone: z.string().regex(/^09\d{9}$/, "شماره تلفن باید ۱۱ رقم و با 09 شروع شود"),
+  phone: z.string().optional().transform((val) => {
+    if (!val || val.trim() === '') return '';
+    return val;
+  }).refine((val) => {
+    if (!val || val === '') return true;
+    return /^09\d{9}$/.test(val);
+  }, { message: "شماره تلفن باید ۱۱ رقم و با 09 شروع شود" }),
   businessType: z.string().min(1, "نوع کسب‌وکار باید انتخاب شود"),
 });
 export const insertPosDeviceSchema = createInsertSchema(posDevices).omit({ id: true, createdAt: true });

@@ -401,9 +401,14 @@ export function CustomerFormModal({
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>شماره تلفن *</FormLabel>
+                    <FormLabel>شماره تلفن (اختیاری)</FormLabel>
                     <FormControl>
-                      <Input {...field} type="tel" data-testid="phone-input" />
+                      <Input 
+                        {...field} 
+                        type="tel" 
+                        placeholder="مثال: 09123456789"
+                        data-testid="phone-input" 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
