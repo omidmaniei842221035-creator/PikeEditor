@@ -23,7 +23,7 @@
   },
   "build": {
     "appId": "com.posmonitoring.app",
-    "productName": "سامانه مانیتورینگ POS",
+    "productName": "POS-Monitoring-System",
     "directories": {
       "output": "release",
       "buildResources": "build"
