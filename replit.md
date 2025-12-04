@@ -183,3 +183,21 @@ resources/
   - Navigation link added to sidebar under "تنظیمات سیستم"
   - Critical fix: Vite middleware now properly allows API routes (was blocking with 404)
   - Users can now download both portable archive (121MB) and electron.exe (201.4MB) directly from web interface
+
+### Map Enhancements - Completed ✅ (October 31, 2025)
+- ✅ Monthly Status History Timeline on Customer Markers:
+  - Added color-coded 6-month status timeline to customer popup tooltips
+  - Lazy-loads data from `/api/pos-stats/customer/:customerId` endpoint when popup opens
+  - Interactive bars with hover tooltips showing month/year, status, and revenue
+  - Persian month abbreviations (فر, ار, خر, etc.) for better UX
+  - Handles loading states and error messages gracefully
+- ✅ Fixed Analytics Map Lazy Loading Issue:
+  - Regional analysis dashboard map now initializes correctly after tab switch
+  - Added 100ms DOM rendering delay before map initialization
+  - Eliminates zero-dimension container failures
+  - Early return pattern prevents unnecessary initialization attempts
+- ✅ Customer Location Selection System (Already Implemented):
+  - Click-to-select mode with crosshair cursor
+  - "افزودن مشتری از نقشه" button toggles selection mode
+  - CustomerFormModal integration with initialLocation prop
+  - Temporary marker shows selected location for 3 seconds

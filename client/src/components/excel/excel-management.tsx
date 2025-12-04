@@ -25,21 +25,17 @@ export function ExcelManagement() {
 
   const uploadMutation = useMutation({
     mutationFn: async (data: any[]) => {
-      // Simulate upload progress
       setIsUploading(true);
-      setUploadProgress(0);
+      setUploadProgress(30);
       
-      // Process data in chunks for progress simulation
-      const chunkSize = 10;
-      const chunks = [];
-      for (let i = 0; i < data.length; i += chunkSize) {
-        chunks.push(data.slice(i, i + chunkSize));
-      }
+      // Use the bulk import endpoint
+      const response = await apiRequest("POST", "/api/excel/import", { 
+        customers: data 
+      });
       
-      let success = 0;
-      let errors = 0;
-      const errorsList: string[] = [];
+      setUploadProgress(100);
       
+<<<<<<< HEAD
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
         
@@ -98,7 +94,19 @@ export function ExcelManagement() {
         errors,
         total: success + errors,
         errorsList,
+=======
+      // Map server response to expected format with safe guards
+      const result = {
+        success: response?.summary?.success || 0,
+        errors: response?.summary?.errors || 0,
+        total: response?.summary?.total || 0,
+        errorsList: (response?.summary?.errorDetails || []).map((err: any) => 
+          `ردیف ${err.row}: ${err.message}`
+        ),
+>>>>>>> 57f38cf3e3015d4b44fff0502944e11ae333ab36
       };
+      
+      return result;
     },
     onSuccess: (result) => {
       setUploadResult(result);
