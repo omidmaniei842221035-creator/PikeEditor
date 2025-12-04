@@ -33,77 +33,19 @@ export function ExcelManagement() {
         customers: data 
       });
       
+      // Parse JSON response
+      const jsonResponse = await response.json();
+      
       setUploadProgress(100);
       
-<<<<<<< HEAD
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        
-        // Process each customer in chunk
-        for (const customer of chunk) {
-          try {
-            // Validate required fields
-            if (!customer.shopName || !customer.ownerName || !customer.phone) {
-              errors++;
-              errorsList.push(`ردیف ${i * chunkSize + chunk.indexOf(customer) + 1}: فیلدهای ضروری کامل نیست`);
-              continue;
-            }
-            
-            // Process geo-location data if available
-            let latitude: string | null = null;
-            let longitude: string | null = null;
-            
-            if (customer.latitude && customer.longitude) {
-              const lat = parseFloat(customer.latitude);
-              const lng = parseFloat(customer.longitude);
-              if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-                latitude = lat.toString();
-                longitude = lng.toString();
-              }
-            }
-            
-            // Create customer via API
-            await apiRequest("POST", "/api/customers", {
-              shopName: customer.shopName,
-              ownerName: customer.ownerName,
-              phone: customer.phone,
-              businessType: customer.businessType || "سایر",
-              address: customer.address || "",
-              latitude: latitude,
-              longitude: longitude,
-              monthlyProfit: customer.monthlyProfit || 0,
-              status: customer.status || "active",
-            });
-            
-            success++;
-          } catch (error) {
-            errors++;
-            errorsList.push(`ردیف ${i * chunkSize + chunk.indexOf(customer) + 1}: خطا در ثبت اطلاعات`);
-          }
-        }
-        
-        // Update progress
-        setUploadProgress(Math.round(((i + 1) / chunks.length) * 100));
-        
-        // Add delay for visual feedback
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
-      return {
-        success,
-        errors,
-        total: success + errors,
-        errorsList,
-=======
       // Map server response to expected format with safe guards
       const result = {
-        success: response?.summary?.success || 0,
-        errors: response?.summary?.errors || 0,
-        total: response?.summary?.total || 0,
-        errorsList: (response?.summary?.errorDetails || []).map((err: any) => 
+        success: jsonResponse?.summary?.success || 0,
+        errors: jsonResponse?.summary?.errors || 0,
+        total: jsonResponse?.summary?.total || 0,
+        errorsList: (jsonResponse?.summary?.errorDetails || []).map((err: any) => 
           `ردیف ${err.row}: ${err.message}`
         ),
->>>>>>> 57f38cf3e3015d4b44fff0502944e11ae333ab36
       };
       
       return result;
