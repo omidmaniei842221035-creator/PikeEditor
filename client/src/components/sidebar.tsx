@@ -14,18 +14,14 @@ const menuItems = [
   { id: "branches" as TabType, label: "واحدهای بانکی", icon: "🏢", type: "tab" },
   { id: "pos-stats" as TabType, label: "آمار ماهانه POS", icon: "📈", type: "tab" },
   { id: "analytics" as TabType, label: "تحلیل و گزارش", icon: "📊", type: "tab" },
-  { id: "reports" as TabType, label: "گزارش‌گیری پیشرفته", icon: "📋", type: "tab" },
   { id: "ai" as TabType, label: "هوش مصنوعی", icon: "🤖", type: "tab" },
   { id: "monitoring" as TabType, label: "مانیتورینگ زنده", icon: "📡", type: "tab" },
   { id: "regional" as TabType, label: "تحلیل منطقه‌ای", icon: "🗺️", type: "tab" },
-  { id: "excel" as TabType, label: "بارگزاری اکسل", icon: "📄", type: "tab" },
-  { id: "spider-web" as TabType, label: "نقشه تار عنکبوت", icon: "🕸️", type: "tab" },
 ];
 
 const navigationItems = [
   { path: "/ai-features", label: "تحلیل‌های هوش مصنوعی", icon: "🧠" },
   { path: "/strategic-analysis", label: "تحلیل استراتژیک", icon: "📈" },
-  { path: "/grafana", label: "Grafana Enterprise", icon: "📊" },
   { path: "/territories", label: "مدیریت مناطق", icon: "🗺️" },
   { path: "/geo-spider-network", label: "نقشه تار عنکبوت شهری", icon: "🕸️" },
 ];
@@ -43,8 +39,8 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   };
 
   return (
-    <aside className="w-72 bg-card border-l border-border flex flex-col shadow-lg">
-      <div className="p-6 border-b border-border">
+    <aside className="w-72 h-screen bg-card border-l border-border flex flex-col shadow-lg">
+      <div className="flex-shrink-0 p-6 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-primary-foreground text-xl">💳</span>
@@ -56,7 +52,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         </div>
       </div>
       
-      <nav className="flex-1 p-4 space-y-1 custom-scrollbar overflow-y-auto">
+      <nav className="flex-1 min-h-0 p-4 space-y-1 custom-scrollbar overflow-y-auto">
         {/* Dashboard Tabs */}
         <div className="space-y-1">
           <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -133,7 +129,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         </div>
       </nav>
       
-      <div className="p-4 border-t border-border">
+      <div className="flex-shrink-0 p-4 border-t border-border">
         <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
           <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
             <span className="text-primary font-bold">ع</span>
