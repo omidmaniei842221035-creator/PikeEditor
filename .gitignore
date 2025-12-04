@@ -41,3 +41,21 @@ logs/
 # Build cache
 .turbo/
 .cache/
+
+# Large files (GitHub limit is 100MB)
+*.tar.gz
+*.zip
+*.exe
+*.msi
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+
+# Electron cache and builds
+.cache/electron/
+electron-builder-cache/
+
+# Release artifacts
+release/
+*.portable
