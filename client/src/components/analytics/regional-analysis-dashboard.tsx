@@ -7,10 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { MapPin, Target, TrendingUp, AlertTriangle, Users, Building2, Zap, Search, Plus, Layers, Info, CheckCircle } from 'lucide-react';
+import { MapPin, Target, TrendingUp, AlertTriangle, Users, Building2, Zap, Search, Plus, Layers, Info, CheckCircle, Brain, Radar } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { initializeMap, type MapInstance } from '@/lib/map-utils';
 import TerritoryManagement from '@/components/territories/territory-management';
+import { AIGeoAnalysisDashboard } from './ai-geo-analysis-dashboard';
 
 interface VirginRegion {
   id: string;
@@ -122,7 +123,7 @@ function createConvexHull(points: [number, number][]): [number, number][] {
 }
 
 export function RegionalAnalysisDashboard({ className }: RegionalAnalysisDashboardProps) {
-  const [activeTab, setActiveTab] = useState('territories');
+  const [activeTab, setActiveTab] = useState('ai-geo');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [virginRegions, setVirginRegions] = useState<VirginRegion[]>([]);
   const [autoZones, setAutoZones] = useState<AutoZone[]>([]);
@@ -487,7 +488,11 @@ export function RegionalAnalysisDashboard({ className }: RegionalAnalysisDashboa
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="ai-geo" data-testid="tab-ai-geo">
+            <Brain className="w-4 h-4 mr-2" />
+            تحلیل هوشمند
+          </TabsTrigger>
           <TabsTrigger value="territories" data-testid="tab-territories">
             <Layers className="w-4 h-4 mr-2" />
             مدیریت مناطق
@@ -505,6 +510,11 @@ export function RegionalAnalysisDashboard({ className }: RegionalAnalysisDashboa
             تحلیل توزیع
           </TabsTrigger>
         </TabsList>
+
+        {/* AI Geographic Analysis Tab */}
+        <TabsContent value="ai-geo" className="space-y-6">
+          <AIGeoAnalysisDashboard />
+        </TabsContent>
 
         {/* Territory Management Tab */}
         <TabsContent value="territories" className="space-y-6">
