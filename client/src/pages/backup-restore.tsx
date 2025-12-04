@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Upload, Database, AlertTriangle, CheckCircle } from "lucide-react";
+import { useLocation } from "wouter";
+import { Download, Upload, Database, AlertTriangle, CheckCircle, Home, ArrowRight } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,7 @@ export function BackupRestore() {
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const downloadBackup = async () => {
     try {
@@ -109,6 +111,18 @@ export function BackupRestore() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 p-8">
       <div className="max-w-6xl mx-auto space-y-8">
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="outline" 
+            onClick={() => setLocation("/")}
+            className="flex items-center gap-2"
+            data-testid="back-to-main"
+          >
+            <Home className="h-4 w-4" />
+            <span>بازگشت به منوی اصلی</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
             💾 پشتیبان‌گیری و بازیابی

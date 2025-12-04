@@ -233,7 +233,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/customers", async (req, res) => {
     try {
       const customerData = insertCustomerSchema.parse(req.body);
-      const customer = await storage.createCustomer(customerData);
+      
+      const cleanedData: any = {
+        shopName: customerData.shopName,
+        ownerName: customerData.ownerName,
+        phone: customerData.phone,
+        businessType: customerData.businessType,
+        status: customerData.status || 'active',
+        monthlyProfit: customerData.monthlyProfit,
+      };
+      
+      if (customerData.nationalId) cleanedData.nationalId = customerData.nationalId;
+      if (customerData.address) cleanedData.address = customerData.address;
+      if (customerData.latitude) cleanedData.latitude = customerData.latitude;
+      if (customerData.longitude) cleanedData.longitude = customerData.longitude;
+      if (customerData.branchId) cleanedData.branchId = customerData.branchId;
+      if (customerData.bankingUnitId) cleanedData.bankingUnitId = customerData.bankingUnitId;
+      if (customerData.supportEmployeeId) cleanedData.supportEmployeeId = customerData.supportEmployeeId;
+      if (customerData.installDate) cleanedData.installDate = customerData.installDate;
+      
+      const customer = await storage.createCustomer(cleanedData);
       res.json(customer);
     } catch (error: any) {
       if (error.errors) {
@@ -263,7 +282,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/customers/:id", async (req, res) => {
     try {
       const updateData = insertCustomerSchema.partial().parse(req.body);
-      const customer = await storage.updateCustomer(req.params.id, updateData);
+      
+      const cleanedData: any = {};
+      if (updateData.shopName !== undefined) cleanedData.shopName = updateData.shopName;
+      if (updateData.ownerName !== undefined) cleanedData.ownerName = updateData.ownerName;
+      if (updateData.phone !== undefined) cleanedData.phone = updateData.phone;
+      if (updateData.businessType !== undefined) cleanedData.businessType = updateData.businessType;
+      if (updateData.status !== undefined) cleanedData.status = updateData.status;
+      if (updateData.nationalId !== undefined) cleanedData.nationalId = updateData.nationalId;
+      if (updateData.address !== undefined) cleanedData.address = updateData.address;
+      if (updateData.latitude !== undefined) cleanedData.latitude = updateData.latitude;
+      if (updateData.longitude !== undefined) cleanedData.longitude = updateData.longitude;
+      if (updateData.monthlyProfit !== undefined) cleanedData.monthlyProfit = updateData.monthlyProfit;
+      if (updateData.branchId !== undefined) cleanedData.branchId = updateData.branchId;
+      if (updateData.bankingUnitId !== undefined) cleanedData.bankingUnitId = updateData.bankingUnitId;
+      if (updateData.supportEmployeeId !== undefined) cleanedData.supportEmployeeId = updateData.supportEmployeeId;
+      if (updateData.installDate !== undefined) cleanedData.installDate = updateData.installDate;
+      
+      const customer = await storage.updateCustomer(req.params.id, cleanedData);
       if (!customer) {
         return res.status(404).json({ error: "مشتری یافت نشد" });
       }

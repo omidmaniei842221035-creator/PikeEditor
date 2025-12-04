@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoo
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 import { 
   MapPin, 
   Plus, 
@@ -30,7 +31,9 @@ import {
   Pencil,
   Square,
   PenTool,
-  Circle
+  Circle,
+  Home,
+  ArrowRight
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -98,9 +101,10 @@ interface SuggestNameResponse {
   };
 }
 
-export function TerritoryManagement() {
+export default function TerritoryManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const mapRef = useRef<L.Map | null>(null);
   const drawControlRef = useRef<L.Control.Draw | null>(null);
   const territoryLayersRef = useRef<L.LayerGroup | null>(null);
@@ -648,14 +652,26 @@ export function TerritoryManagement() {
       {/* Header */}
       <div className="bg-white border-b p-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <MapPin className="w-6 h-6 text-blue-600" />
-              مدیریت مناطق جغرافیایی
-            </h1>
-            <p className="text-gray-600 mt-1">
-              ترسیم، مدیریت و تخصیص مناطق به واحدهای بانکی
-            </p>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setLocation("/")}
+              className="flex items-center gap-2"
+              data-testid="back-to-main"
+            >
+              <Home className="h-4 w-4" />
+              <span>بازگشت به منوی اصلی</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <MapPin className="w-6 h-6 text-blue-600" />
+                مدیریت مناطق جغرافیایی
+              </h1>
+              <p className="text-gray-600 mt-1">
+                ترسیم، مدیریت و تخصیص مناطق به واحدهای بانکی
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Badge variant="outline" className="text-sm">
@@ -1121,5 +1137,3 @@ export function TerritoryManagement() {
     </TooltipProvider>
   );
 }
-
-export default TerritoryManagement;

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 import GridLayout, { Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -41,7 +42,9 @@ import {
   AlertTriangle,
   Zap,
   Target,
-  Brain
+  Brain,
+  Home,
+  ArrowRight
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip as ChartTooltip, Legend, ArcElement } from 'chart.js';
@@ -123,6 +126,7 @@ interface DashboardBuilderProps {
 
 export function DashboardBuilder({ uid }: DashboardBuilderProps = {}) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [dashboard, setDashboard] = useState<Dashboard>({
     uid: uuidv4(),
     title: 'داشبورد جدید',
@@ -410,6 +414,16 @@ export function DashboardBuilder({ uid }: DashboardBuilderProps = {}) {
         <div className="border-b bg-card p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setLocation("/")}
+                className="flex items-center gap-2"
+                data-testid="back-to-main"
+              >
+                <Home className="h-4 w-4" />
+                <span>بازگشت به منوی اصلی</span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
               <Input
                 value={dashboard.title}
                 onChange={(e) => setDashboard(prev => ({ ...prev, title: e.target.value }))}

@@ -350,8 +350,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
-    const [customer] = await db.insert(customers).values(insertCustomer).returning();
-    return customer;
+    const result = await db.execute(sql`
+      INSERT INTO customers (shop_name, owner_name, phone, business_type, address, latitude, longitude, monthly_profit, status, branch_id, banking_unit_id, support_employee_id, install_date)
+      VALUES (
+        ${insertCustomer.shopName},
+        ${insertCustomer.ownerName},
+        ${insertCustomer.phone},
+        ${insertCustomer.businessType},
+        ${insertCustomer.address || null},
+        ${insertCustomer.latitude || null},
+        ${insertCustomer.longitude || null},
+        ${insertCustomer.monthlyProfit || 0},
+        ${insertCustomer.status || 'active'},
+        ${insertCustomer.branchId || null},
+        ${insertCustomer.bankingUnitId || null},
+        ${insertCustomer.supportEmployeeId || null},
+        ${insertCustomer.installDate || null}
+      )
+      RETURNING *
+    `);
+    return result.rows[0] as Customer;
   }
 
   async updateCustomer(id: string, updateData: Partial<InsertCustomer>): Promise<Customer | undefined> {

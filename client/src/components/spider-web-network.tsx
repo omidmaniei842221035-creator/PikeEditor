@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Zap, Network, TrendingUp, Target, Eye, EyeOff } from "lucide-react";
+import { RefreshCw, Zap, Network, TrendingUp, Target, Eye, EyeOff, Home, ArrowRight } from "lucide-react";
 import * as d3 from "d3";
 
 interface NetworkNode {
@@ -95,6 +96,7 @@ interface PerformanceAnalytics {
 export function SpiderWebNetwork() {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [, setLocation] = useLocation();
   const [selectedNodeType, setSelectedNodeType] = useState("all");
   const [selectedEdgeType, setSelectedEdgeType] = useState("all");
   const [isPlaying, setIsPlaying] = useState(true);
@@ -362,6 +364,21 @@ export function SpiderWebNetwork() {
 
   return (
     <div className="space-y-4">
+      {/* Back Button */}
+      <div className="flex items-center gap-4">
+        <Button 
+          variant="outline" 
+          onClick={() => setLocation("/")}
+          className="flex items-center gap-2"
+          data-testid="back-to-main"
+        >
+          <Home className="h-4 w-4" />
+          <span>بازگشت به منوی اصلی</span>
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+        <h1 className="text-2xl font-bold">نقشه تار عنکبوت</h1>
+      </div>
+
       {/* Network Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>

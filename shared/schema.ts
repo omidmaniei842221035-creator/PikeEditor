@@ -161,11 +161,38 @@ export const insertEmployeeSchema = createInsertSchema(employees).omit({
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
   createdAt: true,
+  installDate: true,
 }).extend({
   shopName: z.string().min(2, "نام فروشگاه باید حداقل ۲ کاراکتر باشد"),
   ownerName: z.string().min(2, "نام مالک باید حداقل ۲ کاراکتر باشد"),
   phone: z.string().regex(/^09\d{9}$/, "شماره تلفن باید ۱۱ رقم و با 09 شروع شود"),
   businessType: z.string().min(1, "نوع کسب‌وکار باید انتخاب شود"),
+  monthlyProfit: z.union([z.number(), z.string()]).optional().transform((val) => {
+    if (val === undefined || val === null) return 0;
+    const num = typeof val === 'string' ? parseInt(val, 10) : val;
+    return isNaN(num) ? 0 : Math.max(0, num);
+  }),
+  latitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
+    if (!val) return null;
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num) || num < -90 || num > 90) return null;
+    return String(num);
+  }),
+  longitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
+    if (!val) return null;
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num) || num < -180 || num > 180) return null;
+    return String(num);
+  }),
+  installDate: z.union([z.date(), z.string(), z.null()]).optional().transform((val) => {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    if (typeof val === 'string') {
+      const parsed = new Date(val);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+    return null;
+  }),
 });
 
 export const insertPosDeviceSchema = createInsertSchema(posDevices).omit({

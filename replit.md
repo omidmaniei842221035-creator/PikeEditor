@@ -184,6 +184,21 @@ resources/
   - Critical fix: Vite middleware now properly allows API routes (was blocking with 404)
   - Users can now download both portable archive (121MB) and electron.exe (201.4MB) directly from web interface
 
+### Customer Save Functionality Fix - Completed ✅ (December 4, 2025)
+- ✅ **Fixed Critical Bug**: Customer creation and Excel import were failing due to Drizzle ORM timestamp handling issues
+  - Root cause: `createInsertSchema` from `drizzle-zod` was generating Unix timestamps for optional timestamp fields
+  - Error: "date/time field value out of range" when inserting customers
+  - Solution: Used Drizzle's parameterized sql`` template for raw SQL insert (safe from SQL injection)
+- ✅ **Enhanced Zod Schema Validation**: Added proper type coercion transforms in `insertCustomerSchema`:
+  - `monthlyProfit`: Accepts string/number, coerces to valid integer with `Math.max(0, num)`
+  - `latitude`: Validates range (-90 to 90), converts to string for database
+  - `longitude`: Validates range (-180 to 180), converts to string for database
+  - `installDate`: Accepts Date/string/null, parses strings to Date objects
+- ✅ **Updated Storage Layer**: `storage.createCustomer()` uses Drizzle's sql`` tagged template (parameterized queries)
+- ✅ **Updated Route Handlers**: POST and PUT /api/customers pass Zod-transformed data directly
+- ✅ **Fixed TerritoryManagement Export**: Changed from named export to default export import in regional-analysis-dashboard.tsx
+- ✅ **All Customer Operations Working**: Create, Update, Delete, and Excel import all functioning correctly
+
 ### Map Enhancements - Completed ✅ (October 31, 2025)
 - ✅ Monthly Status History Timeline on Customer Markers:
   - Added color-coded 6-month status timeline to customer popup tooltips

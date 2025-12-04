@@ -10,7 +10,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { MapPin, Target, TrendingUp, AlertTriangle, Users, Building2, Zap, Search, Plus, Layers, Info, CheckCircle } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { initializeMap, type MapInstance } from '@/lib/map-utils';
-import { TerritoryManagement } from '@/components/territories/territory-management';
+import TerritoryManagement from '@/components/territories/territory-management';
 
 interface VirginRegion {
   id: string;
