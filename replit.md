@@ -40,7 +40,11 @@ Preferred communication style: Simple, everyday language.
 - **Real-time Monitoring**: WebSocket-based live POS device status, alert system, and automatic status simulation.
 - **Geographic Management**: Interactive map integration for branch locations, customer tracking, territory management, and coverage analysis.
 - **Regional Analysis Dashboard**: Features territory management (curved drawing, polygon management), virgin region detection, automatic zone creation via customer clustering, customer distribution analysis, and integrated analytics.
-- **AI Geographic Analysis**: K-means clustering of customers based on location, revenue, and distance; AI Regional Forecasting for customer growth and sales trends; Radius/Coverage Analysis for service optimization and new location recommendations.
+- **AI Geographic Analysis (Enhanced)**: 
+  - **AI Clustering (خوشه‌بندی هوشمند)**: K-means clustering of customers based on location, revenue, business type, and activity status. Identifies high/medium/low potential areas with interactive map visualization.
+  - **AI Forecasting (پیش‌بینی فروش)**: Linear regression-based sales prediction per branch with monthly forecasts. Provides business expansion suggestions based on customer density and service coverage gaps.
+  - **Radius Analysis (تحلیل شعاع دسترسی)**: Service coverage analysis showing customers within/outside coverage radius of branches and banking units. Suggests optimal locations for new service points based on uncovered high-revenue customers.
+  - **API Endpoints**: `/api/ai/clusters`, `/api/ai/forecast`, `/api/ai/radius` with configurable parameters (cluster count, forecast horizon, coverage radius).
 - **Data Management**: Excel import/export for customer data, comprehensive CRM, employee management (role-based access), branch and territory management, and a full database backup/restore system (JSON export/import).
 - **Desktop Version**: Electron-based desktop application with SQLite database for standalone PC installation.
 
