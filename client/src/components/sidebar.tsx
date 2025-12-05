@@ -27,6 +27,7 @@ const navigationItems = [
 ];
 
 const systemItems = [
+  { path: "/bulk-import", label: "ورود اطلاعات گروهی", icon: "📥" },
   { path: "/backup", label: "پشتیبان‌گیری و بازیابی", icon: "💾" },
   { path: "/desktop-download", label: "دانلود نسخه دسکتاپ", icon: "🖥️" },
 ];
