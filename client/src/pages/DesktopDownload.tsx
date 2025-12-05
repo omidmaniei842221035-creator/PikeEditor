@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileArchive, FileCode, Loader2, HardDrive, Info } from "lucide-react";
+import { Download, FileArchive, FileCode, Loader2, HardDrive, Info, ArrowRight } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DesktopFile {
@@ -31,6 +32,15 @@ export default function DesktopDownload() {
 
   return (
     <div className="container mx-auto p-6 space-y-6" dir="rtl">
+      <div className="flex items-center justify-between mb-4">
+        <Link href="/">
+          <Button variant="outline" className="flex items-center gap-2" data-testid="button-back-to-main">
+            <ArrowRight className="h-4 w-4" />
+            بازگشت به منوی اصلی
+          </Button>
+        </Link>
+      </div>
+      
       <div className="flex items-center gap-3">
         <HardDrive className="h-8 w-8 text-primary" />
         <div>

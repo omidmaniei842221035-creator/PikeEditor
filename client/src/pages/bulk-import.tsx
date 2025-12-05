@@ -21,6 +21,7 @@ import {
   type ExcelEmployeeData
 } from "@/lib/excel-utils";
 import * as XLSX from 'xlsx';
+import { Link } from "wouter";
 import { 
   Upload, 
   Download, 
@@ -32,7 +33,8 @@ import {
   UserCog,
   FileSpreadsheet,
   Loader2,
-  MapPin
+  MapPin,
+  ArrowRight
 } from "lucide-react";
 
 export default function BulkImportPage() {
@@ -40,7 +42,16 @@ export default function BulkImportPage() {
   const queryClient = useQueryClient();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
+      <div className="flex items-center justify-between mb-4">
+        <Link href="/">
+          <Button variant="outline" className="flex items-center gap-2" data-testid="button-back-to-main">
+            <ArrowRight className="h-4 w-4" />
+            بازگشت به منوی اصلی
+          </Button>
+        </Link>
+      </div>
+      
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">ورود اطلاعات گروهی</h1>
         <p className="text-muted-foreground">
