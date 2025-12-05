@@ -19850,14 +19850,14 @@ var require_etag = __commonJS({
   "node_modules/etag/index.js"(exports2, module2) {
     "use strict";
     module2.exports = etag;
-    var crypto2 = require("crypto");
+    var crypto3 = require("crypto");
     var Stats = require("fs").Stats;
     var toString = Object.prototype.toString;
     function entitytag(entity) {
       if (entity.length === 0) {
         return '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"';
       }
-      var hash = crypto2.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
+      var hash = crypto3.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
       var len = typeof entity === "string" ? Buffer.byteLength(entity, "utf8") : entity.length;
       return '"' + len.toString(16) + "-" + hash + '"';
     }
@@ -22749,11 +22749,11 @@ var require_request = __commonJS({
 // node_modules/cookie-signature/index.js
 var require_cookie_signature = __commonJS({
   "node_modules/cookie-signature/index.js"(exports2) {
-    var crypto2 = require("crypto");
+    var crypto3 = require("crypto");
     exports2.sign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Cookie value must be provided as a string.");
       if ("string" != typeof secret) throw new TypeError("Secret string must be provided.");
-      return val + "." + crypto2.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
+      return val + "." + crypto3.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
     };
     exports2.unsign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Signed cookie string must be provided.");
@@ -22762,7 +22762,7 @@ var require_cookie_signature = __commonJS({
       return sha1(mac) == sha1(val) ? str : false;
     };
     function sha1(str) {
-      return crypto2.createHash("sha1").update(str).digest("hex");
+      return crypto3.createHash("sha1").update(str).digest("hex");
     }
   }
 });
@@ -40977,8 +40977,47 @@ var init_storage = __esm({
         return branch;
       }
       async createBranch(insertBranch) {
-        const [branch] = await db.insert(branches3).values(insertBranch).returning();
-        return branch;
+        if (isElectronMode && sqlite) {
+          const id = crypto.randomUUID();
+          const now = Date.now();
+          const stmt = sqlite.prepare(`
+        INSERT INTO branches (id, name, code, type, manager, phone, address, latitude, longitude, coverage_radius, monthly_target, performance, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+          stmt.run(
+            id,
+            insertBranch.name,
+            insertBranch.code,
+            insertBranch.type,
+            insertBranch.manager || null,
+            insertBranch.phone || null,
+            insertBranch.address || null,
+            insertBranch.latitude || null,
+            insertBranch.longitude || null,
+            insertBranch.coverageRadius || 5,
+            insertBranch.monthlyTarget || 0,
+            insertBranch.performance || 0,
+            now
+          );
+          return {
+            id,
+            name: insertBranch.name,
+            code: insertBranch.code,
+            type: insertBranch.type,
+            manager: insertBranch.manager || null,
+            phone: insertBranch.phone || null,
+            address: insertBranch.address || null,
+            latitude: insertBranch.latitude || null,
+            longitude: insertBranch.longitude || null,
+            coverageRadius: insertBranch.coverageRadius || 5,
+            monthlyTarget: insertBranch.monthlyTarget || 0,
+            performance: insertBranch.performance || 0,
+            createdAt: new Date(now)
+          };
+        } else {
+          const [branch] = await db.insert(branches3).values(insertBranch).returning();
+          return branch;
+        }
       }
       async updateBranch(id, updateData) {
         const [branch] = await db.update(branches3).set(updateData).where(eq(branches3.id, id)).returning();
@@ -41000,8 +41039,43 @@ var init_storage = __esm({
         return await db.select().from(employees3).where(eq(employees3.branchId, branchId));
       }
       async createEmployee(insertEmployee) {
-        const [employee] = await db.insert(employees3).values(insertEmployee).returning();
-        return employee;
+        if (isElectronMode && sqlite) {
+          const id = crypto.randomUUID();
+          const now = Date.now();
+          const stmt = sqlite.prepare(`
+        INSERT INTO employees (id, employee_code, name, position, phone, email, branch_id, salary, hire_date, is_active, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+          stmt.run(
+            id,
+            insertEmployee.employeeCode,
+            insertEmployee.name,
+            insertEmployee.position,
+            insertEmployee.phone || null,
+            insertEmployee.email || null,
+            insertEmployee.branchId || null,
+            insertEmployee.salary || 0,
+            insertEmployee.hireDate ? insertEmployee.hireDate.getTime() : now,
+            insertEmployee.isActive !== false ? 1 : 0,
+            now
+          );
+          return {
+            id,
+            employeeCode: insertEmployee.employeeCode,
+            name: insertEmployee.name,
+            position: insertEmployee.position,
+            phone: insertEmployee.phone || null,
+            email: insertEmployee.email || null,
+            branchId: insertEmployee.branchId || null,
+            salary: insertEmployee.salary || 0,
+            hireDate: insertEmployee.hireDate || new Date(now),
+            isActive: insertEmployee.isActive !== false,
+            createdAt: new Date(now)
+          };
+        } else {
+          const [employee] = await db.insert(employees3).values(insertEmployee).returning();
+          return employee;
+        }
       }
       async updateEmployee(id, updateData) {
         const [employee] = await db.update(employees3).set(updateData).where(eq(employees3.id, id)).returning();
@@ -41037,26 +41111,74 @@ var init_storage = __esm({
         return await db.select().from(customers3).where(eq(customers3.businessType, businessType));
       }
       async createCustomer(insertCustomer) {
-        const result = await db.execute(sql`
-      INSERT INTO customers (shop_name, owner_name, phone, business_type, address, latitude, longitude, monthly_profit, status, branch_id, banking_unit_id, support_employee_id, install_date)
-      VALUES (
-        ${insertCustomer.shopName},
-        ${insertCustomer.ownerName},
-        ${insertCustomer.phone},
-        ${insertCustomer.businessType},
-        ${insertCustomer.address || null},
-        ${insertCustomer.latitude || null},
-        ${insertCustomer.longitude || null},
-        ${insertCustomer.monthlyProfit || 0},
-        ${insertCustomer.status || "active"},
-        ${insertCustomer.branchId || null},
-        ${insertCustomer.bankingUnitId || null},
-        ${insertCustomer.supportEmployeeId || null},
-        ${insertCustomer.installDate || null}
-      )
-      RETURNING *
-    `);
-        return result.rows[0];
+        if (isElectronMode && sqlite) {
+          const id = crypto.randomUUID();
+          const now = Date.now();
+          const stmt = sqlite.prepare(`
+        INSERT INTO customers (id, shop_name, owner_name, phone, business_type, address, latitude, longitude, monthly_profit, status, branch_id, banking_unit_id, support_employee_id, install_date, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+          stmt.run(
+            id,
+            insertCustomer.shopName,
+            insertCustomer.ownerName,
+            insertCustomer.phone || null,
+            insertCustomer.businessType,
+            insertCustomer.address || null,
+            insertCustomer.latitude || null,
+            insertCustomer.longitude || null,
+            insertCustomer.monthlyProfit || 0,
+            insertCustomer.status || "active",
+            insertCustomer.branchId || null,
+            insertCustomer.bankingUnitId || null,
+            insertCustomer.supportEmployeeId || null,
+            insertCustomer.installDate ? insertCustomer.installDate.getTime() : null,
+            now
+          );
+          return {
+            id,
+            nationalId: null,
+            shopName: insertCustomer.shopName,
+            ownerName: insertCustomer.ownerName,
+            phone: insertCustomer.phone || null,
+            businessType: insertCustomer.businessType,
+            address: insertCustomer.address || null,
+            latitude: insertCustomer.latitude || null,
+            longitude: insertCustomer.longitude || null,
+            monthlyProfit: insertCustomer.monthlyProfit || 0,
+            status: insertCustomer.status || "active",
+            branchId: insertCustomer.branchId || null,
+            bankingUnitId: insertCustomer.bankingUnitId || null,
+            supportEmployeeId: insertCustomer.supportEmployeeId || null,
+            installDate: insertCustomer.installDate || null,
+            createdAt: new Date(now)
+          };
+        } else {
+          const result = await db.execute(sql`
+        INSERT INTO customers (shop_name, owner_name, phone, business_type, address, latitude, longitude, monthly_profit, status, branch_id, banking_unit_id, support_employee_id, install_date)
+        VALUES (
+          ${insertCustomer.shopName},
+          ${insertCustomer.ownerName},
+          ${insertCustomer.phone || null},
+          ${insertCustomer.businessType},
+          ${insertCustomer.address || null},
+          ${insertCustomer.latitude || null},
+          ${insertCustomer.longitude || null},
+          ${insertCustomer.monthlyProfit || 0},
+          ${insertCustomer.status || "active"},
+          ${insertCustomer.branchId || null},
+          ${insertCustomer.bankingUnitId || null},
+          ${insertCustomer.supportEmployeeId || null},
+          ${insertCustomer.installDate ? insertCustomer.installDate.toISOString() : null}
+        )
+        RETURNING id, national_id as "nationalId", shop_name as "shopName", owner_name as "ownerName", 
+                  phone, business_type as "businessType", address, latitude, longitude,
+                  monthly_profit as "monthlyProfit", status, branch_id as "branchId",
+                  banking_unit_id as "bankingUnitId", support_employee_id as "supportEmployeeId",
+                  install_date as "installDate", created_at as "createdAt"
+      `);
+          return result.rows[0];
+        }
       }
       async updateCustomer(id, updateData) {
         const [customer] = await db.update(customers3).set(updateData).where(eq(customers3.id, id)).returning();
@@ -41248,8 +41370,45 @@ var init_storage = __esm({
         return unit;
       }
       async createBankingUnit(insertUnit) {
-        const [unit] = await db.insert(bankingUnits3).values(insertUnit).returning();
-        return unit;
+        if (isElectronMode && sqlite) {
+          const id = crypto.randomUUID();
+          const now = Date.now();
+          const stmt = sqlite.prepare(`
+        INSERT INTO banking_units (id, code, name, unit_type, manager_name, phone, address, latitude, longitude, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+          stmt.run(
+            id,
+            insertUnit.code,
+            insertUnit.name,
+            insertUnit.unitType,
+            insertUnit.managerName || null,
+            insertUnit.phone || null,
+            insertUnit.address || null,
+            insertUnit.latitude || null,
+            insertUnit.longitude || null,
+            insertUnit.isActive !== false ? 1 : 0,
+            now,
+            now
+          );
+          return {
+            id,
+            code: insertUnit.code,
+            name: insertUnit.name,
+            unitType: insertUnit.unitType,
+            managerName: insertUnit.managerName || null,
+            phone: insertUnit.phone || null,
+            address: insertUnit.address || null,
+            latitude: insertUnit.latitude || null,
+            longitude: insertUnit.longitude || null,
+            isActive: insertUnit.isActive !== false,
+            createdAt: new Date(now),
+            updatedAt: new Date(now)
+          };
+        } else {
+          const [unit] = await db.insert(bankingUnits3).values(insertUnit).returning();
+          return unit;
+        }
       }
       async updateBankingUnit(id, insertUnit) {
         const [unit] = await db.update(bankingUnits3).set({

@@ -24,7 +24,7 @@ import {
   type NetworkNode, type InsertNetworkNode,
   type NetworkEdge, type InsertNetworkEdge
 } from "@shared/schema";
-import { db, schema } from "./db";
+import { db, schema, isElectronMode, sqlite } from "./db";
 
 // Get tables from the active schema (PostgreSQL or SQLite)
 const {
@@ -268,8 +268,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBranch(insertBranch: InsertBranch): Promise<Branch> {
-    const [branch] = await db.insert(branches).values(insertBranch).returning();
-    return branch;
+    if (isElectronMode && sqlite) {
+      // SQLite mode - use direct insert with manual ID generation
+      const id = crypto.randomUUID();
+      const now = Date.now();
+      
+      const stmt = sqlite.prepare(`
+        INSERT INTO branches (id, name, code, type, manager, phone, address, latitude, longitude, coverage_radius, monthly_target, performance, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      stmt.run(
+        id,
+        insertBranch.name,
+        insertBranch.code,
+        insertBranch.type,
+        insertBranch.manager || null,
+        insertBranch.phone || null,
+        insertBranch.address || null,
+        insertBranch.latitude || null,
+        insertBranch.longitude || null,
+        insertBranch.coverageRadius || 5,
+        insertBranch.monthlyTarget || 0,
+        insertBranch.performance || 0,
+        now
+      );
+      
+      return {
+        id,
+        name: insertBranch.name,
+        code: insertBranch.code,
+        type: insertBranch.type,
+        manager: insertBranch.manager || null,
+        phone: insertBranch.phone || null,
+        address: insertBranch.address || null,
+        latitude: insertBranch.latitude || null,
+        longitude: insertBranch.longitude || null,
+        coverageRadius: insertBranch.coverageRadius || 5,
+        monthlyTarget: insertBranch.monthlyTarget || 0,
+        performance: insertBranch.performance || 0,
+        createdAt: new Date(now)
+      } as Branch;
+    } else {
+      const [branch] = await db.insert(branches).values(insertBranch).returning();
+      return branch;
+    }
   }
 
   async updateBranch(id: string, updateData: Partial<InsertBranch>): Promise<Branch | undefined> {
@@ -300,8 +343,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEmployee(insertEmployee: InsertEmployee): Promise<Employee> {
-    const [employee] = await db.insert(employees).values(insertEmployee).returning();
-    return employee;
+    if (isElectronMode && sqlite) {
+      // SQLite mode - use direct insert with manual ID generation
+      const id = crypto.randomUUID();
+      const now = Date.now();
+      
+      const stmt = sqlite.prepare(`
+        INSERT INTO employees (id, employee_code, name, position, phone, email, branch_id, salary, hire_date, is_active, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      stmt.run(
+        id,
+        insertEmployee.employeeCode,
+        insertEmployee.name,
+        insertEmployee.position,
+        insertEmployee.phone || null,
+        insertEmployee.email || null,
+        insertEmployee.branchId || null,
+        insertEmployee.salary || 0,
+        insertEmployee.hireDate ? insertEmployee.hireDate.getTime() : now,
+        insertEmployee.isActive !== false ? 1 : 0,
+        now
+      );
+      
+      return {
+        id,
+        employeeCode: insertEmployee.employeeCode,
+        name: insertEmployee.name,
+        position: insertEmployee.position,
+        phone: insertEmployee.phone || null,
+        email: insertEmployee.email || null,
+        branchId: insertEmployee.branchId || null,
+        salary: insertEmployee.salary || 0,
+        hireDate: insertEmployee.hireDate || new Date(now),
+        isActive: insertEmployee.isActive !== false,
+        createdAt: new Date(now)
+      } as Employee;
+    } else {
+      const [employee] = await db.insert(employees).values(insertEmployee).returning();
+      return employee;
+    }
   }
 
   async updateEmployee(id: string, updateData: Partial<InsertEmployee>): Promise<Employee | undefined> {
@@ -350,30 +432,80 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
-    const result = await db.execute(sql`
-      INSERT INTO customers (shop_name, owner_name, phone, business_type, address, latitude, longitude, monthly_profit, status, branch_id, banking_unit_id, support_employee_id, install_date)
-      VALUES (
-        ${insertCustomer.shopName},
-        ${insertCustomer.ownerName},
-        ${insertCustomer.phone || null},
-        ${insertCustomer.businessType},
-        ${insertCustomer.address || null},
-        ${insertCustomer.latitude || null},
-        ${insertCustomer.longitude || null},
-        ${insertCustomer.monthlyProfit || 0},
-        ${insertCustomer.status || 'active'},
-        ${insertCustomer.branchId || null},
-        ${insertCustomer.bankingUnitId || null},
-        ${insertCustomer.supportEmployeeId || null},
-        ${insertCustomer.installDate ? insertCustomer.installDate.toISOString() : null}
-      )
-      RETURNING id, national_id as "nationalId", shop_name as "shopName", owner_name as "ownerName", 
-                phone, business_type as "businessType", address, latitude, longitude,
-                monthly_profit as "monthlyProfit", status, branch_id as "branchId",
-                banking_unit_id as "bankingUnitId", support_employee_id as "supportEmployeeId",
-                install_date as "installDate", created_at as "createdAt"
-    `);
-    return result.rows[0] as Customer;
+    if (isElectronMode && sqlite) {
+      // SQLite mode - use direct insert with manual ID generation
+      const id = crypto.randomUUID();
+      const now = Date.now();
+      
+      const stmt = sqlite.prepare(`
+        INSERT INTO customers (id, shop_name, owner_name, phone, business_type, address, latitude, longitude, monthly_profit, status, branch_id, banking_unit_id, support_employee_id, install_date, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      stmt.run(
+        id,
+        insertCustomer.shopName,
+        insertCustomer.ownerName,
+        insertCustomer.phone || null,
+        insertCustomer.businessType,
+        insertCustomer.address || null,
+        insertCustomer.latitude || null,
+        insertCustomer.longitude || null,
+        insertCustomer.monthlyProfit || 0,
+        insertCustomer.status || 'active',
+        insertCustomer.branchId || null,
+        insertCustomer.bankingUnitId || null,
+        insertCustomer.supportEmployeeId || null,
+        insertCustomer.installDate ? insertCustomer.installDate.getTime() : null,
+        now
+      );
+      
+      // Return the created customer with proper camelCase mapping
+      return {
+        id,
+        nationalId: null,
+        shopName: insertCustomer.shopName,
+        ownerName: insertCustomer.ownerName,
+        phone: insertCustomer.phone || null,
+        businessType: insertCustomer.businessType,
+        address: insertCustomer.address || null,
+        latitude: insertCustomer.latitude || null,
+        longitude: insertCustomer.longitude || null,
+        monthlyProfit: insertCustomer.monthlyProfit || 0,
+        status: insertCustomer.status || 'active',
+        branchId: insertCustomer.branchId || null,
+        bankingUnitId: insertCustomer.bankingUnitId || null,
+        supportEmployeeId: insertCustomer.supportEmployeeId || null,
+        installDate: insertCustomer.installDate || null,
+        createdAt: new Date(now)
+      } as Customer;
+    } else {
+      // PostgreSQL mode - use raw SQL with column aliases
+      const result = await db.execute(sql`
+        INSERT INTO customers (shop_name, owner_name, phone, business_type, address, latitude, longitude, monthly_profit, status, branch_id, banking_unit_id, support_employee_id, install_date)
+        VALUES (
+          ${insertCustomer.shopName},
+          ${insertCustomer.ownerName},
+          ${insertCustomer.phone || null},
+          ${insertCustomer.businessType},
+          ${insertCustomer.address || null},
+          ${insertCustomer.latitude || null},
+          ${insertCustomer.longitude || null},
+          ${insertCustomer.monthlyProfit || 0},
+          ${insertCustomer.status || 'active'},
+          ${insertCustomer.branchId || null},
+          ${insertCustomer.bankingUnitId || null},
+          ${insertCustomer.supportEmployeeId || null},
+          ${insertCustomer.installDate ? insertCustomer.installDate.toISOString() : null}
+        )
+        RETURNING id, national_id as "nationalId", shop_name as "shopName", owner_name as "ownerName", 
+                  phone, business_type as "businessType", address, latitude, longitude,
+                  monthly_profit as "monthlyProfit", status, branch_id as "branchId",
+                  banking_unit_id as "bankingUnitId", support_employee_id as "supportEmployeeId",
+                  install_date as "installDate", created_at as "createdAt"
+      `);
+      return result.rows[0] as Customer;
+    }
   }
 
   async updateCustomer(id: string, updateData: Partial<InsertCustomer>): Promise<Customer | undefined> {
@@ -638,8 +770,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBankingUnit(insertUnit: InsertBankingUnit): Promise<BankingUnit> {
-    const [unit] = await db.insert(bankingUnits).values(insertUnit).returning();
-    return unit;
+    if (isElectronMode && sqlite) {
+      // SQLite mode - use direct insert with manual ID generation
+      const id = crypto.randomUUID();
+      const now = Date.now();
+      
+      const stmt = sqlite.prepare(`
+        INSERT INTO banking_units (id, code, name, unit_type, manager_name, phone, address, latitude, longitude, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      stmt.run(
+        id,
+        insertUnit.code,
+        insertUnit.name,
+        insertUnit.unitType,
+        insertUnit.managerName || null,
+        insertUnit.phone || null,
+        insertUnit.address || null,
+        insertUnit.latitude || null,
+        insertUnit.longitude || null,
+        insertUnit.isActive !== false ? 1 : 0,
+        now,
+        now
+      );
+      
+      return {
+        id,
+        code: insertUnit.code,
+        name: insertUnit.name,
+        unitType: insertUnit.unitType,
+        managerName: insertUnit.managerName || null,
+        phone: insertUnit.phone || null,
+        address: insertUnit.address || null,
+        latitude: insertUnit.latitude || null,
+        longitude: insertUnit.longitude || null,
+        isActive: insertUnit.isActive !== false,
+        createdAt: new Date(now),
+        updatedAt: new Date(now)
+      } as BankingUnit;
+    } else {
+      const [unit] = await db.insert(bankingUnits).values(insertUnit).returning();
+      return unit;
+    }
   }
 
   async updateBankingUnit(id: string, insertUnit: Partial<InsertBankingUnit>): Promise<BankingUnit | undefined> {
