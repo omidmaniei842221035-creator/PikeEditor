@@ -12,10 +12,13 @@ import { apiRequest } from "@/lib/queryClient";
 import { 
   parseExcelFile, 
   parseExcelBankingUnitsFile,
+  parseExcelEmployeesFile,
   validateExcelData,
   validateBankingUnitExcelData,
+  validateEmployeeExcelData,
   type ExcelCustomerData,
-  type ExcelBankingUnitData
+  type ExcelBankingUnitData,
+  type ExcelEmployeeData
 } from "@/lib/excel-utils";
 import * as XLSX from 'xlsx';
 import { 
@@ -31,16 +34,6 @@ import {
   Loader2,
   MapPin
 } from "lucide-react";
-
-interface EmployeeData {
-  employeeCode: string;
-  name: string;
-  position: string;
-  phone?: string;
-  email?: string;
-  branchId?: string;
-  salary?: number;
-}
 
 export default function BulkImportPage() {
   const { toast } = useToast();
@@ -326,14 +319,18 @@ function EmployeeImportSection() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [parsedData, setParsedData] = useState<EmployeeData[]>([]);
+  const [parsedData, setParsedData] = useState<ExcelEmployeeData[]>([]);
+  const [validationResult, setValidationResult] = useState<{
+    valid: ExcelEmployeeData[];
+    invalid: { row: number; errors: string[] }[];
+  } | null>(null);
   const [previewStep, setPreviewStep] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const importMutation = useMutation({
-    mutationFn: async (employees: EmployeeData[]) => {
+    mutationFn: async (employees: ExcelEmployeeData[]) => {
       return apiRequest("POST", "/api/employees/bulk-import", { employees });
     },
     onSuccess: (result: any) => {
@@ -358,6 +355,7 @@ function EmployeeImportSection() {
     setIsProcessing(false);
     setProgress(0);
     setParsedData([]);
+    setValidationResult(null);
     setPreviewStep(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -368,6 +366,7 @@ function EmployeeImportSection() {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+      setValidationResult(null);
       setPreviewStep(false);
     }
   };
@@ -379,44 +378,27 @@ function EmployeeImportSection() {
     setProgress(20);
 
     try {
-      const buffer = await selectedFile.arrayBuffer();
       setProgress(40);
+      const rawData = await parseExcelEmployeesFile(selectedFile);
       
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
       setProgress(60);
-      
-      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
-      
-      const employees: EmployeeData[] = [];
-      for (let i = 1; i < data.length; i++) {
-        const row = data[i];
-        if (row[0] && row[1]) {
-          employees.push({
-            employeeCode: row[0]?.toString() || '',
-            name: row[1]?.toString() || '',
-            position: row[2]?.toString() || 'کارمند',
-            phone: row[3]?.toString() || '',
-            email: row[4]?.toString() || '',
-            branchId: row[5]?.toString() || '',
-            salary: parseInt(row[6]) || 0,
-          });
-        }
-      }
+      const validation = validateEmployeeExcelData(rawData);
+      setValidationResult(validation);
+      setParsedData(validation.valid);
       
       setProgress(80);
       
-      if (employees.length === 0) {
+      if (validation.valid.length === 0) {
         toast({
           title: "خطا",
           description: "هیچ ردیف معتبری در فایل یافت نشد",
           variant: "destructive",
         });
+        setProgress(0);
+        setIsProcessing(false);
         return;
       }
       
-      setParsedData(employees);
       setProgress(100);
       setPreviewStep(true);
       
@@ -434,13 +416,36 @@ function EmployeeImportSection() {
 
   const downloadTemplate = () => {
     const templateData = [
-      ['کد کارمند', 'نام', 'سمت', 'تلفن', 'ایمیل', 'شناسه شعبه', 'حقوق'],
-      ['EMP001', 'علی احمدی', 'مدیر فروش', '09121234567', 'ali@company.com', '', '25000000'],
-      ['EMP002', 'فاطمه کریمی', 'کارشناس فنی', '09129876543', 'fateme@company.com', '', '20000000'],
-      ['EMP003', 'محمد رضایی', 'پشتیبان', '09123456789', 'mohammad@company.com', '', '18000000'],
+      {
+        'کد کارمند': 'EMP001',
+        'نام': 'علی احمدی',
+        'سمت': 'مدیر فروش',
+        'تلفن': '09121234567',
+        'ایمیل': 'ali@company.com',
+        'شناسه شعبه': '',
+        'حقوق': 25000000
+      },
+      {
+        'کد کارمند': 'EMP002',
+        'نام': 'فاطمه کریمی',
+        'سمت': 'کارشناس فنی',
+        'تلفن': '09129876543',
+        'ایمیل': 'fateme@company.com',
+        'شناسه شعبه': '',
+        'حقوق': 20000000
+      },
+      {
+        'کد کارمند': 'EMP003',
+        'نام': 'محمد رضایی',
+        'سمت': 'پشتیبان',
+        'تلفن': '09123456789',
+        'ایمیل': 'mohammad@company.com',
+        'شناسه شعبه': '',
+        'حقوق': 18000000
+      }
     ];
     
-    const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'کارمندان');
     
@@ -476,61 +481,26 @@ function EmployeeImportSection() {
             requiredColumns={['کد کارمند', 'نام']}
           />
         ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">پیش‌نمایش کارمندان ({parsedData.length} نفر)</h3>
-              <Button variant="outline" onClick={() => setPreviewStep(false)} data-testid="button-back">
-                بازگشت
-              </Button>
-            </div>
-
-            <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-                <div>
-                  <p className="text-2xl font-bold text-green-600">{parsedData.length}</p>
-                  <p className="text-sm text-green-700 dark:text-green-400">کارمند آماده وارد کردن</p>
+          <ImportPreviewSection
+            validationResult={validationResult}
+            isPending={importMutation.isPending}
+            onBack={() => setPreviewStep(false)}
+            onReset={resetForm}
+            onImport={() => importMutation.mutate(parsedData)}
+            entityName="کارمند"
+            renderPreviewItem={(item: ExcelEmployeeData, index: number) => (
+              <div key={index} className="bg-muted p-3 rounded border">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                  <div><strong>کد:</strong> {item.employeeCode}</div>
+                  <div><strong>نام:</strong> {item.name}</div>
+                  <div><strong>سمت:</strong> {item.position}</div>
+                  {item.phone && <div><strong>تلفن:</strong> {item.phone}</div>}
+                  {item.email && <div><strong>ایمیل:</strong> {item.email}</div>}
+                  {item.salary && item.salary > 0 && <div><strong>حقوق:</strong> {item.salary.toLocaleString('fa-IR')}</div>}
                 </div>
               </div>
-            </div>
-
-            <ScrollArea className="h-64 border rounded-md">
-              <div className="p-4 space-y-3">
-                {parsedData.slice(0, 5).map((emp, index) => (
-                  <div key={index} className="bg-muted p-3 rounded border">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                      <div><strong>کد:</strong> {emp.employeeCode}</div>
-                      <div><strong>نام:</strong> {emp.name}</div>
-                      <div><strong>سمت:</strong> {emp.position}</div>
-                      {emp.phone && <div><strong>تلفن:</strong> {emp.phone}</div>}
-                      {emp.email && <div><strong>ایمیل:</strong> {emp.email}</div>}
-                    </div>
-                  </div>
-                ))}
-                {parsedData.length > 5 && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    و {parsedData.length - 5} کارمند دیگر...
-                  </p>
-                )}
-              </div>
-            </ScrollArea>
-
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={resetForm} disabled={importMutation.isPending} data-testid="button-cancel">
-                انصراف
-              </Button>
-              <Button onClick={() => importMutation.mutate(parsedData)} disabled={importMutation.isPending} data-testid="button-import">
-                {importMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    در حال وارد کردن...
-                  </>
-                ) : (
-                  `وارد کردن ${parsedData.length} کارمند`
-                )}
-              </Button>
-            </div>
-          </div>
+            )}
+          />
         )}
       </CardContent>
     </Card>

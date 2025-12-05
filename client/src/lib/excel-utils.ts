@@ -26,6 +26,16 @@ export interface ExcelBankingUnitData {
   isActive?: boolean;
 }
 
+export interface ExcelEmployeeData {
+  employeeCode: string;
+  name: string;
+  position: string;
+  phone?: string;
+  email?: string;
+  branchId?: string;
+  salary?: number;
+}
+
 export async function parseExcelFile(file: File): Promise<ExcelCustomerData[]> {
   return new Promise((resolve, reject) => {
     // Check if file is Excel format
@@ -682,4 +692,162 @@ function parseMonetaryValue(value: string | number): number {
   
   const parsed = parseFloat(normalized);
   return isNaN(parsed) ? 0 : parsed;
+}
+
+// Employee Excel parsing and validation functions
+export async function parseExcelEmployeesFile(file: File): Promise<ExcelEmployeeData[]> {
+  return new Promise((resolve, reject) => {
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      reject(new Error('فرمت فایل نامعتبر است. فقط فایل‌های Excel (.xlsx, .xls) پذیرفته می‌شود'));
+      return;
+    }
+
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const result = parseEmployeesExcelContent(e.target?.result);
+        resolve(result);
+      } catch (error) {
+        reject(new Error('خطا در خواندن فایل Excel: ' + (error as Error).message));
+      }
+    };
+
+    reader.onerror = () => {
+      reject(new Error('خطا در بارگذاری فایل'));
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function parseEmployeesExcelContent(buffer: any): ExcelEmployeeData[] {
+  try {
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error('فایل Excel خالی است');
+    }
+    
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    if (jsonData.length < 2) {
+      throw new Error('فایل Excel باید حداقل شامل سر ستون‌ها و یک ردیف داده باشد');
+    }
+
+    const headers = jsonData[0] as string[];
+    const dataRows = jsonData.slice(1);
+
+    const columnMapping: Record<string, keyof ExcelEmployeeData> = {
+      'کد کارمند': 'employeeCode',
+      'نام': 'name',
+      'سمت': 'position',
+      'تلفن': 'phone',
+      'ایمیل': 'email',
+      'شناسه شعبه': 'branchId',
+      'حقوق': 'salary'
+    };
+
+    const columnIndices: Record<keyof ExcelEmployeeData, number> = {} as any;
+    
+    headers.forEach((header, index) => {
+      const mappedField = columnMapping[header?.trim()];
+      if (mappedField) {
+        columnIndices[mappedField] = index;
+      }
+    });
+
+    const requiredFields: (keyof ExcelEmployeeData)[] = ['employeeCode', 'name'];
+    const missingFields = requiredFields.filter(field => columnIndices[field] === undefined);
+    
+    if (missingFields.length > 0) {
+      const missingPersianFields = missingFields.map(field => {
+        return Object.keys(columnMapping).find(key => columnMapping[key] === field);
+      }).join(', ');
+      throw new Error(`ستون‌های ضروری موجود نیست: ${missingPersianFields}`);
+    }
+
+    const employees: ExcelEmployeeData[] = [];
+    
+    (dataRows as any[][]).forEach((row: any[]) => {
+      if (row.every(cell => !cell || cell.toString().trim() === '')) {
+        return;
+      }
+
+      const employee: ExcelEmployeeData = {
+        employeeCode: row[columnIndices.employeeCode]?.toString().trim() || '',
+        name: row[columnIndices.name]?.toString().trim() || '',
+        position: columnIndices.position !== undefined ? 
+          row[columnIndices.position]?.toString().trim() || 'کارمند' : 'کارمند',
+        phone: columnIndices.phone !== undefined ? 
+          formatPhoneNumber(row[columnIndices.phone]?.toString() || '') : '',
+        email: columnIndices.email !== undefined ? 
+          row[columnIndices.email]?.toString().trim() || '' : '',
+        branchId: columnIndices.branchId !== undefined ? 
+          row[columnIndices.branchId]?.toString().trim() || '' : '',
+        salary: columnIndices.salary !== undefined ? 
+          parseMonetaryValue(row[columnIndices.salary]) : 0
+      };
+
+      employees.push(employee);
+    });
+
+    return employees;
+    
+  } catch (error) {
+    throw new Error('خطا در پردازش فایل Excel: ' + (error as Error).message);
+  }
+}
+
+export function validateEmployeeExcelData(data: ExcelEmployeeData[]): { 
+  valid: ExcelEmployeeData[]; 
+  invalid: { row: number; errors: string[] }[] 
+} {
+  const valid: ExcelEmployeeData[] = [];
+  const invalid: { row: number; errors: string[] }[] = [];
+
+  data.forEach((employee, index) => {
+    const rowErrors: string[] = [];
+    const rowNumber = index + 2; // Account for header row
+
+    // Required field validations
+    if (!employee.employeeCode || employee.employeeCode.trim() === '') {
+      rowErrors.push('کد کارمند الزامی است');
+    }
+
+    if (!employee.name || employee.name.trim() === '') {
+      rowErrors.push('نام کارمند الزامی است');
+    }
+
+    // Email validation if provided
+    if (employee.email && employee.email.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(employee.email)) {
+        rowErrors.push('فرمت ایمیل نامعتبر است');
+      }
+    }
+
+    // Phone validation if provided
+    if (employee.phone && employee.phone.trim() !== '') {
+      const cleanPhone = employee.phone.replace(/\D/g, '');
+      if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+        rowErrors.push('شماره تلفن باید ۱۰ یا ۱۱ رقم باشد');
+      }
+    }
+
+    // Salary validation
+    if (employee.salary !== undefined && employee.salary < 0) {
+      rowErrors.push('حقوق نمی‌تواند منفی باشد');
+    }
+
+    if (rowErrors.length > 0) {
+      invalid.push({ row: rowNumber, errors: rowErrors });
+    } else {
+      valid.push(employee);
+    }
+  });
+
+  return { valid, invalid };
 }
