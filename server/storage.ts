@@ -355,7 +355,7 @@ export class DatabaseStorage implements IStorage {
       VALUES (
         ${insertCustomer.shopName},
         ${insertCustomer.ownerName},
-        ${insertCustomer.phone},
+        ${insertCustomer.phone || null},
         ${insertCustomer.businessType},
         ${insertCustomer.address || null},
         ${insertCustomer.latitude || null},
@@ -365,9 +365,13 @@ export class DatabaseStorage implements IStorage {
         ${insertCustomer.branchId || null},
         ${insertCustomer.bankingUnitId || null},
         ${insertCustomer.supportEmployeeId || null},
-        ${insertCustomer.installDate || null}
+        ${insertCustomer.installDate ? insertCustomer.installDate.toISOString() : null}
       )
-      RETURNING *
+      RETURNING id, national_id as "nationalId", shop_name as "shopName", owner_name as "ownerName", 
+                phone, business_type as "businessType", address, latitude, longitude,
+                monthly_profit as "monthlyProfit", status, branch_id as "branchId",
+                banking_unit_id as "bankingUnitId", support_employee_id as "supportEmployeeId",
+                install_date as "installDate", created_at as "createdAt"
     `);
     return result.rows[0] as Customer;
   }
