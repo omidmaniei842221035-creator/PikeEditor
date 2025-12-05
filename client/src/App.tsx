@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { FiltersProvider } from "@/contexts/FiltersContext";
+import { TabProvider } from "@/contexts/TabContext";
+import { Layout } from "@/components/layout";
 import Dashboard from "@/pages/dashboard";
 import Monitoring from "@/pages/monitoring";
 import TerritoryManagement from "@/components/territories/territory-management";
@@ -52,8 +54,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <FiltersProvider>
-          <Toaster />
-          <Router />
+          <TabProvider>
+            <Toaster />
+            <Layout>
+              <Router />
+            </Layout>
+          </TabProvider>
         </FiltersProvider>
       </TooltipProvider>
     </QueryClientProvider>

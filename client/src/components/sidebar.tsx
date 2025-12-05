@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
-import type { TabType } from "@/pages/dashboard";
+import type { TabType } from "@/types/tabs";
 
 interface SidebarProps {
   activeTab: TabType;
@@ -64,7 +64,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               onClick={() => onTabChange(item.id)}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2 text-right rounded-md transition-colors text-sm",
-                activeTab === item.id && location === "/" || location === "/dashboard"
+                activeTab === item.id && (location === "/" || location === "/dashboard")
                   ? "bg-primary text-primary-foreground"
                   : "text-foreground hover:bg-muted"
               )}

@@ -1,16 +1,27 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { AIClustering } from "@/components/ai/ai-clustering";
 import { AIForecasting } from "@/components/ai/ai-forecasting";
 import { RadiusAnalysis } from "@/components/ai/radius-analysis";
-import { Target, BarChart3, Navigation, Brain } from "lucide-react";
+import { Target, BarChart3, Navigation, Brain, ArrowRight } from "lucide-react";
 
 export default function AIFeatures() {
   const [activeTab, setActiveTab] = useState("clustering");
 
   return (
-    <div className="p-6 space-y-6" dir="rtl">
+    <div className="space-y-6" dir="rtl">
+      <div className="flex items-center justify-between mb-4">
+        <Link href="/">
+          <Button variant="outline" className="flex items-center gap-2" data-testid="button-back-to-main">
+            <ArrowRight className="h-4 w-4" />
+            بازگشت به منوی اصلی
+          </Button>
+        </Link>
+      </div>
+      
       <div className="flex items-center gap-3 mb-6">
         <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
           <Brain className="h-8 w-8 text-white" />
