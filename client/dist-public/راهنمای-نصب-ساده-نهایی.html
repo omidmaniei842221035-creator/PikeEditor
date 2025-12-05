@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>راهنمای نصب ساده - نسخه نهایی</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            line-height: 1.8;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            border-bottom: 4px solid #667eea;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            font-size: 32px;
+        }
+        h2 {
+            color: #27ae60;
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 30px 0 20px 0;
+        }
+        .success-box {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .success-box h2 {
+            color: white;
+            background: transparent;
+            margin-bottom: 15px;
+        }
+        .step {
+            background: #f8f9fa;
+            border-right: 5px solid #3498db;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .number {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            width: 45px;
+            height: 45px;
+            text-align: center;
+            line-height: 45px;
+            border-radius: 50%;
+            margin-left: 10px;
+            font-weight: bold;
+            font-size: 22px;
+        }
+        .code {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            font-size: 15px;
+        }
+        .feature {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 راهنمای نصب نسخه Desktop - نهایی</h1>
+        
+        <div class="success-box">
+            <h2>✅ مشکل حل شد!</h2>
+            <p style="font-size: 18px; margin: 15px 0;">
+                حالا می‌تونید نسخه Desktop با دیتابیس SQLite داخلی نصب کنید!
+            </p>
+            <p style="font-size: 16px;">
+                بدون نیاز به PostgreSQL، بدون پیچیدگی، فقط با یک کلیک!
+            </p>
+        </div>
+
+        <h2>📋 مراحل نصب (خیلی ساده)</h2>
+
+        <div class="step">
+            <h3><span class="number">1</span>دانلود پروژه</h3>
+            <p>در Replit:</p>
+            <ol style="margin-right: 30px; margin-top: 10px;">
+                <li>روی منوی <strong>⋮ (3 نقطه)</strong> کلیک کنید</li>
+                <li><strong>"Download as ZIP"</strong> را انتخاب کنید</li>
+                <li>فایل ZIP را Extract کنید (مثلاً در <code>C:\POS-Desktop</code>)</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3><span class="number">2</span>نصب Node.js (یکبار)</h3>
+            <p>اگر قبلاً نصب کردید، این مرحله را رد کنید.</p>
+            <ol style="margin-right: 30px; margin-top: 10px;">
+                <li>به <a href="https://nodejs.org/" target="_blank" style="color: #3498db;">nodejs.org</a> بروید</li>
+                <li>نسخه <strong>LTS (18+)</strong> را دانلود و نصب کنید</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3><span class="number">3</span>ساخت نسخه Desktop</h3>
+            <p>Command Prompt را در پوشه پروژه باز کنید:</p>
+            <div class="code">
+cd C:\POS-Desktop<br>
+npm install<br>
+npm run build:desktop
+            </div>
+            <p style="margin-top: 10px;">این فرآیند چند دقیقه طول می‌کشد...</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="number">4</span>اجرا!</h3>
+            <p>پس از build، به پوشه <code>dist-desktop</code> بروید:</p>
+            <div class="code">cd dist-desktop</div>
+            <p style="margin-top: 15px;">سپس فایل <code>Start-POS.bat</code> را اجرا کنید (دابل کلیک)</p>
+            <p style="margin-top: 10px;">یا در Command Prompt:</p>
+            <div class="code">Start-POS.bat</div>
+        </div>
+
+        <div class="step">
+            <h3><span class="number">5</span>باز کردن مرورگر</h3>
+            <p>مرورگر را باز کنید و این آدرس را وارد کنید:</p>
+            <div class="code">http://localhost:5000</div>
+            
+            <div class="feature">
+                <strong>🔐 اطلاعات ورود:</strong>
+                <ul style="margin-right: 25px; margin-top: 10px;">
+                    <li>نام کاربری: <code>admin</code></li>
+                    <li>رمز عبور: <code>admin123</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>🎁 ویژگی‌های نسخه Desktop</h2>
+
+        <div class="feature">
+            ✅ دیتابیس SQLite داخلی - نیازی به PostgreSQL ندارد
+        </div>
+        <div class="feature">
+            ✅ کاملاً آفلاین - بدون نیاز به اینترنت
+        </div>
+        <div class="feature">
+            ✅ اجرای ساده - فقط یک فایل bat
+        </div>
+        <div class="feature">
+            ✅ قابل انتقال - پوشه dist-desktop را ZIP کنید و به اشتراک بگذارید
+        </div>
+        <div class="feature">
+            ✅ تمام امکانات - همان Web version با دیتابیس محلی
+        </div>
+
+        <h2>📁 مکان دیتابیس</h2>
+
+        <p>دیتابیس SQLite در این مسیر ذخیره می‌شود:</p>
+        <div class="code">C:\Users\[نام شما]\AppData\Roaming\POS-System\pos-system.db</div>
+
+        <h2>📦 اشتراک‌گذاری با دیگران</h2>
+
+        <p>می‌توانید پوشه <code>dist-desktop</code> را:</p>
+        <ol style="margin-right: 30px; margin-top: 10px;">
+            <li>ZIP کنید</li>
+            <li>روی فلش کپی کنید</li>
+            <li>با دیگران به اشتراک بگذارید</li>
+        </ol>
+
+        <div class="warning">
+            <strong>⚠️ نکته:</strong> کامپیوتر مقصد باید Node.js داشته باشد. 
+            اولین بار که <code>Start-POS.bat</code> را اجرا می‌کنید، dependency ها نصب می‌شوند.
+        </div>
+
+        <h2>🐛 حل مشکلات</h2>
+
+        <div class="step">
+            <h4>مشکل: npm install خطا می‌دهد</h4>
+            <div class="code">
+npm cache clean --force<br>
+npm install --force
+            </div>
+        </div>
+
+        <div class="step">
+            <h4>مشکل: Port 5000 اشغال است</h4>
+            <p>فایل <code>Start-POS.bat</code> را ویرایش کنید و قبل از <code>node server.js</code> اضافه کنید:</p>
+            <div class="code">set PORT=8080</div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+            <h2 style="color: white; background: transparent;">🎉 موفق باشید!</h2>
+            <p style="margin-top: 15px; font-size: 18px;">
+                حالا یک نسخه Desktop کامل با دیتابیس SQLite دارید!
+            </p>
+        </div>
+    </div>
+</body>
+</html>

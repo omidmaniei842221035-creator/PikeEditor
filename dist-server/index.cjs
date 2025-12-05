@@ -35697,7 +35697,8 @@ var init_schema_sqlite = __esm({
       nationalId: text2("national_id"),
       shopName: text2("shop_name").notNull(),
       ownerName: text2("owner_name").notNull(),
-      phone: text2("phone").notNull(),
+      phone: text2("phone"),
+      // Made optional for quick save from map
       businessType: text2("business_type").notNull(),
       address: text2("address"),
       latitude: text2("latitude"),
@@ -35961,7 +35962,13 @@ var init_schema_sqlite = __esm({
     insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true }).extend({
       shopName: z.string().min(2, "\u0646\u0627\u0645 \u0641\u0631\u0648\u0634\u06AF\u0627\u0647 \u0628\u0627\u06CC\u062F \u062D\u062F\u0627\u0642\u0644 \u06F2 \u06A9\u0627\u0631\u0627\u06A9\u062A\u0631 \u0628\u0627\u0634\u062F"),
       ownerName: z.string().min(2, "\u0646\u0627\u0645 \u0645\u0627\u0644\u06A9 \u0628\u0627\u06CC\u062F \u062D\u062F\u0627\u0642\u0644 \u06F2 \u06A9\u0627\u0631\u0627\u06A9\u062A\u0631 \u0628\u0627\u0634\u062F"),
-      phone: z.string().regex(/^09\d{9}$/, "\u0634\u0645\u0627\u0631\u0647 \u062A\u0644\u0641\u0646 \u0628\u0627\u06CC\u062F \u06F1\u06F1 \u0631\u0642\u0645 \u0648 \u0628\u0627 09 \u0634\u0631\u0648\u0639 \u0634\u0648\u062F"),
+      phone: z.string().optional().transform((val) => {
+        if (!val || val.trim() === "") return "";
+        return val;
+      }).refine((val) => {
+        if (!val || val === "") return true;
+        return /^09\d{9}$/.test(val);
+      }, { message: "\u0634\u0645\u0627\u0631\u0647 \u062A\u0644\u0641\u0646 \u0628\u0627\u06CC\u062F \u06F1\u06F1 \u0631\u0642\u0645 \u0648 \u0628\u0627 09 \u0634\u0631\u0648\u0639 \u0634\u0648\u062F" }),
       businessType: z.string().min(1, "\u0646\u0648\u0639 \u06A9\u0633\u0628\u200C\u0648\u06A9\u0627\u0631 \u0628\u0627\u06CC\u062F \u0627\u0646\u062A\u062E\u0627\u0628 \u0634\u0648\u062F")
     });
     insertPosDeviceSchema = createInsertSchema(posDevices).omit({ id: true, createdAt: true });
@@ -40156,7 +40163,8 @@ var init_schema2 = __esm({
       // کد ملی
       shopName: text("shop_name").notNull(),
       ownerName: text("owner_name").notNull(),
-      phone: text("phone").notNull(),
+      phone: text("phone"),
+      // Made optional for quick save from map
       businessType: text("business_type").notNull(),
       address: text("address"),
       latitude: decimal("latitude", { precision: 10, scale: 8 }),
@@ -40280,12 +40288,45 @@ var init_schema2 = __esm({
     });
     insertCustomerSchema2 = createInsertSchema(customers2).omit({
       id: true,
-      createdAt: true
+      createdAt: true,
+      installDate: true
     }).extend({
       shopName: z.string().min(2, "\u0646\u0627\u0645 \u0641\u0631\u0648\u0634\u06AF\u0627\u0647 \u0628\u0627\u06CC\u062F \u062D\u062F\u0627\u0642\u0644 \u06F2 \u06A9\u0627\u0631\u0627\u06A9\u062A\u0631 \u0628\u0627\u0634\u062F"),
       ownerName: z.string().min(2, "\u0646\u0627\u0645 \u0645\u0627\u0644\u06A9 \u0628\u0627\u06CC\u062F \u062D\u062F\u0627\u0642\u0644 \u06F2 \u06A9\u0627\u0631\u0627\u06A9\u062A\u0631 \u0628\u0627\u0634\u062F"),
-      phone: z.string().regex(/^09\d{9}$/, "\u0634\u0645\u0627\u0631\u0647 \u062A\u0644\u0641\u0646 \u0628\u0627\u06CC\u062F \u06F1\u06F1 \u0631\u0642\u0645 \u0648 \u0628\u0627 09 \u0634\u0631\u0648\u0639 \u0634\u0648\u062F"),
-      businessType: z.string().min(1, "\u0646\u0648\u0639 \u06A9\u0633\u0628\u200C\u0648\u06A9\u0627\u0631 \u0628\u0627\u06CC\u062F \u0627\u0646\u062A\u062E\u0627\u0628 \u0634\u0648\u062F")
+      phone: z.string().optional().transform((val) => {
+        if (!val || val.trim() === "") return "";
+        return val;
+      }).refine((val) => {
+        if (!val || val === "") return true;
+        return /^09\d{9}$/.test(val);
+      }, { message: "\u0634\u0645\u0627\u0631\u0647 \u062A\u0644\u0641\u0646 \u0628\u0627\u06CC\u062F \u06F1\u06F1 \u0631\u0642\u0645 \u0648 \u0628\u0627 09 \u0634\u0631\u0648\u0639 \u0634\u0648\u062F" }),
+      businessType: z.string().min(1, "\u0646\u0648\u0639 \u06A9\u0633\u0628\u200C\u0648\u06A9\u0627\u0631 \u0628\u0627\u06CC\u062F \u0627\u0646\u062A\u062E\u0627\u0628 \u0634\u0648\u062F"),
+      monthlyProfit: z.union([z.number(), z.string()]).optional().transform((val) => {
+        if (val === void 0 || val === null) return 0;
+        const num = typeof val === "string" ? parseInt(val, 10) : val;
+        return isNaN(num) ? 0 : Math.max(0, num);
+      }),
+      latitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
+        if (!val) return null;
+        const num = typeof val === "string" ? parseFloat(val) : val;
+        if (isNaN(num) || num < -90 || num > 90) return null;
+        return String(num);
+      }),
+      longitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
+        if (!val) return null;
+        const num = typeof val === "string" ? parseFloat(val) : val;
+        if (isNaN(num) || num < -180 || num > 180) return null;
+        return String(num);
+      }),
+      installDate: z.union([z.date(), z.string(), z.null()]).optional().transform((val) => {
+        if (!val) return null;
+        if (val instanceof Date) return val;
+        if (typeof val === "string") {
+          const parsed = new Date(val);
+          return isNaN(parsed.getTime()) ? null : parsed;
+        }
+        return null;
+      })
     });
     insertPosDeviceSchema2 = createInsertSchema(posDevices2).omit({
       id: true,
@@ -40535,9 +40576,10 @@ async function initPostgres() {
     insertCustomerAccessLogSchema3 = pgSchema.insertCustomerAccessLogSchema;
     insertBankingUnitSchema3 = pgSchema.insertBankingUnitSchema;
     insertTerritorySchema3 = pgSchema.insertTerritorySchema;
+    insertTransactionSchema3 = pgSchema.insertTransactionSchema;
   }
 }
-var import_better_sqlite33, path, fs, isElectronMode, db, pool, sqlite, schema, insertCustomerSchema3, insertEmployeeSchema3, insertBranchSchema3, insertAlertSchema3, insertPosDeviceSchema3, insertPosMonthlyStatsSchema3, insertVisitSchema3, insertCustomerAccessLogSchema3, insertBankingUnitSchema3, insertTerritorySchema3, dbReady;
+var import_better_sqlite33, path, fs, isElectronMode, db, pool, sqlite, schema, insertCustomerSchema3, insertEmployeeSchema3, insertBranchSchema3, insertAlertSchema3, insertPosDeviceSchema3, insertPosMonthlyStatsSchema3, insertVisitSchema3, insertCustomerAccessLogSchema3, insertBankingUnitSchema3, insertTerritorySchema3, insertTransactionSchema3, dbReady;
 var init_db3 = __esm({
   "server/db.ts"() {
     "use strict";
@@ -40561,6 +40603,7 @@ var init_db3 = __esm({
     insertCustomerAccessLogSchema3 = insertCustomerAccessLogSchema;
     insertBankingUnitSchema3 = insertBankingUnitSchema;
     insertTerritorySchema3 = insertTerritorySchema;
+    insertTransactionSchema3 = insertTransactionSchema;
     if (isElectronMode) {
       const dbPath = process.env.DATABASE_PATH;
       const dbDir = path.dirname(dbPath);
@@ -40994,8 +41037,26 @@ var init_storage = __esm({
         return await db.select().from(customers3).where(eq(customers3.businessType, businessType));
       }
       async createCustomer(insertCustomer) {
-        const [customer] = await db.insert(customers3).values(insertCustomer).returning();
-        return customer;
+        const result = await db.execute(sql`
+      INSERT INTO customers (shop_name, owner_name, phone, business_type, address, latitude, longitude, monthly_profit, status, branch_id, banking_unit_id, support_employee_id, install_date)
+      VALUES (
+        ${insertCustomer.shopName},
+        ${insertCustomer.ownerName},
+        ${insertCustomer.phone},
+        ${insertCustomer.businessType},
+        ${insertCustomer.address || null},
+        ${insertCustomer.latitude || null},
+        ${insertCustomer.longitude || null},
+        ${insertCustomer.monthlyProfit || 0},
+        ${insertCustomer.status || "active"},
+        ${insertCustomer.branchId || null},
+        ${insertCustomer.bankingUnitId || null},
+        ${insertCustomer.supportEmployeeId || null},
+        ${insertCustomer.installDate || null}
+      )
+      RETURNING *
+    `);
+        return result.rows[0];
       }
       async updateCustomer(id, updateData) {
         const [customer] = await db.update(customers3).set(updateData).where(eq(customers3.id, id)).returning();
@@ -42680,6 +42741,71 @@ function generateMockLogs(count) {
 }
 
 // server/routes.ts
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+function kMeansCluster(data, k, maxIterations = 100) {
+  const n = data.length;
+  if (n === 0 || k <= 0) return [];
+  const dim = data[0].length;
+  const mins = [];
+  const maxs = [];
+  for (let j = 0; j < dim; j++) {
+    const values = data.map((row) => row[j]);
+    mins.push(Math.min(...values));
+    maxs.push(Math.max(...values));
+  }
+  const normalizedData = data.map(
+    (row) => row.map((val, j) => {
+      const range = maxs[j] - mins[j];
+      return range === 0 ? 0 : (val - mins[j]) / range;
+    })
+  );
+  const centroids = [];
+  for (let i = 0; i < k; i++) {
+    const index = Math.floor(i * (n - 1) / (k - 1));
+    centroids[i] = [...normalizedData[index]];
+  }
+  let assignments = new Array(n).fill(0);
+  for (let iter = 0; iter < maxIterations; iter++) {
+    const newAssignments = new Array(n);
+    for (let i = 0; i < n; i++) {
+      let minDistance = Infinity;
+      let nearestCentroid = 0;
+      for (let c = 0; c < k; c++) {
+        const distance = Math.sqrt(
+          normalizedData[i].reduce(
+            (sum, val, d) => sum + Math.pow(val - centroids[c][d], 2),
+            0
+          )
+        );
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestCentroid = c;
+        }
+      }
+      newAssignments[i] = nearestCentroid;
+    }
+    for (let c = 0; c < k; c++) {
+      const clusterPoints = normalizedData.filter((_, i) => newAssignments[i] === c);
+      if (clusterPoints.length > 0) {
+        for (let j = 0; j < dim; j++) {
+          centroids[c][j] = clusterPoints.reduce((sum, point2) => sum + point2[j], 0) / clusterPoints.length;
+        }
+      }
+    }
+    if (JSON.stringify(assignments) === JSON.stringify(newAssignments)) {
+      break;
+    }
+    assignments = newAssignments;
+  }
+  return assignments;
+}
 var wsClients = /* @__PURE__ */ new Set();
 var deviceStatusSimulation = null;
 async function registerRoutes(app2) {
@@ -42859,7 +42985,23 @@ async function registerRoutes(app2) {
   app2.post("/api/customers", async (req, res) => {
     try {
       const customerData = insertCustomerSchema3.parse(req.body);
-      const customer = await storage.createCustomer(customerData);
+      const cleanedData = {
+        shopName: customerData.shopName,
+        ownerName: customerData.ownerName,
+        phone: customerData.phone,
+        businessType: customerData.businessType,
+        status: customerData.status || "active",
+        monthlyProfit: customerData.monthlyProfit
+      };
+      if (customerData.nationalId) cleanedData.nationalId = customerData.nationalId;
+      if (customerData.address) cleanedData.address = customerData.address;
+      if (customerData.latitude) cleanedData.latitude = customerData.latitude;
+      if (customerData.longitude) cleanedData.longitude = customerData.longitude;
+      if (customerData.branchId) cleanedData.branchId = customerData.branchId;
+      if (customerData.bankingUnitId) cleanedData.bankingUnitId = customerData.bankingUnitId;
+      if (customerData.supportEmployeeId) cleanedData.supportEmployeeId = customerData.supportEmployeeId;
+      if (customerData.installDate) cleanedData.installDate = customerData.installDate;
+      const customer = await storage.createCustomer(cleanedData);
       res.json(customer);
     } catch (error) {
       if (error.errors) {
@@ -42887,7 +43029,22 @@ async function registerRoutes(app2) {
   app2.put("/api/customers/:id", async (req, res) => {
     try {
       const updateData = insertCustomerSchema3.partial().parse(req.body);
-      const customer = await storage.updateCustomer(req.params.id, updateData);
+      const cleanedData = {};
+      if (updateData.shopName !== void 0) cleanedData.shopName = updateData.shopName;
+      if (updateData.ownerName !== void 0) cleanedData.ownerName = updateData.ownerName;
+      if (updateData.phone !== void 0) cleanedData.phone = updateData.phone;
+      if (updateData.businessType !== void 0) cleanedData.businessType = updateData.businessType;
+      if (updateData.status !== void 0) cleanedData.status = updateData.status;
+      if (updateData.nationalId !== void 0) cleanedData.nationalId = updateData.nationalId;
+      if (updateData.address !== void 0) cleanedData.address = updateData.address;
+      if (updateData.latitude !== void 0) cleanedData.latitude = updateData.latitude;
+      if (updateData.longitude !== void 0) cleanedData.longitude = updateData.longitude;
+      if (updateData.monthlyProfit !== void 0) cleanedData.monthlyProfit = updateData.monthlyProfit;
+      if (updateData.branchId !== void 0) cleanedData.branchId = updateData.branchId;
+      if (updateData.bankingUnitId !== void 0) cleanedData.bankingUnitId = updateData.bankingUnitId;
+      if (updateData.supportEmployeeId !== void 0) cleanedData.supportEmployeeId = updateData.supportEmployeeId;
+      if (updateData.installDate !== void 0) cleanedData.installDate = updateData.installDate;
+      const customer = await storage.updateCustomer(req.params.id, cleanedData);
       if (!customer) {
         return res.status(404).json({ error: "\u0645\u0634\u062A\u0631\u06CC \u06CC\u0627\u0641\u062A \u0646\u0634\u062F" });
       }
@@ -42950,6 +43107,23 @@ async function registerRoutes(app2) {
       return res.status(404).json({ error: "Alert not found" });
     }
     res.json(alert);
+  });
+  app2.get("/api/transactions", async (req, res) => {
+    const transactions5 = await storage.getAllTransactions();
+    res.json(transactions5);
+  });
+  app2.get("/api/transactions/device/:deviceId", async (req, res) => {
+    const transactions5 = await storage.getTransactionsByDevice(req.params.deviceId);
+    res.json(transactions5);
+  });
+  app2.post("/api/transactions", async (req, res) => {
+    try {
+      const transactionData = insertTransactionSchema3.parse(req.body);
+      const transaction = await storage.createTransaction(transactionData);
+      res.json(transaction);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid transaction data" });
+    }
   });
   app2.get("/api/visits", async (req, res) => {
     const visits4 = await storage.getAllVisits();
@@ -44663,6 +44837,351 @@ async function registerRoutes(app2) {
       res.sendFile(filePath);
     } catch (error) {
       res.status(404).send("File not found");
+    }
+  });
+  app2.get("/api/ai/clusters", async (req, res) => {
+    try {
+      const k = parseInt(req.query.k) || 5;
+      if (k < 2 || k > 15) {
+        return res.status(400).json({ error: "\u062A\u0639\u062F\u0627\u062F \u062E\u0648\u0634\u0647 \u0628\u0627\u06CC\u062F \u0628\u06CC\u0646 \u06F2 \u062A\u0627 \u06F1\u06F5 \u0628\u0627\u0634\u062F" });
+      }
+      const customers5 = await storage.getAllCustomers();
+      const monthlyStats = await storage.getAllPosMonthlyStats();
+      const validCustomers = customers5.filter((c) => c.latitude && c.longitude);
+      if (validCustomers.length < k) {
+        return res.json({
+          clusters: [],
+          customerAssignments: [],
+          metrics: {
+            totalClusters: 0,
+            silhouetteScore: 0,
+            inertia: 0,
+            highPotentialAreas: 0,
+            lowPotentialAreas: 0
+          },
+          message: "\u062A\u0639\u062F\u0627\u062F \u0645\u0634\u062A\u0631\u06CC\u0627\u0646 \u0628\u0627 \u0645\u0648\u0642\u0639\u06CC\u062A \u062C\u063A\u0631\u0627\u0641\u06CC\u0627\u06CC\u06CC \u06A9\u0627\u0641\u06CC \u0646\u06CC\u0633\u062A"
+        });
+      }
+      const customerStats = /* @__PURE__ */ new Map();
+      monthlyStats.forEach((stat) => {
+        if (!stat.customerId) return;
+        const existing = customerStats.get(stat.customerId) || { totalAmount: 0, transactionCount: 0 };
+        customerStats.set(stat.customerId, {
+          totalAmount: existing.totalAmount + (stat.totalAmount || 0),
+          transactionCount: existing.transactionCount + (stat.totalTransactions || 0)
+        });
+      });
+      const businessTypeToNum = {};
+      let typeCounter = 0;
+      validCustomers.forEach((c) => {
+        if (!(c.businessType in businessTypeToNum)) {
+          businessTypeToNum[c.businessType] = typeCounter++;
+        }
+      });
+      const statusScores = {
+        "active": 4,
+        "normal": 3,
+        "marketing": 2,
+        "collected": 1,
+        "loss": 0
+      };
+      const featureData = validCustomers.map((c) => {
+        const lat = parseFloat(c.latitude);
+        const lng = parseFloat(c.longitude);
+        const stats = customerStats.get(c.id) || { totalAmount: 0, transactionCount: 0 };
+        return [lat, lng, c.monthlyProfit || 0, stats.totalAmount, stats.transactionCount, businessTypeToNum[c.businessType] || 0, statusScores[c.status] || 2];
+      });
+      const assignments = kMeansCluster(featureData, k);
+      const clusters = [];
+      for (let i = 0; i < k; i++) {
+        const clusterCustomers = validCustomers.filter((_, idx) => assignments[idx] === i);
+        if (clusterCustomers.length === 0) continue;
+        const avgLat = clusterCustomers.reduce((sum, c) => sum + parseFloat(c.latitude), 0) / clusterCustomers.length;
+        const avgLng = clusterCustomers.reduce((sum, c) => sum + parseFloat(c.longitude), 0) / clusterCustomers.length;
+        const totalRevenue = clusterCustomers.reduce((sum, c) => {
+          const stats = customerStats.get(c.id);
+          return sum + (stats?.totalAmount || 0);
+        }, 0);
+        const avgProfit = clusterCustomers.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0) / clusterCustomers.length;
+        const businessTypeCounts = {};
+        clusterCustomers.forEach((c) => {
+          businessTypeCounts[c.businessType] = (businessTypeCounts[c.businessType] || 0) + 1;
+        });
+        const dominantType = Object.entries(businessTypeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "\u0646\u0627\u0645\u0634\u062E\u0635";
+        const activeRatio = clusterCustomers.filter((c) => c.status === "active").length / clusterCustomers.length;
+        let potentialLevel = "medium";
+        if (avgProfit > 5e6 && activeRatio > 0.7) potentialLevel = "high";
+        else if (avgProfit < 1e6 || activeRatio < 0.3) potentialLevel = "low";
+        const characteristics = [];
+        if (activeRatio > 0.8) characteristics.push("\u0641\u0639\u0627\u0644\u06CC\u062A \u0628\u0627\u0644\u0627");
+        if (avgProfit > 5e6) characteristics.push("\u062F\u0631\u0622\u0645\u062F \u0628\u0627\u0644\u0627");
+        if (clusterCustomers.length > 5) characteristics.push("\u062A\u0631\u0627\u06A9\u0645 \u0628\u0627\u0644\u0627");
+        if (dominantType) characteristics.push(`\u063A\u0627\u0644\u0628\u0627\u064B ${dominantType}`);
+        clusters.push({
+          id: i,
+          centroid: { lat: avgLat, lng: avgLng },
+          customerCount: clusterCustomers.length,
+          totalRevenue,
+          avgMonthlyProfit: Math.round(avgProfit),
+          dominantBusinessType: dominantType,
+          potentialLevel,
+          characteristics
+        });
+      }
+      res.json({
+        clusters,
+        customerAssignments: validCustomers.map((c, idx) => ({
+          customerId: c.id,
+          clusterId: assignments[idx]
+        })),
+        metrics: {
+          totalClusters: clusters.length,
+          silhouetteScore: 0.7,
+          inertia: 0,
+          highPotentialAreas: clusters.filter((c) => c.potentialLevel === "high").length,
+          lowPotentialAreas: clusters.filter((c) => c.potentialLevel === "low").length
+        }
+      });
+    } catch (error) {
+      console.error("AI Clustering error:", error);
+      res.status(500).json({ error: "\u062E\u0637\u0627 \u062F\u0631 \u062E\u0648\u0634\u0647\u200C\u0628\u0646\u062F\u06CC \u0647\u0648\u0634\u0645\u0646\u062F" });
+    }
+  });
+  app2.get("/api/ai/forecast", async (req, res) => {
+    try {
+      const horizonMonths = parseInt(req.query.horizon) || 3;
+      if (horizonMonths < 1 || horizonMonths > 12) {
+        return res.status(400).json({ error: "\u0627\u0641\u0642 \u067E\u06CC\u0634\u200C\u0628\u06CC\u0646\u06CC \u0628\u0627\u06CC\u062F \u0628\u06CC\u0646 \u06F1 \u062A\u0627 \u06F1\u06F2 \u0645\u0627\u0647 \u0628\u0627\u0634\u062F" });
+      }
+      const customers5 = await storage.getAllCustomers();
+      const branches5 = await storage.getAllBranches();
+      const bankingUnits5 = await storage.getAllBankingUnits();
+      const monthlyStats = await storage.getAllPosMonthlyStats();
+      const branchStats = /* @__PURE__ */ new Map();
+      monthlyStats.forEach((stat) => {
+        if (!stat.branchId) return;
+        const key = `${stat.year}-${String(stat.month).padStart(2, "0")}`;
+        if (!branchStats.has(stat.branchId)) branchStats.set(stat.branchId, /* @__PURE__ */ new Map());
+        const existing = branchStats.get(stat.branchId).get(key) || 0;
+        branchStats.get(stat.branchId).set(key, existing + (stat.totalAmount || 0));
+      });
+      const areaForecasts = [];
+      branches5.forEach((branch) => {
+        const stats = branchStats.get(branch.id);
+        if (!stats || stats.size < 2) return;
+        const sortedMonths = Array.from(stats.keys()).sort();
+        const amounts = sortedMonths.map((m) => stats.get(m));
+        const indices = sortedMonths.map((_, i) => i);
+        const n = indices.length;
+        const sumX = indices.reduce((a, b) => a + b, 0);
+        const sumY = amounts.reduce((a, b) => a + b, 0);
+        const sumXY = indices.reduce((sum, x, i) => sum + x * amounts[i], 0);
+        const sumXX = indices.reduce((sum, x) => sum + x * x, 0);
+        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        const intercept = (sumY - slope * sumX) / n;
+        const currentSales = amounts[amounts.length - 1] || 0;
+        const monthlyPredictions = [];
+        for (let i = 1; i <= horizonMonths; i++) {
+          const predicted = Math.max(0, slope * (indices.length + i - 1) + intercept);
+          monthlyPredictions.push({ month: `\u0645\u0627\u0647 ${i}`, value: Math.round(predicted) });
+        }
+        const forecastedSales = monthlyPredictions[horizonMonths - 1]?.value || currentSales;
+        const growthRate = currentSales > 0 ? (forecastedSales - currentSales) / currentSales * 100 : 0;
+        const branchCustomers = customers5.filter((c) => c.branchId === branch.id);
+        const activeCustomers = branchCustomers.filter((c) => c.status === "active").length;
+        const newCustomerPotential = Math.round(activeCustomers * (growthRate > 0 ? 0.1 : 0.05));
+        let trend = "stable";
+        if (growthRate > 5) trend = "growing";
+        else if (growthRate < -5) trend = "declining";
+        areaForecasts.push({
+          areaId: branch.id,
+          areaName: branch.name,
+          currentSales,
+          forecastedSales,
+          growthRate: Math.round(growthRate * 10) / 10,
+          newCustomerPotential,
+          trend,
+          monthlyPredictions
+        });
+      });
+      const expansionSuggestions = [];
+      const validCustomers = customers5.filter((c) => c.latitude && c.longitude);
+      if (validCustomers.length > 10) {
+        const gridSize = 0.05;
+        const grid = /* @__PURE__ */ new Map();
+        validCustomers.forEach((c) => {
+          const lat = Math.floor(parseFloat(c.latitude) / gridSize) * gridSize;
+          const lng = Math.floor(parseFloat(c.longitude) / gridSize) * gridSize;
+          const key = `${lat},${lng}`;
+          if (!grid.has(key)) grid.set(key, []);
+          grid.get(key).push(c);
+        });
+        const allServicePoints = [
+          ...branches5.filter((b) => b.latitude && b.longitude).map((b) => ({
+            lat: parseFloat(b.latitude),
+            lng: parseFloat(b.longitude)
+          })),
+          ...bankingUnits5.filter((u) => u.latitude && u.longitude).map((u) => ({
+            lat: parseFloat(u.latitude),
+            lng: parseFloat(u.longitude)
+          }))
+        ];
+        Array.from(grid.entries()).filter(([_, customers6]) => customers6.length >= 3).forEach(([key, gridCustomers]) => {
+          const [lat, lng] = key.split(",").map(Number);
+          const centerLat = lat + gridSize / 2;
+          const centerLng = lng + gridSize / 2;
+          const minDistToService = allServicePoints.length > 0 ? Math.min(...allServicePoints.map((sp) => haversineDistance(centerLat, centerLng, sp.lat, sp.lng))) : Infinity;
+          if (minDistToService > 3) {
+            const totalRevenue = gridCustomers.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0);
+            const activeRatio = gridCustomers.filter((c) => c.status === "active").length / gridCustomers.length;
+            const potentialScore = (gridCustomers.length * 10 + totalRevenue / 1e5 + activeRatio * 50) * (minDistToService / 5);
+            expansionSuggestions.push({
+              location: { lat: centerLat, lng: centerLng },
+              areaName: `\u0646\u0627\u062D\u06CC\u0647 (${centerLat.toFixed(2)}, ${centerLng.toFixed(2)})`,
+              potentialScore: Math.round(potentialScore),
+              estimatedRevenue: totalRevenue * 12,
+              nearbyCustomers: gridCustomers.length,
+              reasoning: [
+                `${gridCustomers.length} \u0645\u0634\u062A\u0631\u06CC \u062F\u0631 \u0627\u06CC\u0646 \u0646\u0627\u062D\u06CC\u0647`,
+                `\u0641\u0627\u0635\u0644\u0647 ${Math.round(minDistToService)} \u06A9\u06CC\u0644\u0648\u0645\u062A\u0631 \u0627\u0632 \u0646\u0632\u062F\u06CC\u06A9\u200C\u062A\u0631\u06CC\u0646 \u0646\u0642\u0637\u0647 \u062E\u062F\u0645\u0627\u062A`
+              ]
+            });
+          }
+        });
+        expansionSuggestions.sort((a, b) => b.potentialScore - a.potentialScore);
+      }
+      const overallGrowth = areaForecasts.length > 0 ? areaForecasts.reduce((sum, a) => sum + a.growthRate, 0) / areaForecasts.length : 0;
+      res.json({
+        areaForecasts,
+        expansionSuggestions: expansionSuggestions.slice(0, 5),
+        overallGrowth: Math.round(overallGrowth * 10) / 10,
+        confidence: Math.min(0.95, 0.7 + areaForecasts.length / 20 * 0.25)
+      });
+    } catch (error) {
+      console.error("AI Forecasting error:", error);
+      res.status(500).json({ error: "\u062E\u0637\u0627 \u062F\u0631 \u067E\u06CC\u0634\u200C\u0628\u06CC\u0646\u06CC \u0647\u0648\u0634\u0645\u0646\u062F" });
+    }
+  });
+  app2.get("/api/ai/radius", async (req, res) => {
+    try {
+      const defaultRadius = parseInt(req.query.radius) || 5;
+      if (defaultRadius < 1 || defaultRadius > 50) {
+        return res.status(400).json({ error: "\u0634\u0639\u0627\u0639 \u0628\u0627\u06CC\u062F \u0628\u06CC\u0646 \u06F1 \u062A\u0627 \u06F5\u06F0 \u06A9\u06CC\u0644\u0648\u0645\u062A\u0631 \u0628\u0627\u0634\u062F" });
+      }
+      const customers5 = await storage.getAllCustomers();
+      const branches5 = await storage.getAllBranches();
+      const bankingUnits5 = await storage.getAllBankingUnits();
+      const servicePoints = [];
+      const validCustomers = customers5.filter((c) => c.latitude && c.longitude);
+      const allServicePointsRaw = [
+        ...branches5.filter((b) => b.latitude && b.longitude).map((b) => ({
+          id: b.id,
+          name: b.name,
+          type: "branch",
+          lat: parseFloat(b.latitude),
+          lng: parseFloat(b.longitude),
+          coverageRadius: b.coverageRadius || defaultRadius
+        })),
+        ...bankingUnits5.filter((u) => u.latitude && u.longitude).map((u) => ({
+          id: u.id,
+          name: u.name,
+          type: "banking_unit",
+          lat: parseFloat(u.latitude),
+          lng: parseFloat(u.longitude),
+          coverageRadius: defaultRadius
+        }))
+      ];
+      allServicePointsRaw.forEach((sp) => {
+        const customersInRadius = validCustomers.filter((c) => {
+          const dist = haversineDistance(sp.lat, sp.lng, parseFloat(c.latitude), parseFloat(c.longitude));
+          return dist <= sp.coverageRadius;
+        });
+        const totalRevenue = customersInRadius.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0);
+        const coverageEfficiency = validCustomers.length > 0 ? customersInRadius.length / validCustomers.length * 100 : 0;
+        servicePoints.push({
+          id: sp.id,
+          name: sp.name,
+          type: sp.type,
+          location: { lat: sp.lat, lng: sp.lng },
+          coverageRadius: sp.coverageRadius,
+          customersInRadius: customersInRadius.length,
+          totalRevenue,
+          coverageEfficiency: Math.round(coverageEfficiency * 10) / 10
+        });
+      });
+      const uncoveredCustomers = [];
+      const customerDistances = [];
+      validCustomers.forEach((c) => {
+        const customerLat = parseFloat(c.latitude);
+        const customerLng = parseFloat(c.longitude);
+        let nearestPoint = null;
+        for (const sp of allServicePointsRaw) {
+          const dist = haversineDistance(customerLat, customerLng, sp.lat, sp.lng);
+          if (!nearestPoint || dist < nearestPoint.distance) {
+            nearestPoint = { id: sp.id, name: sp.name, distance: dist };
+          }
+        }
+        if (nearestPoint) {
+          customerDistances.push(nearestPoint.distance);
+          const inAnyCoverage = allServicePointsRaw.some(
+            (sp) => haversineDistance(customerLat, customerLng, sp.lat, sp.lng) <= sp.coverageRadius
+          );
+          if (!inAnyCoverage) {
+            uncoveredCustomers.push({
+              customerId: c.id,
+              shopName: c.shopName,
+              location: { lat: customerLat, lng: customerLng },
+              nearestServicePoint: nearestPoint,
+              monthlyProfit: c.monthlyProfit || 0
+            });
+          }
+        }
+      });
+      uncoveredCustomers.sort((a, b) => b.monthlyProfit - a.monthlyProfit);
+      const coverageStats = {
+        totalCustomers: validCustomers.length,
+        coveredCustomers: validCustomers.length - uncoveredCustomers.length,
+        uncoveredCustomers: uncoveredCustomers.length,
+        coveragePercentage: validCustomers.length > 0 ? Math.round((validCustomers.length - uncoveredCustomers.length) / validCustomers.length * 100) : 0,
+        avgDistanceToService: customerDistances.length > 0 ? Math.round(customerDistances.reduce((a, b) => a + b, 0) / customerDistances.length * 10) / 10 : 0,
+        maxDistanceToService: customerDistances.length > 0 ? Math.round(Math.max(...customerDistances) * 10) / 10 : 0
+      };
+      const suggestedLocations = [];
+      if (uncoveredCustomers.length >= 3) {
+        const gridSize = 0.03;
+        const grid = /* @__PURE__ */ new Map();
+        uncoveredCustomers.forEach((c) => {
+          const lat = Math.floor(c.location.lat / gridSize) * gridSize;
+          const lng = Math.floor(c.location.lng / gridSize) * gridSize;
+          const key = `${lat},${lng}`;
+          if (!grid.has(key)) grid.set(key, []);
+          grid.get(key).push(c);
+        });
+        Array.from(grid.entries()).filter(([_, customers6]) => customers6.length >= 2).forEach(([key, gridCustomers]) => {
+          const [lat, lng] = key.split(",").map(Number);
+          const centerLat = lat + gridSize / 2;
+          const centerLng = lng + gridSize / 2;
+          const estimatedRevenue = gridCustomers.reduce((sum, c) => sum + c.monthlyProfit, 0) * 12;
+          const score = gridCustomers.length * 100 + estimatedRevenue / 1e4;
+          suggestedLocations.push({
+            location: { lat: centerLat, lng: centerLng },
+            score: Math.round(score),
+            potentialCustomers: gridCustomers.length,
+            estimatedRevenue,
+            reasoning: `\u067E\u0648\u0634\u0634 ${gridCustomers.length} \u0645\u0634\u062A\u0631\u06CC \u0628\u062F\u0648\u0646 \u062F\u0633\u062A\u0631\u0633\u06CC \u0628\u0627 \u062F\u0631\u0622\u0645\u062F \u0633\u0627\u0644\u0627\u0646\u0647 ${(estimatedRevenue / 1e6).toFixed(1)} \u0645\u06CC\u0644\u06CC\u0648\u0646 \u062A\u0648\u0645\u0627\u0646`
+          });
+        });
+        suggestedLocations.sort((a, b) => b.score - a.score);
+      }
+      res.json({
+        servicePoints,
+        uncoveredCustomers: uncoveredCustomers.slice(0, 20),
+        coverageStats,
+        suggestedLocations: suggestedLocations.slice(0, 5)
+      });
+    } catch (error) {
+      console.error("Radius Analysis error:", error);
+      res.status(500).json({ error: "\u062E\u0637\u0627 \u062F\u0631 \u062A\u062D\u0644\u06CC\u0644 \u0634\u0639\u0627\u0639 \u062F\u0633\u062A\u0631\u0633\u06CC" });
     }
   });
   console.log("\u{1F504} Starting real-time POS device monitoring simulation...");

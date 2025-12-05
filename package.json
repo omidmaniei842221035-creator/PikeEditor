@@ -42,7 +42,7 @@
         "to": "server/"
       },
       {
-        "from": "dist-public/",
+        "from": "client/dist-public/",
         "to": "public/"
       },
       {
