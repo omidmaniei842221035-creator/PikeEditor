@@ -5,7 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertBankingUnitSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { BankingUnitPlacementModal } from "./banking-unit-placement-modal";
+import { LocationPickerModal } from "@/components/common/location-picker-modal";
+import { MapPin } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -148,7 +149,6 @@ export function BankingUnitFormModal({ open, onOpenChange, editData }: BankingUn
     setSelectedLocation({ lat, lng });
     form.setValue("latitude", lat.toString());
     form.setValue("longitude", lng.toString());
-    setShowMapPicker(false);
   };
 
   const getUnitTypeLabel = (type: string) => {
@@ -301,13 +301,14 @@ export function BankingUnitFormModal({ open, onOpenChange, editData }: BankingUn
                   variant="outline"
                   size="sm"
                   onClick={() => setShowMapPicker(true)}
-                  data-testid="button-select-on-map"
+                  data-testid="button-select-location-banking-unit"
                 >
-                  🗺️ انتخاب روی نقشه
+                  <MapPin className="w-4 h-4 ml-1" />
+                  انتخاب روی نقشه
                 </Button>
                 {selectedLocation && (
                   <span className="text-sm text-green-600">
-                    ✅ موقعیت انتخاب شده
+                    موقعیت انتخاب شده
                   </span>
                 )}
               </div>
@@ -415,11 +416,12 @@ export function BankingUnitFormModal({ open, onOpenChange, editData }: BankingUn
         </Form>
       </DialogContent>
       
-      <BankingUnitPlacementModal
+      <LocationPickerModal
         open={showMapPicker}
         onOpenChange={setShowMapPicker}
         onLocationSelected={handleMapLocationSelected}
         initialLocation={selectedLocation}
+        title="انتخاب موقعیت واحد بانکی روی نقشه"
       />
     </Dialog>
   );

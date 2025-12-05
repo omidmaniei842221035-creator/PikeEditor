@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertCustomerSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { LocationPickerModal } from "@/components/common/location-picker-modal";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MapPin } from "lucide-react";
 import type { z } from "zod";
 
 type CustomerFormData = z.infer<typeof insertCustomerSchema>;
@@ -49,6 +51,7 @@ export function CustomerFormModal({
   onSelectLocationFromMap 
 }: CustomerFormModalProps) {
   const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(initialLocation);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -337,9 +340,12 @@ export function CustomerFormModal({
         
         {/* Location Selection Section */}
         <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex-1">
-              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">📍 موقعیت جغرافیایی</h4>
+              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1 flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
+                موقعیت جغرافیایی
+              </h4>
               {selectedLocation ? (
                 <p className="text-sm text-blue-700 dark:text-blue-300">
                   عرض جغرافیایی: {selectedLocation.lat.toFixed(6)} - طول جغرافیایی: {selectedLocation.lng.toFixed(6)}
@@ -348,18 +354,17 @@ export function CustomerFormModal({
                 <p className="text-sm text-blue-600 dark:text-blue-400">موقعیت جغرافیایی انتخاب نشده</p>
               )}
             </div>
-            {onSelectLocationFromMap && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm"
-                onClick={onSelectLocationFromMap}
-                className="bg-white dark:bg-gray-800"
-                data-testid="select-location-button"
-              >
-                🗺️ انتخاب از نقشه
-              </Button>
-            )}
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowMapPicker(true)}
+              className="bg-white dark:bg-gray-800"
+              data-testid="button-select-location-customer"
+            >
+              <MapPin className="w-4 h-4 ml-1" />
+              انتخاب از نقشه
+            </Button>
           </div>
         </div>
         
@@ -552,17 +557,6 @@ export function CustomerFormModal({
               )}
             />
             
-            <div className="border-t border-border pt-4">
-              <div className="flex items-center justify-between">
-                <Button type="button" variant="outline" size="sm">
-                  📍 انتخاب از نقشه
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  **موقعیت انتخاب شده:** {selectedLocation ? "انتخاب شده" : "هیچ"}
-                </span>
-              </div>
-            </div>
-            
             <div className="flex items-center gap-3 pt-4">
               <Button 
                 type="submit" 
@@ -583,6 +577,16 @@ export function CustomerFormModal({
           </form>
         </Form>
       </DialogContent>
+      
+      <LocationPickerModal
+        open={showMapPicker}
+        onOpenChange={setShowMapPicker}
+        onLocationSelected={(lat, lng) => {
+          setSelectedLocation({ lat, lng });
+        }}
+        initialLocation={selectedLocation}
+        title="انتخاب موقعیت مشتری روی نقشه"
+      />
     </Dialog>
   );
 }

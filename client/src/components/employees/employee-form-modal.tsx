@@ -44,7 +44,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
   const queryClient = useQueryClient();
   const isEditing = !!employee;
 
-  const { data: branches = [] } = useQuery({
+  const { data: branches = [] } = useQuery<any[]>({
     queryKey: ["/api/branches"],
   });
 
@@ -201,7 +201,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
                   <FormItem>
                     <FormLabel>شماره تماس</FormLabel>
                     <FormControl>
-                      <Input {...field} type="tel" data-testid="phone-input" />
+                      <Input {...field} value={field.value || ""} type="tel" data-testid="phone-input" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -215,7 +215,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
                   <FormItem>
                     <FormLabel>ایمیل</FormLabel>
                     <FormControl>
-                      <Input {...field} type="email" data-testid="email-input" />
+                      <Input {...field} value={field.value || ""} type="email" data-testid="email-input" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -258,6 +258,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
                     <FormControl>
                       <Input 
                         {...field} 
+                        value={field.value ?? 0}
                         type="number"
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                         data-testid="salary-input"
@@ -282,7 +283,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: EmployeeForm
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
+                      checked={field.value ?? true}
                       onCheckedChange={field.onChange}
                       data-testid="active-switch"
                     />

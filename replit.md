@@ -47,6 +47,7 @@ Preferred communication style: Simple, everyday language.
   - **API Endpoints**: `/api/ai/clusters`, `/api/ai/forecast`, `/api/ai/radius` with configurable parameters (cluster count, forecast horizon, coverage radius).
 - **Data Management**: Excel import/export for customer data, comprehensive CRM, employee management (role-based access), branch and territory management, and a full database backup/restore system (JSON export/import).
 - **Desktop Version**: Electron-based desktop application with SQLite database for standalone PC installation.
+- **Map Location Picker**: Reusable LocationPickerModal component for selecting geographic locations on a Leaflet map. Available in both web and desktop versions for customers and banking units.
 
 ## External Dependencies
 
