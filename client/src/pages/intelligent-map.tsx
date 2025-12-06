@@ -763,6 +763,32 @@ export default function IntelligentMap() {
         });
       }
       
+      const cross = (O: {lat: number, lng: number}, A: {lat: number, lng: number}, B: {lat: number, lng: number}) => {
+        return (A.lng - O.lng) * (B.lat - O.lat) - (A.lat - O.lat) * (B.lng - O.lng);
+      };
+      
+      const computeConvexHull = (pts: {lat: number, lng: number}[]): {lat: number, lng: number}[] => {
+        if (pts.length < 3) return pts;
+        const sorted = [...pts].sort((a, b) => a.lng === b.lng ? a.lat - b.lat : a.lng - b.lng);
+        const lower: {lat: number, lng: number}[] = [];
+        for (const p of sorted) {
+          while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
+            lower.pop();
+          }
+          lower.push(p);
+        }
+        const upper: {lat: number, lng: number}[] = [];
+        for (let i = sorted.length - 1; i >= 0; i--) {
+          while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], sorted[i]) <= 0) {
+            upper.pop();
+          }
+          upper.push(sorted[i]);
+        }
+        lower.pop();
+        upper.pop();
+        return lower.concat(upper);
+      };
+      
       clusterData.clusters.forEach((cluster: ClusterInfo, index: number) => {
         const clusterCustomers = customers.filter((c: any) => {
           if (!c.latitude || !c.longitude) return false;
@@ -775,17 +801,8 @@ export default function IntelligentMap() {
             lng: parseFloat(c.longitude)
           }));
           
-          const center = {
-            lat: points.reduce((s, p) => s + p.lat, 0) / points.length,
-            lng: points.reduce((s, p) => s + p.lng, 0) / points.length
-          };
-          
-          const sortedPoints = [...points].sort((a, b) => {
-            return Math.atan2(a.lat - center.lat, a.lng - center.lng) - 
-                   Math.atan2(b.lat - center.lat, b.lng - center.lng);
-          });
-          
-          const hullPoints = sortedPoints.map(p => [p.lat, p.lng] as [number, number]);
+          const hull = computeConvexHull(points);
+          const hullPoints = hull.map(p => [p.lat, p.lng] as [number, number]);
           
           const potentialColors = {
             'high': '#10b981',
