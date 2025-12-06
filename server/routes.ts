@@ -1856,32 +1856,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const errors: Array<{ row: number; message: string }> = [];
 
       // Get all branches for validation
-      const branches = await storage.getAllBranches();
-      const defaultBranch = branches.find(b => b.code === 'TBR-001') || branches[0];
-
-      if (!defaultBranch) {
-        return res.status(500).json({
-          error: "هیچ شعبه‌ای در سیستم یافت نشد",
-          success: false
-        });
+      let branches = await storage.getAllBranches();
+      
+      // If no branches exist, create a default branch
+      if (branches.length === 0) {
+        const defaultBranchData = {
+          name: 'شعبه مرکزی',
+          code: 'TBR-001',
+          type: 'branch',
+          address: 'تبریز',
+          phone: '',
+          latitude: '38.0792',
+          longitude: '46.2887'
+        };
+        await storage.createBranch(defaultBranchData);
+        branches = await storage.getAllBranches();
       }
+      
+      const defaultBranch = branches.find(b => b.code === 'TBR-001') || branches[0];
 
       // Process customers in batches
       for (let i = 0; i < customers.length; i++) {
         const customerData = customers[i];
         
         try {
-          // Find matching branch if specified
-          let branchId = defaultBranch.id;
-          if (customerData.branch) {
+          // Find matching branch if specified (case-insensitive, with trim)
+          let branchId = defaultBranch?.id || 1;
+          if (customerData.branch && customerData.branch.trim() !== '') {
+            const branchSearch = customerData.branch.trim().toLowerCase();
             const matchingBranch = branches.find(b => 
-              b.name === customerData.branch || b.code === customerData.branch
+              b.name.toLowerCase() === branchSearch || 
+              b.code.toLowerCase() === branchSearch ||
+              b.name.toLowerCase().includes(branchSearch) ||
+              branchSearch.includes(b.name.toLowerCase())
             );
             if (matchingBranch) {
               branchId = matchingBranch.id;
-            } else {
-              throw new Error(`شعبه "${customerData.branch}" یافت نشد`);
             }
+            // If no match found, use default branch instead of throwing error
           }
 
           // Process and validate geo-location data

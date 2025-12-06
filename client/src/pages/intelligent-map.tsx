@@ -53,6 +53,7 @@ import {
   Grid3X3
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Delaunay } from "d3-delaunay";
 import type { Customer } from "@shared/schema";
 
 interface ClusterInfo {
@@ -127,6 +128,11 @@ export default function IntelligentMap() {
   const [showRiskMap, setShowRiskMap] = useState(false);
   const [showFlowLines, setShowFlowLines] = useState(false);
   const [showDistanceAnalysis, setShowDistanceAnalysis] = useState(false);
+  
+  const [showVoronoi, setShowVoronoi] = useState(false);
+  const [showTerritoryBoundaries, setShowTerritoryBoundaries] = useState(false);
+  const [showMarketShare, setShowMarketShare] = useState(false);
+  const [editZonesMode, setEditZonesMode] = useState(false);
   
   const [activeZoneType, setActiveZoneType] = useState<string>('highSales');
   const [activeRiskType, setActiveRiskType] = useState<string>('fraud');
@@ -206,7 +212,10 @@ export default function IntelligentMap() {
         forecastMarkers: [] as any[],
         riskMarkers: [] as any[],
         flowLines: [] as any[],
-        distanceLines: [] as any[]
+        distanceLines: [] as any[],
+        voronoiPolygons: [] as any[],
+        territoryPolygons: [] as any[],
+        marketShareOverlays: [] as any[]
       };
 
       setIsMapReady(true);
@@ -242,6 +251,12 @@ export default function IntelligentMap() {
     mapInstanceRef.current.flowLines = [];
     mapInstanceRef.current.distanceLines.forEach((l: any) => l.remove());
     mapInstanceRef.current.distanceLines = [];
+    mapInstanceRef.current.voronoiPolygons.forEach((p: any) => p.remove());
+    mapInstanceRef.current.voronoiPolygons = [];
+    mapInstanceRef.current.territoryPolygons.forEach((p: any) => p.remove());
+    mapInstanceRef.current.territoryPolygons = [];
+    mapInstanceRef.current.marketShareOverlays.forEach((o: any) => o.remove());
+    mapInstanceRef.current.marketShareOverlays = [];
   }, []);
 
   const handleEntityClick = useCallback((type: 'customer' | 'banking_unit', data: any) => {
@@ -676,7 +691,199 @@ export default function IntelligentMap() {
       });
     }
 
-  }, [isMapReady, customers, bankingUnits, clusterData, showCustomers, showBankingUnits, showHeatmap, showClusters, showCoverageRadius, coverageRadius, showSmartZoning, activeZoneType, showForecastLayer, showRiskMap, activeRiskType, showFlowLines, showDistanceAnalysis, clearMarkers, handleEntityClick]);
+    if (showVoronoi && bankingUnits.length > 0) {
+      const validUnits = bankingUnits.filter((u: any) => u.latitude && u.longitude);
+      
+      if (validUnits.length >= 3) {
+        const points = validUnits.map((u: any) => [parseFloat(u.longitude), parseFloat(u.latitude)] as [number, number]);
+        
+        const bounds = {
+          minLng: Math.min(...points.map(p => p[0])) - 0.05,
+          maxLng: Math.max(...points.map(p => p[0])) + 0.05,
+          minLat: Math.min(...points.map(p => p[1])) - 0.03,
+          maxLat: Math.max(...points.map(p => p[1])) + 0.03
+        };
+        
+        try {
+          const delaunay = Delaunay.from(points);
+          const voronoi = delaunay.voronoi([bounds.minLng, bounds.minLat, bounds.maxLng, bounds.maxLat]);
+          
+          validUnits.forEach((unit: any, i: number) => {
+            const cell = voronoi.cellPolygon(i);
+            if (cell) {
+              const latLngs = cell.map((p: [number, number]) => [p[1], p[0]]);
+              
+              const customersInZone = customers.filter((c: any) => {
+                if (!c.latitude || !c.longitude) return false;
+                const cLat = parseFloat(c.latitude);
+                const cLng = parseFloat(c.longitude);
+                const closestUnit = validUnits.reduce((closest: any, u: any) => {
+                  const dist = Math.hypot(parseFloat(u.latitude) - cLat, parseFloat(u.longitude) - cLng);
+                  const closestDist = closest ? Math.hypot(parseFloat(closest.latitude) - cLat, parseFloat(closest.longitude) - cLng) : Infinity;
+                  return dist < closestDist ? u : closest;
+                }, null);
+                return closestUnit?.id === unit.id;
+              });
+              
+              const totalRevenue = customersInZone.reduce((sum: number, c: any) => sum + (c.monthlyProfit || 0), 0);
+              const intensity = Math.min(1, totalRevenue / 100000000);
+              const colorIndex = i % CLUSTER_COLORS.length;
+              
+              const polygon = L.polygon(latLngs, {
+                color: CLUSTER_COLORS[colorIndex],
+                fillColor: CLUSTER_COLORS[colorIndex],
+                fillOpacity: 0.15 + intensity * 0.2,
+                weight: 2,
+                dashArray: '8, 4'
+              }).addTo(map);
+              
+              polygon.bindPopup(`
+                <div style="direction: rtl; text-align: right;">
+                  <h4 style="margin: 0 0 8px 0; color: ${CLUSTER_COLORS[colorIndex]};">منطقه ${unit.name || 'واحد بانکی'}</h4>
+                  <p style="margin: 4px 0;"><strong>تعداد مشتری:</strong> ${customersInZone.length}</p>
+                  <p style="margin: 4px 0;"><strong>درآمد کل:</strong> ${(totalRevenue / 1000000).toFixed(1)}M</p>
+                  <p style="margin: 4px 0;"><strong>سهم بازار:</strong> ${((customersInZone.length / customers.length) * 100).toFixed(1)}%</p>
+                </div>
+              `);
+              
+              mapInstanceRef.current.voronoiPolygons.push(polygon);
+            }
+          });
+        } catch (err) {
+          console.error('Voronoi calculation error:', err);
+        }
+      }
+    }
+
+    if (showTerritoryBoundaries && clusterData?.clusters && clusterData.clusters.length > 0) {
+      const assignmentMap = new Map<string, number>();
+      if (clusterData.customerAssignments) {
+        clusterData.customerAssignments.forEach(a => {
+          assignmentMap.set(a.customerId, a.clusterId);
+        });
+      }
+      
+      clusterData.clusters.forEach((cluster: ClusterInfo, index: number) => {
+        const clusterCustomers = customers.filter((c: any) => {
+          if (!c.latitude || !c.longitude) return false;
+          return assignmentMap.get(c.id) === cluster.id;
+        });
+        
+        if (clusterCustomers.length >= 3) {
+          const points = clusterCustomers.map((c: any) => ({
+            lat: parseFloat(c.latitude),
+            lng: parseFloat(c.longitude)
+          }));
+          
+          const center = {
+            lat: points.reduce((s, p) => s + p.lat, 0) / points.length,
+            lng: points.reduce((s, p) => s + p.lng, 0) / points.length
+          };
+          
+          const sortedPoints = [...points].sort((a, b) => {
+            return Math.atan2(a.lat - center.lat, a.lng - center.lng) - 
+                   Math.atan2(b.lat - center.lat, b.lng - center.lng);
+          });
+          
+          const hullPoints = sortedPoints.map(p => [p.lat, p.lng] as [number, number]);
+          
+          const potentialColors = {
+            'high': '#10b981',
+            'medium': '#f59e0b',
+            'low': '#ef4444'
+          };
+          const color = potentialColors[cluster.potentialLevel] || CLUSTER_COLORS[index % CLUSTER_COLORS.length];
+          
+          const polygon = L.polygon(hullPoints, {
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.25,
+            weight: 3,
+            className: 'territory-polygon'
+          }).addTo(map);
+          
+          polygon.bindPopup(`
+            <div style="direction: rtl; text-align: right;">
+              <h4 style="margin: 0 0 8px 0; color: ${color};">خوشه ${cluster.id + 1}</h4>
+              <p style="margin: 4px 0;"><strong>پتانسیل:</strong> ${cluster.potentialLevel === 'high' ? 'بالا' : cluster.potentialLevel === 'medium' ? 'متوسط' : 'پایین'}</p>
+              <p style="margin: 4px 0;"><strong>تعداد:</strong> ${cluster.customerCount}</p>
+              <p style="margin: 4px 0;"><strong>درآمد:</strong> ${(cluster.totalRevenue / 1000000).toFixed(1)}M</p>
+              <p style="margin: 4px 0;"><strong>میانگین سود:</strong> ${(cluster.avgMonthlyProfit / 1000000).toFixed(1)}M</p>
+            </div>
+          `);
+          
+          mapInstanceRef.current.territoryPolygons.push(polygon);
+        }
+      });
+    }
+
+    if (showMarketShare && bankingUnits.length > 0) {
+      const validUnits = bankingUnits.filter((u: any) => u.latitude && u.longitude);
+      
+      validUnits.forEach((unit: any, i: number) => {
+        const customersInUnit = customers.filter((c: any) => {
+          if (!c.latitude || !c.longitude) return false;
+          const cLat = parseFloat(c.latitude);
+          const cLng = parseFloat(c.longitude);
+          const closestUnit = validUnits.reduce((closest: any, u: any) => {
+            const dist = Math.hypot(parseFloat(u.latitude) - cLat, parseFloat(u.longitude) - cLng);
+            const closestDist = closest ? Math.hypot(parseFloat(closest.latitude) - cLat, parseFloat(closest.longitude) - cLng) : Infinity;
+            return dist < closestDist ? u : closest;
+          }, null);
+          return closestUnit?.id === unit.id;
+        });
+        
+        const marketShare = customers.length > 0 ? (customersInUnit.length / customers.length) * 100 : 0;
+        const totalRevenue = customersInUnit.reduce((sum: number, c: any) => sum + (c.monthlyProfit || 0), 0);
+        
+        if (marketShare > 5) {
+          const size = Math.max(50, Math.min(100, marketShare * 3));
+          
+          const shareIcon = L.divIcon({
+            className: 'market-share-icon',
+            html: `
+              <div style="
+                width: ${size}px; height: ${size}px;
+                background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                border-radius: 50%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: ${size > 70 ? '14px' : '12px'};
+                box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+                border: 3px solid white;
+              ">
+                <span>${marketShare.toFixed(0)}%</span>
+                <span style="font-size: 9px; opacity: 0.8;">${customersInUnit.length}</span>
+              </div>
+            `,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+          });
+          
+          const marker = L.marker(
+            [parseFloat(unit.latitude), parseFloat(unit.longitude)],
+            { icon: shareIcon }
+          ).addTo(map);
+          
+          marker.bindPopup(`
+            <div style="direction: rtl; text-align: right;">
+              <h4 style="margin: 0 0 8px 0;">${unit.name || 'واحد بانکی'}</h4>
+              <p style="margin: 4px 0;"><strong>سهم بازار:</strong> ${marketShare.toFixed(1)}%</p>
+              <p style="margin: 4px 0;"><strong>تعداد مشتری:</strong> ${customersInUnit.length}</p>
+              <p style="margin: 4px 0;"><strong>درآمد کل:</strong> ${(totalRevenue / 1000000).toFixed(1)}M</p>
+            </div>
+          `);
+          
+          mapInstanceRef.current.marketShareOverlays.push(marker);
+        }
+      });
+    }
+
+  }, [isMapReady, customers, bankingUnits, clusterData, showCustomers, showBankingUnits, showHeatmap, showClusters, showCoverageRadius, coverageRadius, showSmartZoning, activeZoneType, showForecastLayer, showRiskMap, activeRiskType, showFlowLines, showDistanceAnalysis, showVoronoi, showTerritoryBoundaries, showMarketShare, clearMarkers, handleEntityClick]);
 
   const refreshData = () => {
     if (showClusters) refetchClusters();
@@ -973,6 +1180,69 @@ export default function IntelligentMap() {
                       data-testid="switch-distance"
                     />
                   </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Navigation className="h-4 w-4" />
+                    مرزبندی حرفه‌ای
+                  </h4>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <Grid3X3 className="h-4 w-4 text-violet-500" />
+                      نمودار ورونوی
+                    </span>
+                    <Switch
+                      checked={showVoronoi}
+                      onCheckedChange={setShowVoronoi}
+                      data-testid="switch-voronoi"
+                    />
+                  </div>
+                  {showVoronoi && (
+                    <p className="text-xs text-muted-foreground pr-6">
+                      تقسیم‌بندی هندسی مناطق بر اساس واحدهای بانکی
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-cyan-500" />
+                      مرز خوشه‌ها
+                    </span>
+                    <Switch
+                      checked={showTerritoryBoundaries}
+                      onCheckedChange={(checked) => {
+                        setShowTerritoryBoundaries(checked);
+                        if (checked && !showClusters) setShowClusters(true);
+                      }}
+                      data-testid="switch-territory"
+                    />
+                  </div>
+                  {showTerritoryBoundaries && (
+                    <p className="text-xs text-muted-foreground pr-6">
+                      نمایش حوزه جغرافیایی هر خوشه مشتری
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <Crown className="h-4 w-4 text-amber-500" />
+                      سهم بازار
+                    </span>
+                    <Switch
+                      checked={showMarketShare}
+                      onCheckedChange={setShowMarketShare}
+                      data-testid="switch-market-share"
+                    />
+                  </div>
+                  {showMarketShare && (
+                    <p className="text-xs text-muted-foreground pr-6">
+                      نمایش درصد سهم هر واحد از کل مشتریان
+                    </p>
+                  )}
                 </div>
 
                 <Separator />
