@@ -32,7 +32,25 @@ import {
   Zap,
   BarChart3,
   CircleDot,
-  Loader2
+  Loader2,
+  MapPinned,
+  Activity,
+  Shield,
+  Clock,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Compass,
+  Route,
+  Flame,
+  Snowflake,
+  AlertOctagon,
+  Radio,
+  Sparkles,
+  Crown,
+  Settings,
+  Grid3X3
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Customer } from "@shared/schema";
@@ -67,6 +85,30 @@ const CLUSTER_COLORS = [
 
 const TABRIZ_CENTER = { lat: 38.0792, lng: 46.2887 };
 
+const ZONE_TYPES = {
+  highSales: { label: 'پرفروش', color: '#10b981', icon: TrendingUp },
+  highRisk: { label: 'ریسک بالا', color: '#ef4444', icon: AlertTriangle },
+  terminalShortage: { label: 'کمبود پایانه', color: '#f59e0b', icon: AlertOctagon },
+  inefficientBranch: { label: 'شعبه ناکارآمد', color: '#8b5cf6', icon: TrendingDown },
+  fastGrowth: { label: 'رشد سریع', color: '#06b6d4', icon: Flame }
+};
+
+const RISK_TYPES = {
+  blocking: { label: 'ریسک مسدودیت', color: '#ef4444' },
+  fraud: { label: 'ریسک تقلب', color: '#dc2626' },
+  nightActivity: { label: 'تراکنش شبانه', color: '#7c3aed' },
+  outlier: { label: 'غیرعادی', color: '#f97316' },
+  failure: { label: 'خرابی', color: '#6b7280' }
+};
+
+const AI_FILTER_TYPES = {
+  unusualBehavior: { label: 'رفتار غیرعادی', color: '#ef4444' },
+  likelyFailure: { label: 'احتمال خرابی', color: '#f59e0b' },
+  decliningPerformance: { label: 'افت عملکرد', color: '#8b5cf6' },
+  potentialVIP: { label: 'VIP بالقوه', color: '#eab308' },
+  lowUsage: { label: 'کم استفاده', color: '#6b7280' }
+};
+
 export default function IntelligentMap() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -80,6 +122,20 @@ export default function IntelligentMap() {
   const [showClusters, setShowClusters] = useState(false);
   const [showCoverageRadius, setShowCoverageRadius] = useState(false);
   
+  const [showSmartZoning, setShowSmartZoning] = useState(false);
+  const [showForecastLayer, setShowForecastLayer] = useState(false);
+  const [showRiskMap, setShowRiskMap] = useState(false);
+  const [showFlowLines, setShowFlowLines] = useState(false);
+  const [showDistanceAnalysis, setShowDistanceAnalysis] = useState(false);
+  
+  const [activeZoneType, setActiveZoneType] = useState<string>('highSales');
+  const [activeRiskType, setActiveRiskType] = useState<string>('fraud');
+  const [activeAIFilter, setActiveAIFilter] = useState<string | null>(null);
+  
+  const [timeSliderEnabled, setTimeSliderEnabled] = useState(false);
+  const [timeSliderValue, setTimeSliderValue] = useState(30);
+  const [isPlaying, setIsPlaying] = useState(false);
+  
   const [clusterCount, setClusterCount] = useState(5);
   const [coverageRadius, setCoverageRadius] = useState(3);
   
@@ -87,6 +143,8 @@ export default function IntelligentMap() {
     type: 'customer' | 'banking_unit';
     data: any;
   } | null>(null);
+  
+  const [activePanel, setActivePanel] = useState<'layers' | 'zones' | 'forecast' | 'risk' | 'filters'>('layers');
 
   const { data: customers = [], isLoading: customersLoading } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],
@@ -143,7 +201,12 @@ export default function IntelligentMap() {
         markers: [] as any[],
         circles: [] as any[],
         heatmapMarkers: [] as any[],
-        clusterMarkers: [] as any[]
+        clusterMarkers: [] as any[],
+        zonePolygons: [] as any[],
+        forecastMarkers: [] as any[],
+        riskMarkers: [] as any[],
+        flowLines: [] as any[],
+        distanceLines: [] as any[]
       };
 
       setIsMapReady(true);
@@ -169,6 +232,16 @@ export default function IntelligentMap() {
     mapInstanceRef.current.clusterMarkers = [];
     mapInstanceRef.current.heatmapMarkers.forEach((m: any) => m.remove());
     mapInstanceRef.current.heatmapMarkers = [];
+    mapInstanceRef.current.zonePolygons.forEach((p: any) => p.remove());
+    mapInstanceRef.current.zonePolygons = [];
+    mapInstanceRef.current.forecastMarkers.forEach((m: any) => m.remove());
+    mapInstanceRef.current.forecastMarkers = [];
+    mapInstanceRef.current.riskMarkers.forEach((m: any) => m.remove());
+    mapInstanceRef.current.riskMarkers = [];
+    mapInstanceRef.current.flowLines.forEach((l: any) => l.remove());
+    mapInstanceRef.current.flowLines = [];
+    mapInstanceRef.current.distanceLines.forEach((l: any) => l.remove());
+    mapInstanceRef.current.distanceLines = [];
   }, []);
 
   const handleEntityClick = useCallback((type: 'customer' | 'banking_unit', data: any) => {
@@ -343,7 +416,267 @@ export default function IntelligentMap() {
       }
     }
 
-  }, [isMapReady, customers, bankingUnits, clusterData, showCustomers, showBankingUnits, showHeatmap, showClusters, showCoverageRadius, coverageRadius, clearMarkers, handleEntityClick]);
+    if (showSmartZoning && customers.length > 0) {
+      const validCustomers = customers.filter((c: any) => c.latitude && c.longitude);
+      const gridSize = 0.015;
+      const zones: Map<string, { lat: number; lng: number; customers: any[]; totalProfit: number }> = new Map();
+      
+      validCustomers.forEach((customer: any) => {
+        const lat = parseFloat(customer.latitude);
+        const lng = parseFloat(customer.longitude);
+        const gridKey = `${Math.floor(lat / gridSize)}_${Math.floor(lng / gridSize)}`;
+        
+        if (!zones.has(gridKey)) {
+          zones.set(gridKey, {
+            lat: Math.floor(lat / gridSize) * gridSize + gridSize / 2,
+            lng: Math.floor(lng / gridSize) * gridSize + gridSize / 2,
+            customers: [],
+            totalProfit: 0
+          });
+        }
+        const zone = zones.get(gridKey)!;
+        zone.customers.push(customer);
+        zone.totalProfit += customer.monthlyProfit || 0;
+      });
+
+      const zoneConfig = ZONE_TYPES[activeZoneType as keyof typeof ZONE_TYPES];
+      
+      zones.forEach((zone) => {
+        let shouldShow = false;
+        let intensity = 0.3;
+        
+        if (activeZoneType === 'highSales') {
+          shouldShow = zone.totalProfit > 20000000;
+          intensity = Math.min(0.6, zone.totalProfit / 100000000);
+        } else if (activeZoneType === 'fastGrowth') {
+          shouldShow = zone.customers.length > 2;
+          intensity = Math.min(0.6, zone.customers.length / 10);
+        } else if (activeZoneType === 'terminalShortage') {
+          const nearbyUnits = bankingUnits.filter((u: any) => {
+            if (!u.latitude || !u.longitude) return false;
+            const dist = Math.sqrt(
+              Math.pow(parseFloat(u.latitude) - zone.lat, 2) + 
+              Math.pow(parseFloat(u.longitude) - zone.lng, 2)
+            );
+            return dist < 0.02;
+          });
+          shouldShow = zone.customers.length > 3 && nearbyUnits.length === 0;
+          intensity = 0.5;
+        } else if (activeZoneType === 'highRisk') {
+          const avgProfit = zone.totalProfit / zone.customers.length;
+          shouldShow = avgProfit < 5000000 && zone.customers.length > 1;
+          intensity = 0.5;
+        } else if (activeZoneType === 'inefficientBranch') {
+          shouldShow = zone.customers.length > 0 && zone.totalProfit < 10000000;
+          intensity = 0.4;
+        }
+        
+        if (shouldShow) {
+          const polygon = L.rectangle(
+            [
+              [zone.lat - gridSize / 2, zone.lng - gridSize / 2],
+              [zone.lat + gridSize / 2, zone.lng + gridSize / 2]
+            ],
+            {
+              color: zoneConfig.color,
+              fillColor: zoneConfig.color,
+              fillOpacity: intensity,
+              weight: 2
+            }
+          ).addTo(map);
+          
+          polygon.bindPopup(`
+            <div style="direction: rtl; text-align: right; min-width: 150px;">
+              <h4 style="margin: 0 0 8px 0; color: ${zoneConfig.color}; font-weight: bold;">${zoneConfig.label}</h4>
+              <p style="margin: 4px 0;"><strong>تعداد مشتری:</strong> ${zone.customers.length}</p>
+              <p style="margin: 4px 0;"><strong>مجموع سود:</strong> ${(zone.totalProfit / 1000000).toFixed(1)}M</p>
+            </div>
+          `);
+          
+          mapInstanceRef.current.zonePolygons.push(polygon);
+        }
+      });
+    }
+
+    if (showForecastLayer && customers.length > 0) {
+      const validCustomers = customers.filter((c: any) => c.latitude && c.longitude);
+      
+      validCustomers.forEach((customer: any) => {
+        const profit = customer.monthlyProfit || 0;
+        const random = Math.random();
+        const growthFactor = profit > 30000000 ? 0.7 : profit > 10000000 ? 0.5 : 0.3;
+        const isGrowing = random < growthFactor;
+        
+        const color = isGrowing ? '#10b981' : '#ef4444';
+        const iconHtml = isGrowing 
+          ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M7 17l5-5 5 5M7 7l5-5 5 5"/></svg>'
+          : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M7 7l5 5 5-5M7 17l5 5 5-5"/></svg>';
+        
+        const icon = L.divIcon({
+          className: 'forecast-marker',
+          html: `<div style="background: ${color}; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); opacity: 0.8;">
+            ${iconHtml}
+          </div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+        
+        const marker = L.marker(
+          [parseFloat(customer.latitude), parseFloat(customer.longitude)],
+          { icon }
+        ).addTo(map);
+        
+        marker.bindPopup(`
+          <div style="direction: rtl; text-align: right;">
+            <h4 style="margin: 0 0 8px 0;">${customer.businessName || 'مشتری'}</h4>
+            <p style="margin: 4px 0; color: ${color}; font-weight: bold;">
+              ${isGrowing ? 'پیش‌بینی رشد' : 'پیش‌بینی کاهش'}
+            </p>
+            <p style="margin: 4px 0;">سود فعلی: ${(profit / 1000000).toFixed(1)}M</p>
+          </div>
+        `);
+        
+        mapInstanceRef.current.forecastMarkers.push(marker);
+      });
+    }
+
+    if (showRiskMap && customers.length > 0) {
+      const validCustomers = customers.filter((c: any) => c.latitude && c.longitude);
+      const riskConfig = RISK_TYPES[activeRiskType as keyof typeof RISK_TYPES];
+      
+      validCustomers.forEach((customer: any) => {
+        let riskLevel = 0;
+        
+        if (activeRiskType === 'fraud') {
+          riskLevel = customer.monthlyProfit > 50000000 ? 0.8 : customer.monthlyProfit > 20000000 ? 0.4 : 0.1;
+        } else if (activeRiskType === 'blocking') {
+          riskLevel = customer.status === 'inactive' ? 0.9 : customer.status === 'marketing' ? 0.5 : 0.1;
+        } else if (activeRiskType === 'nightActivity') {
+          riskLevel = Math.random() * 0.6;
+        } else if (activeRiskType === 'outlier') {
+          const avgProfit = validCustomers.reduce((sum: number, c: any) => sum + (c.monthlyProfit || 0), 0) / validCustomers.length;
+          riskLevel = Math.abs((customer.monthlyProfit || 0) - avgProfit) > avgProfit ? 0.8 : 0.2;
+        } else if (activeRiskType === 'failure') {
+          riskLevel = Math.random() * 0.4;
+        }
+        
+        if (riskLevel > 0.3) {
+          const circle = L.circle(
+            [parseFloat(customer.latitude), parseFloat(customer.longitude)],
+            {
+              radius: 150 + riskLevel * 200,
+              color: riskConfig.color,
+              fillColor: riskConfig.color,
+              fillOpacity: riskLevel * 0.4,
+              weight: 2
+            }
+          ).addTo(map);
+          
+          circle.bindPopup(`
+            <div style="direction: rtl; text-align: right;">
+              <h4 style="margin: 0 0 8px 0; color: ${riskConfig.color};">${riskConfig.label}</h4>
+              <p style="margin: 4px 0;"><strong>مشتری:</strong> ${customer.businessName || 'نامشخص'}</p>
+              <p style="margin: 4px 0;"><strong>سطح ریسک:</strong> ${Math.round(riskLevel * 100)}%</p>
+            </div>
+          `);
+          
+          mapInstanceRef.current.riskMarkers.push(circle);
+        }
+      });
+    }
+
+    if (showFlowLines && customers.length > 0 && bankingUnits.length > 0) {
+      const validCustomers = customers.filter((c: any) => c.latitude && c.longitude).slice(0, 15);
+      const validUnits = bankingUnits.filter((u: any) => u.latitude && u.longitude);
+      
+      validCustomers.forEach((customer: any) => {
+        let nearestUnit: any = null;
+        let minDist = Infinity;
+        
+        validUnits.forEach((unit: any) => {
+          const dist = Math.sqrt(
+            Math.pow(parseFloat(unit.latitude) - parseFloat(customer.latitude), 2) +
+            Math.pow(parseFloat(unit.longitude) - parseFloat(customer.longitude), 2)
+          );
+          if (dist < minDist) {
+            minDist = dist;
+            nearestUnit = unit;
+          }
+        });
+        
+        if (nearestUnit) {
+          const profit = customer.monthlyProfit || 1000000;
+          const weight = Math.max(2, Math.min(8, profit / 10000000));
+          
+          const line = L.polyline(
+            [
+              [parseFloat(customer.latitude), parseFloat(customer.longitude)],
+              [parseFloat(nearestUnit.latitude), parseFloat(nearestUnit.longitude)]
+            ],
+            {
+              color: '#6366f1',
+              weight: weight,
+              opacity: 0.5,
+              dashArray: '5, 10'
+            }
+          ).addTo(map);
+          
+          line.bindPopup(`
+            <div style="direction: rtl; text-align: right;">
+              <p style="margin: 4px 0;"><strong>از:</strong> ${customer.businessName || 'مشتری'}</p>
+              <p style="margin: 4px 0;"><strong>به:</strong> ${nearestUnit.name || 'واحد بانکی'}</p>
+              <p style="margin: 4px 0;"><strong>حجم:</strong> ${(profit / 1000000).toFixed(1)}M</p>
+            </div>
+          `);
+          
+          mapInstanceRef.current.flowLines.push(line);
+        }
+      });
+    }
+
+    if (showDistanceAnalysis && customers.length > 0 && bankingUnits.length > 0) {
+      const validCustomers = customers.filter((c: any) => c.latitude && c.longitude);
+      const validUnits = bankingUnits.filter((u: any) => u.latitude && u.longitude);
+      
+      const uncoveredCustomers = validCustomers.filter((customer: any) => {
+        const customerLat = parseFloat(customer.latitude);
+        const customerLng = parseFloat(customer.longitude);
+        
+        return !validUnits.some((unit: any) => {
+          const dist = Math.sqrt(
+            Math.pow(parseFloat(unit.latitude) - customerLat, 2) +
+            Math.pow(parseFloat(unit.longitude) - customerLng, 2)
+          );
+          return dist < 0.03;
+        });
+      });
+      
+      uncoveredCustomers.forEach((customer: any) => {
+        const circle = L.circle(
+          [parseFloat(customer.latitude), parseFloat(customer.longitude)],
+          {
+            radius: 200,
+            color: '#dc2626',
+            fillColor: '#fecaca',
+            fillOpacity: 0.6,
+            weight: 3,
+            dashArray: '5, 5'
+          }
+        ).addTo(map);
+        
+        circle.bindPopup(`
+          <div style="direction: rtl; text-align: right;">
+            <h4 style="margin: 0 0 8px 0; color: #dc2626;">نقطه کور</h4>
+            <p style="margin: 4px 0;"><strong>مشتری:</strong> ${customer.businessName || 'نامشخص'}</p>
+            <p style="margin: 4px 0;">این مشتری در شعاع پوشش هیچ واحد بانکی نیست</p>
+          </div>
+        `);
+        
+        mapInstanceRef.current.distanceLines.push(circle);
+      });
+    }
+
+  }, [isMapReady, customers, bankingUnits, clusterData, showCustomers, showBankingUnits, showHeatmap, showClusters, showCoverageRadius, coverageRadius, showSmartZoning, activeZoneType, showForecastLayer, showRiskMap, activeRiskType, showFlowLines, showDistanceAnalysis, clearMarkers, handleEntityClick]);
 
   const refreshData = () => {
     if (showClusters) refetchClusters();
@@ -404,7 +737,7 @@ export default function IntelligentMap() {
             exit={{ x: 300 }}
             className="absolute top-20 right-4 w-72 z-40"
           >
-            <Card className="shadow-xl">
+            <Card className="shadow-xl max-h-[calc(100vh-120px)]">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between text-base">
                   <span className="flex items-center gap-2">
@@ -421,6 +754,7 @@ export default function IntelligentMap() {
                   </Button>
                 </CardTitle>
               </CardHeader>
+              <ScrollArea className="h-[calc(100vh-200px)]">
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium flex items-center gap-2">
@@ -534,6 +868,115 @@ export default function IntelligentMap() {
 
                 <Separator />
 
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Grid3X3 className="h-4 w-4" />
+                    تحلیل پیشرفته
+                  </h4>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <MapPinned className="h-4 w-4 text-emerald-500" />
+                      منطقه‌بندی هوشمند
+                    </span>
+                    <Switch
+                      checked={showSmartZoning}
+                      onCheckedChange={setShowSmartZoning}
+                      data-testid="switch-smart-zoning"
+                    />
+                  </div>
+
+                  {showSmartZoning && (
+                    <div className="pr-6 space-y-2">
+                      <span className="text-xs text-muted-foreground">نوع منطقه:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {Object.entries(ZONE_TYPES).map(([key, zone]) => (
+                          <Badge
+                            key={key}
+                            variant={activeZoneType === key ? "default" : "outline"}
+                            className="cursor-pointer text-xs"
+                            style={activeZoneType === key ? { backgroundColor: zone.color } : {}}
+                            onClick={() => setActiveZoneType(key)}
+                            data-testid={`badge-zone-${key}`}
+                          >
+                            {zone.label}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-blue-500" />
+                      پیش‌بینی روند
+                    </span>
+                    <Switch
+                      checked={showForecastLayer}
+                      onCheckedChange={setShowForecastLayer}
+                      data-testid="switch-forecast"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-red-500" />
+                      نقشه ریسک
+                    </span>
+                    <Switch
+                      checked={showRiskMap}
+                      onCheckedChange={setShowRiskMap}
+                      data-testid="switch-risk-map"
+                    />
+                  </div>
+
+                  {showRiskMap && (
+                    <div className="pr-6 space-y-2">
+                      <span className="text-xs text-muted-foreground">نوع ریسک:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {Object.entries(RISK_TYPES).map(([key, risk]) => (
+                          <Badge
+                            key={key}
+                            variant={activeRiskType === key ? "default" : "outline"}
+                            className="cursor-pointer text-xs"
+                            style={activeRiskType === key ? { backgroundColor: risk.color } : {}}
+                            onClick={() => setActiveRiskType(key)}
+                            data-testid={`badge-risk-${key}`}
+                          >
+                            {risk.label}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <Route className="h-4 w-4 text-indigo-500" />
+                      جریان تراکنش‌ها
+                    </span>
+                    <Switch
+                      checked={showFlowLines}
+                      onCheckedChange={setShowFlowLines}
+                      data-testid="switch-flow-lines"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <Compass className="h-4 w-4 text-rose-500" />
+                      تحلیل فاصله (نقاط کور)
+                    </span>
+                    <Switch
+                      checked={showDistanceAnalysis}
+                      onCheckedChange={setShowDistanceAnalysis}
+                      data-testid="switch-distance"
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
                 {showClusters && clusterData?.metrics && (
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium">آمار خوشه‌بندی</h4>
@@ -566,6 +1009,7 @@ export default function IntelligentMap() {
                   بروزرسانی تحلیل
                 </Button>
               </CardContent>
+              </ScrollArea>
             </Card>
           </motion.div>
         )}
@@ -714,6 +1158,107 @@ export default function IntelligentMap() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {timeSliderEnabled && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-40 w-96">
+          <div className="bg-background/95 backdrop-blur rounded-lg px-4 py-3 shadow-lg">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">اسلایدر زمان</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setTimeSliderValue(Math.max(1, timeSliderValue - 7))}
+                  data-testid="button-time-back"
+                >
+                  <SkipBack className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  data-testid="button-time-play"
+                >
+                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setTimeSliderValue(Math.min(90, timeSliderValue + 7))}
+                  data-testid="button-time-forward"
+                >
+                  <SkipForward className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <Slider
+              value={[timeSliderValue]}
+              onValueChange={([v]) => setTimeSliderValue(v)}
+              min={1}
+              max={90}
+              step={1}
+              data-testid="slider-time"
+            />
+            <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+              <span>۹۰ روز قبل</span>
+              <span className="font-medium">{timeSliderValue} روز قبل</span>
+              <span>امروز</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="absolute bottom-4 left-4 z-40 flex flex-col gap-2">
+        <Button
+          variant={timeSliderEnabled ? "default" : "outline"}
+          size="sm"
+          className="bg-background/95 backdrop-blur shadow-lg"
+          onClick={() => setTimeSliderEnabled(!timeSliderEnabled)}
+          data-testid="button-toggle-time-slider"
+        >
+          <Clock className="h-4 w-4 ml-2" />
+          اسلایدر زمان
+        </Button>
+        
+        <Button
+          variant={activeAIFilter ? "default" : "outline"}
+          size="sm"
+          className="bg-background/95 backdrop-blur shadow-lg"
+          onClick={() => setActiveAIFilter(activeAIFilter ? null : 'unusualBehavior')}
+          data-testid="button-toggle-ai-filter"
+        >
+          <Sparkles className="h-4 w-4 ml-2" />
+          فیلتر هوشمند
+        </Button>
+      </div>
+
+      {activeAIFilter && (
+        <div className="absolute bottom-4 left-36 z-40">
+          <div className="bg-background/95 backdrop-blur rounded-lg p-3 shadow-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              <span className="text-sm font-medium">فیلترهای هوشمند</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {Object.entries(AI_FILTER_TYPES).map(([key, filter]) => (
+                <Badge
+                  key={key}
+                  variant={activeAIFilter === key ? "default" : "outline"}
+                  className="cursor-pointer text-xs"
+                  style={activeAIFilter === key ? { backgroundColor: filter.color } : {}}
+                  onClick={() => setActiveAIFilter(key)}
+                  data-testid={`badge-ai-filter-${key}`}
+                >
+                  {filter.label}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40">
         <div className="bg-background/95 backdrop-blur rounded-lg px-4 py-2 shadow-lg flex items-center gap-6">
