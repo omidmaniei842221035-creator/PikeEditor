@@ -134,6 +134,13 @@ export default function IntelligentMap() {
   const [showMarketShare, setShowMarketShare] = useState(false);
   const [editZonesMode, setEditZonesMode] = useState(false);
   
+  const [showBranchPerformance, setShowBranchPerformance] = useState(false);
+  const [showGeoAlerts, setShowGeoAlerts] = useState(false);
+  const [showBubbleMap, setShowBubbleMap] = useState(false);
+  const [showSideAnalytics, setShowSideAnalytics] = useState(false);
+  const [showAIRecommender, setShowAIRecommender] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState<number | null>(null);
+  
   const [activeZoneType, setActiveZoneType] = useState<string>('highSales');
   const [activeRiskType, setActiveRiskType] = useState<string>('fraud');
   const [activeAIFilter, setActiveAIFilter] = useState<string | null>(null);
@@ -172,6 +179,10 @@ export default function IntelligentMap() {
 
   const { data: analytics } = useQuery({
     queryKey: ["/api/analytics/overview"],
+  });
+
+  const { data: branches = [] } = useQuery<any[]>({
+    queryKey: ['/api/branches'],
   });
 
   useEffect(() => {
@@ -215,7 +226,11 @@ export default function IntelligentMap() {
         distanceLines: [] as any[],
         voronoiPolygons: [] as any[],
         territoryPolygons: [] as any[],
-        marketShareOverlays: [] as any[]
+        marketShareOverlays: [] as any[],
+        branchPerformanceMarkers: [] as any[],
+        geoAlertMarkers: [] as any[],
+        bubbleMarkers: [] as any[],
+        aiRecommenderMarkers: [] as any[]
       };
 
       setIsMapReady(true);
@@ -257,6 +272,14 @@ export default function IntelligentMap() {
     mapInstanceRef.current.territoryPolygons = [];
     mapInstanceRef.current.marketShareOverlays.forEach((o: any) => o.remove());
     mapInstanceRef.current.marketShareOverlays = [];
+    mapInstanceRef.current.branchPerformanceMarkers.forEach((m: any) => m.remove());
+    mapInstanceRef.current.branchPerformanceMarkers = [];
+    mapInstanceRef.current.geoAlertMarkers.forEach((m: any) => m.remove());
+    mapInstanceRef.current.geoAlertMarkers = [];
+    mapInstanceRef.current.bubbleMarkers.forEach((m: any) => m.remove());
+    mapInstanceRef.current.bubbleMarkers = [];
+    mapInstanceRef.current.aiRecommenderMarkers.forEach((m: any) => m.remove());
+    mapInstanceRef.current.aiRecommenderMarkers = [];
   }, []);
 
   const handleEntityClick = useCallback((type: 'customer' | 'banking_unit', data: any) => {
@@ -900,7 +923,352 @@ export default function IntelligentMap() {
       });
     }
 
-  }, [isMapReady, customers, bankingUnits, clusterData, showCustomers, showBankingUnits, showHeatmap, showClusters, showCoverageRadius, coverageRadius, showSmartZoning, activeZoneType, showForecastLayer, showRiskMap, activeRiskType, showFlowLines, showDistanceAnalysis, showVoronoi, showTerritoryBoundaries, showMarketShare, clearMarkers, handleEntityClick]);
+    if (showBranchPerformance && branches.length > 0) {
+      branches.forEach((branch: any) => {
+        const branchCustomers = customers.filter((c: any) => c.branchId === branch.id);
+        const activeCustomers = branchCustomers.filter((c: any) => c.status === 'active');
+        const totalRevenue = branchCustomers.reduce((sum: number, c: any) => sum + (c.monthlyProfit || 0), 0);
+        
+        const salesKPI = Math.min(100, (totalRevenue / 50000000) * 100);
+        const customerKPI = Math.min(100, (activeCustomers.length / Math.max(1, branchCustomers.length)) * 100);
+        const overallScore = (salesKPI + customerKPI) / 2;
+        
+        const scoreColor = overallScore >= 70 ? '#10b981' : overallScore >= 40 ? '#f59e0b' : '#ef4444';
+        const scoreLabel = overallScore >= 70 ? 'عالی' : overallScore >= 40 ? 'متوسط' : 'ضعیف';
+        
+        const branchLat = branch.latitude || (TABRIZ_CENTER.lat + (Math.random() - 0.5) * 0.08);
+        const branchLng = branch.longitude || (TABRIZ_CENTER.lng + (Math.random() - 0.5) * 0.1);
+        
+        const performanceIcon = L.divIcon({
+          className: 'branch-performance-icon',
+          html: `
+            <div style="
+              background: linear-gradient(135deg, ${scoreColor}dd 0%, ${scoreColor}99 100%);
+              border-radius: 12px;
+              padding: 8px 12px;
+              color: white;
+              font-weight: bold;
+              font-size: 11px;
+              box-shadow: 0 4px 12px ${scoreColor}40;
+              border: 2px solid white;
+              min-width: 80px;
+              text-align: center;
+            ">
+              <div style="font-size: 13px;">${branch.name || 'شعبه'}</div>
+              <div style="display: flex; gap: 8px; justify-content: center; margin-top: 4px;">
+                <span>فروش: ${salesKPI.toFixed(0)}%</span>
+              </div>
+              <div style="margin-top: 2px; font-size: 10px; opacity: 0.9;">${scoreLabel}</div>
+            </div>
+          `,
+          iconSize: [100, 60],
+          iconAnchor: [50, 30]
+        });
+        
+        const marker = L.marker([branchLat, branchLng], { icon: performanceIcon }).addTo(map);
+        
+        marker.bindPopup(`
+          <div style="direction: rtl; text-align: right; min-width: 200px;">
+            <h4 style="margin: 0 0 10px 0; color: ${scoreColor}; font-size: 14px;">${branch.name || 'شعبه'}</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div style="background: #f0f9ff; padding: 8px; border-radius: 8px;">
+                <div style="font-size: 10px; color: #0369a1;">KPI فروش</div>
+                <div style="font-size: 16px; font-weight: bold; color: #0284c7;">${salesKPI.toFixed(0)}%</div>
+              </div>
+              <div style="background: #f0fdf4; padding: 8px; border-radius: 8px;">
+                <div style="font-size: 10px; color: #15803d;">KPI جذب</div>
+                <div style="font-size: 16px; font-weight: bold; color: #16a34a;">${customerKPI.toFixed(0)}%</div>
+              </div>
+            </div>
+            <div style="margin-top: 10px; padding: 8px; background: ${scoreColor}15; border-radius: 8px; border-right: 3px solid ${scoreColor};">
+              <div style="font-size: 10px;">امتیاز کل</div>
+              <div style="font-size: 18px; font-weight: bold; color: ${scoreColor};">${overallScore.toFixed(0)} / 100</div>
+            </div>
+            <div style="margin-top: 8px; font-size: 11px; color: #64748b;">
+              <p style="margin: 2px 0;">تعداد مشتری: ${branchCustomers.length}</p>
+              <p style="margin: 2px 0;">درآمد کل: ${(totalRevenue / 1000000).toFixed(1)}M</p>
+            </div>
+          </div>
+        `);
+        
+        marker.on('click', () => {
+          setSelectedBranchId(branch.id);
+          if (!showSideAnalytics) setShowSideAnalytics(true);
+        });
+        
+        mapInstanceRef.current.branchPerformanceMarkers.push(marker);
+      });
+    }
+
+    if (showGeoAlerts && customers.length > 0) {
+      const validCustomers = customers.filter((c: any) => c.latitude && c.longitude);
+      
+      const alertTypes = [
+        { type: 'transaction_drop', color: '#ef4444', label: 'افت تراکنش', icon: '📉' },
+        { type: 'unhealthy_terminal', color: '#f97316', label: 'پایانه ناسالم', icon: '⚠️' },
+        { type: 'abnormal_customers', color: '#8b5cf6', label: 'مشتری غیرعادی', icon: '🔍' },
+        { type: 'sudden_growth', color: '#10b981', label: 'رشد ناگهانی', icon: '📈' }
+      ];
+      
+      validCustomers.forEach((customer: any, index: number) => {
+        const alertProbability = Math.random();
+        if (alertProbability > 0.7) {
+          const alertType = alertTypes[Math.floor(Math.random() * alertTypes.length)];
+          const intensity = 0.5 + Math.random() * 0.5;
+          
+          const pulseAnimation = `
+            @keyframes pulse-${index} {
+              0%, 100% { transform: scale(1); opacity: 1; }
+              50% { transform: scale(1.2); opacity: 0.7; }
+            }
+          `;
+          
+          const alertIcon = L.divIcon({
+            className: 'geo-alert-icon',
+            html: `
+              <style>${pulseAnimation}</style>
+              <div style="
+                width: 36px; height: 36px;
+                background: ${alertType.color};
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 16px;
+                box-shadow: 0 0 20px ${alertType.color}80;
+                border: 3px solid white;
+                animation: pulse-${index} 2s ease-in-out infinite;
+              ">
+                ${alertType.type === 'transaction_drop' ? '↓' : alertType.type === 'unhealthy_terminal' ? '!' : alertType.type === 'abnormal_customers' ? '?' : '↑'}
+              </div>
+            `,
+            iconSize: [36, 36],
+            iconAnchor: [18, 18]
+          });
+          
+          const marker = L.marker(
+            [parseFloat(customer.latitude), parseFloat(customer.longitude)],
+            { icon: alertIcon }
+          ).addTo(map);
+          
+          marker.bindPopup(`
+            <div style="direction: rtl; text-align: right;">
+              <h4 style="margin: 0 0 8px 0; color: ${alertType.color};">هشدار: ${alertType.label}</h4>
+              <p style="margin: 4px 0;"><strong>مشتری:</strong> ${customer.businessName || 'نامشخص'}</p>
+              <p style="margin: 4px 0;"><strong>شدت:</strong> ${(intensity * 100).toFixed(0)}%</p>
+              <p style="margin: 4px 0; font-size: 11px; color: #64748b;">نیاز به بررسی فوری</p>
+            </div>
+          `);
+          
+          mapInstanceRef.current.geoAlertMarkers.push(marker);
+        }
+      });
+    }
+
+    if (showBubbleMap && customers.length > 0) {
+      const gridSize = 0.02;
+      const grid: { [key: string]: any[] } = {};
+      
+      customers.forEach((c: any) => {
+        if (!c.latitude || !c.longitude) return;
+        const lat = parseFloat(c.latitude);
+        const lng = parseFloat(c.longitude);
+        const gridKey = `${Math.floor(lat / gridSize)}_${Math.floor(lng / gridSize)}`;
+        if (!grid[gridKey]) grid[gridKey] = [];
+        grid[gridKey].push(c);
+      });
+      
+      Object.entries(grid).forEach(([key, gridCustomers]) => {
+        if (gridCustomers.length < 2) return;
+        
+        const centerLat = gridCustomers.reduce((sum, c) => sum + parseFloat(c.latitude), 0) / gridCustomers.length;
+        const centerLng = gridCustomers.reduce((sum, c) => sum + parseFloat(c.longitude), 0) / gridCustomers.length;
+        const totalRevenue = gridCustomers.reduce((sum, c) => sum + (c.monthlyProfit || 0), 0);
+        
+        const count = gridCustomers.length;
+        const intensity = Math.min(1, totalRevenue / 100000000);
+        const size = Math.max(30, Math.min(80, count * 8));
+        
+        const intensityColor = intensity > 0.7 ? '#10b981' : intensity > 0.4 ? '#f59e0b' : '#3b82f6';
+        
+        const bubbleIcon = L.divIcon({
+          className: 'bubble-icon',
+          html: `
+            <div style="
+              width: ${size}px; height: ${size}px;
+              background: radial-gradient(circle at 30% 30%, ${intensityColor}cc, ${intensityColor}66);
+              border-radius: 50%;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: bold;
+              box-shadow: 0 4px 20px ${intensityColor}50;
+              border: 2px solid ${intensityColor};
+            ">
+              <span style="font-size: ${size > 50 ? '14px' : '11px'};">${count}</span>
+              <span style="font-size: 8px; opacity: 0.8;">مشتری</span>
+            </div>
+          `,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2]
+        });
+        
+        const marker = L.marker([centerLat, centerLng], { icon: bubbleIcon }).addTo(map);
+        
+        marker.bindPopup(`
+          <div style="direction: rtl; text-align: right;">
+            <h4 style="margin: 0 0 8px 0;">خوشه مشتریان</h4>
+            <p style="margin: 4px 0;"><strong>تعداد:</strong> ${count} مشتری</p>
+            <p style="margin: 4px 0;"><strong>درآمد کل:</strong> ${(totalRevenue / 1000000).toFixed(1)}M</p>
+            <p style="margin: 4px 0;"><strong>شدت:</strong> ${(intensity * 100).toFixed(0)}%</p>
+          </div>
+        `);
+        
+        mapInstanceRef.current.bubbleMarkers.push(marker);
+      });
+    }
+
+    if (showAIRecommender && customers.length > 0 && bankingUnits.length > 0) {
+      const validCustomers = customers.filter((c: any) => c.latitude && c.longitude);
+      const validUnits = bankingUnits.filter((u: any) => u.latitude && u.longitude);
+      
+      const recommendations: { lat: number; lng: number; type: string; score: number; reason: string }[] = [];
+      
+      const gridSize = 0.025;
+      const demandGrid: { [key: string]: { lat: number; lng: number; customers: number; revenue: number; covered: boolean } } = {};
+      
+      validCustomers.forEach((c: any) => {
+        const lat = parseFloat(c.latitude);
+        const lng = parseFloat(c.longitude);
+        const gridKey = `${Math.floor(lat / gridSize)}_${Math.floor(lng / gridSize)}`;
+        
+        if (!demandGrid[gridKey]) {
+          demandGrid[gridKey] = { lat: 0, lng: 0, customers: 0, revenue: 0, covered: false };
+        }
+        demandGrid[gridKey].customers++;
+        demandGrid[gridKey].revenue += c.monthlyProfit || 0;
+        demandGrid[gridKey].lat += lat;
+        demandGrid[gridKey].lng += lng;
+      });
+      
+      Object.entries(demandGrid).forEach(([key, cell]) => {
+        cell.lat /= cell.customers;
+        cell.lng /= cell.customers;
+        
+        const isCovered = validUnits.some((u: any) => {
+          const dist = Math.hypot(parseFloat(u.latitude) - cell.lat, parseFloat(u.longitude) - cell.lng);
+          return dist < 0.03;
+        });
+        cell.covered = isCovered;
+      });
+      
+      Object.entries(demandGrid)
+        .filter(([_, cell]) => !cell.covered && cell.customers >= 3)
+        .sort((a, b) => b[1].revenue - a[1].revenue)
+        .slice(0, 5)
+        .forEach(([_, cell]) => {
+          recommendations.push({
+            lat: cell.lat,
+            lng: cell.lng,
+            type: 'new_terminal',
+            score: Math.min(100, (cell.revenue / 50000000) * 100),
+            reason: `${cell.customers} مشتری بدون پوشش با درآمد ${(cell.revenue / 1000000).toFixed(1)}M`
+          });
+        });
+      
+      const lowPerformingUnits = validUnits.filter((u: any) => {
+        const unitCustomers = validCustomers.filter((c: any) => {
+          const dist = Math.hypot(parseFloat(u.latitude) - parseFloat(c.latitude), parseFloat(u.longitude) - parseFloat(c.longitude));
+          return dist < 0.02;
+        });
+        return unitCustomers.length < 2;
+      });
+      
+      lowPerformingUnits.slice(0, 3).forEach((unit: any) => {
+        const bestTarget = Object.entries(demandGrid)
+          .filter(([_, cell]) => !cell.covered && cell.customers >= 2)
+          .sort((a, b) => b[1].customers - a[1].customers)[0];
+        
+        if (bestTarget) {
+          recommendations.push({
+            lat: parseFloat(unit.latitude),
+            lng: parseFloat(unit.longitude),
+            type: 'relocate',
+            score: 70,
+            reason: `انتقال به منطقه با ${bestTarget[1].customers} مشتری پتانسیل`
+          });
+        }
+      });
+      
+      recommendations.forEach((rec, i) => {
+        const typeConfig = {
+          'new_terminal': { color: '#10b981', label: 'نصب پایانه جدید', icon: '+' },
+          'relocate': { color: '#f59e0b', label: 'انتقال دستگاه', icon: '→' },
+          'marketing': { color: '#8b5cf6', label: 'منطقه بازاریابی', icon: '★' },
+          'strengthen': { color: '#3b82f6', label: 'تقویت شعبه', icon: '↑' }
+        }[rec.type] || { color: '#6b7280', label: rec.type, icon: '?' };
+        
+        const recIcon = L.divIcon({
+          className: 'ai-recommender-icon',
+          html: `
+            <div style="
+              position: relative;
+              width: 50px; height: 50px;
+            ">
+              <div style="
+                position: absolute;
+                width: 50px; height: 50px;
+                background: ${typeConfig.color}20;
+                border: 2px dashed ${typeConfig.color};
+                border-radius: 50%;
+                animation: pulse 2s infinite;
+              "></div>
+              <div style="
+                position: absolute;
+                top: 50%; left: 50%;
+                transform: translate(-50%, -50%);
+                width: 30px; height: 30px;
+                background: ${typeConfig.color};
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 16px;
+                box-shadow: 0 2px 10px ${typeConfig.color}60;
+              ">
+                ${typeConfig.icon}
+              </div>
+            </div>
+          `,
+          iconSize: [50, 50],
+          iconAnchor: [25, 25]
+        });
+        
+        const marker = L.marker([rec.lat, rec.lng], { icon: recIcon }).addTo(map);
+        
+        marker.bindPopup(`
+          <div style="direction: rtl; text-align: right; min-width: 180px;">
+            <h4 style="margin: 0 0 8px 0; color: ${typeConfig.color};">
+              پیشنهاد هوشمند: ${typeConfig.label}
+            </h4>
+            <div style="background: ${typeConfig.color}10; padding: 8px; border-radius: 8px; margin-bottom: 8px;">
+              <div style="font-size: 10px; color: #64748b;">امتیاز پیشنهاد</div>
+              <div style="font-size: 18px; font-weight: bold; color: ${typeConfig.color};">${rec.score.toFixed(0)}%</div>
+            </div>
+            <p style="margin: 4px 0; font-size: 11px;">${rec.reason}</p>
+          </div>
+        `);
+        
+        mapInstanceRef.current.aiRecommenderMarkers.push(marker);
+      });
+    }
+
+  }, [isMapReady, customers, bankingUnits, branches, clusterData, showCustomers, showBankingUnits, showHeatmap, showClusters, showCoverageRadius, coverageRadius, showSmartZoning, activeZoneType, showForecastLayer, showRiskMap, activeRiskType, showFlowLines, showDistanceAnalysis, showVoronoi, showTerritoryBoundaries, showMarketShare, showBranchPerformance, showGeoAlerts, showBubbleMap, showAIRecommender, showSideAnalytics, clearMarkers, handleEntityClick]);
 
   const refreshData = () => {
     if (showClusters) refetchClusters();
@@ -1264,6 +1632,100 @@ export default function IntelligentMap() {
 
                 <Separator />
 
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    هوش بانکی
+                  </h4>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-blue-500" />
+                      عملکرد شعب
+                    </span>
+                    <Switch
+                      checked={showBranchPerformance}
+                      onCheckedChange={setShowBranchPerformance}
+                      data-testid="switch-branch-performance"
+                    />
+                  </div>
+                  {showBranchPerformance && (
+                    <p className="text-xs text-muted-foreground pr-6">
+                      KPI فروش و جذب مشتری برای هر شعبه
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      هشدار مناطق
+                    </span>
+                    <Switch
+                      checked={showGeoAlerts}
+                      onCheckedChange={setShowGeoAlerts}
+                      data-testid="switch-geo-alerts"
+                    />
+                  </div>
+                  {showGeoAlerts && (
+                    <p className="text-xs text-muted-foreground pr-6">
+                      هشدارهای فوری افت تراکنش و پایانه ناسالم
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <CircleDot className="h-4 w-4 text-cyan-500" />
+                      دایره‌های هوشمند
+                    </span>
+                    <Switch
+                      checked={showBubbleMap}
+                      onCheckedChange={setShowBubbleMap}
+                      data-testid="switch-bubble-map"
+                    />
+                  </div>
+                  {showBubbleMap && (
+                    <p className="text-xs text-muted-foreground pr-6">
+                      نمایش تراکم مشتریان با اندازه و رنگ
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-amber-500" />
+                      پیشنهاددهی AI
+                    </span>
+                    <Switch
+                      checked={showAIRecommender}
+                      onCheckedChange={setShowAIRecommender}
+                      data-testid="switch-ai-recommender"
+                    />
+                  </div>
+                  {showAIRecommender && (
+                    <p className="text-xs text-muted-foreground pr-6">
+                      پیشنهاد محل نصب پایانه و تقویت شعب
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-indigo-500" />
+                      پنل تحلیل
+                    </span>
+                    <Switch
+                      checked={showSideAnalytics}
+                      onCheckedChange={setShowSideAnalytics}
+                      data-testid="switch-side-analytics"
+                    />
+                  </div>
+                  {showSideAnalytics && (
+                    <p className="text-xs text-muted-foreground pr-6">
+                      داشبورد نمودارها و KPI کنار نقشه
+                    </p>
+                  )}
+                </div>
+
+                <Separator />
+
                 {showClusters && clusterData?.metrics && (
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium">آمار خوشه‌بندی</h4>
@@ -1568,6 +2030,216 @@ export default function IntelligentMap() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showSideAnalytics && (
+          <motion.div
+            initial={{ x: -400, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -400, opacity: 0 }}
+            className="absolute top-20 left-4 w-80 z-40"
+          >
+            <Card className="shadow-xl max-h-[calc(100vh-120px)]">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between text-base">
+                  <span className="flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    داشبورد تحلیلی
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowSideAnalytics(false)}
+                    data-testid="button-close-analytics"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <ScrollArea className="h-[calc(100vh-200px)]">
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
+                      <div className="flex items-center gap-2 text-blue-600 text-xs mb-1">
+                        <Users className="h-3 w-3" />
+                        مشتریان
+                      </div>
+                      <p className="text-2xl font-bold">{stats.totalCustomers}</p>
+                      <p className="text-xs text-muted-foreground">{stats.activeCustomers} فعال</p>
+                    </div>
+                    <div className="bg-purple-50 dark:bg-purple-950/30 p-3 rounded-lg">
+                      <div className="flex items-center gap-2 text-purple-600 text-xs mb-1">
+                        <Building2 className="h-3 w-3" />
+                        واحد بانکی
+                      </div>
+                      <p className="text-2xl font-bold">{stats.totalBankingUnits}</p>
+                      <p className="text-xs text-muted-foreground">{branches.length} شعبه</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">درآمد کل</span>
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                    </div>
+                    <p className="text-2xl font-bold text-green-600">
+                      {(customers.reduce((sum: number, c: any) => sum + (c.monthlyProfit || 0), 0) / 1000000000).toFixed(2)}B
+                    </p>
+                    <p className="text-xs text-muted-foreground">تومان</p>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Flame className="h-4 w-4 text-orange-500" />
+                      نقاط داغ (Hotspots)
+                    </h4>
+                    <div className="space-y-2">
+                      {customers
+                        .filter((c: any) => c.latitude && c.longitude)
+                        .sort((a: any, b: any) => (b.monthlyProfit || 0) - (a.monthlyProfit || 0))
+                        .slice(0, 5)
+                        .map((c: any, i: number) => (
+                          <div 
+                            key={c.id} 
+                            className="flex items-center justify-between p-2 bg-muted/50 rounded-lg hover-elevate cursor-pointer"
+                            onClick={() => {
+                              if (mapInstanceRef.current?.map && c.latitude && c.longitude) {
+                                mapInstanceRef.current.map.setView([parseFloat(c.latitude), parseFloat(c.longitude)], 16);
+                              }
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                                i === 0 ? 'bg-yellow-500' : i === 1 ? 'bg-gray-400' : i === 2 ? 'bg-amber-600' : 'bg-muted-foreground'
+                              }`}>
+                                {i + 1}
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium truncate max-w-[120px]">{c.businessName || 'نامشخص'}</p>
+                                <p className="text-xs text-muted-foreground">{c.businessType || '-'}</p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {((c.monthlyProfit || 0) / 1000000).toFixed(1)}M
+                            </Badge>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-blue-500" />
+                      توزیع نوع کسب‌وکار
+                    </h4>
+                    <div className="space-y-2">
+                      {Object.entries(
+                        customers.reduce((acc: any, c: any) => {
+                          const type = c.businessType || 'سایر';
+                          acc[type] = (acc[type] || 0) + 1;
+                          return acc;
+                        }, {})
+                      )
+                        .sort((a: any, b: any) => b[1] - a[1])
+                        .slice(0, 5)
+                        .map(([type, count]: [string, any], i: number) => {
+                          const percentage = (count / customers.length) * 100;
+                          const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500'];
+                          return (
+                            <div key={type} className="space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span>{type}</span>
+                                <span className="text-muted-foreground">{count} ({percentage.toFixed(0)}%)</span>
+                              </div>
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full ${colors[i % colors.length]} rounded-full transition-all`}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-cyan-500" />
+                      وضعیت مشتریان
+                    </h4>
+                    <div className="flex gap-2">
+                      <div className="flex-1 text-center p-2 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                        <p className="text-lg font-bold text-green-600">{stats.activeCustomers}</p>
+                        <p className="text-xs text-muted-foreground">فعال</p>
+                      </div>
+                      <div className="flex-1 text-center p-2 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                        <p className="text-lg font-bold text-red-600">{stats.inactiveCustomers}</p>
+                        <p className="text-xs text-muted-foreground">غیرفعال</p>
+                      </div>
+                      <div className="flex-1 text-center p-2 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg">
+                        <p className="text-lg font-bold text-yellow-600">
+                          {customers.filter((c: any) => c.status === 'marketing').length}
+                        </p>
+                        <p className="text-xs text-muted-foreground">بازاریابی</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {showBranchPerformance && branches.length > 0 && (
+                    <>
+                      <Separator />
+                      <div>
+                        <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                          <Crown className="h-4 w-4 text-amber-500" />
+                          رتبه‌بندی شعب
+                        </h4>
+                        <div className="space-y-2">
+                          {branches
+                            .map((branch: any) => {
+                              const branchCustomers = customers.filter((c: any) => c.branchId === branch.id);
+                              const totalRevenue = branchCustomers.reduce((sum: number, c: any) => sum + (c.monthlyProfit || 0), 0);
+                              return { ...branch, customerCount: branchCustomers.length, revenue: totalRevenue };
+                            })
+                            .sort((a: any, b: any) => b.revenue - a.revenue)
+                            .slice(0, 5)
+                            .map((branch: any, i: number) => (
+                              <div 
+                                key={branch.id} 
+                                className="flex items-center justify-between p-2 bg-muted/50 rounded-lg"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                                    i === 0 ? 'bg-yellow-500' : i === 1 ? 'bg-gray-400' : i === 2 ? 'bg-amber-600' : 'bg-muted-foreground'
+                                  }`}>
+                                    {i + 1}
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-medium">{branch.name}</p>
+                                    <p className="text-xs text-muted-foreground">{branch.customerCount} مشتری</p>
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  {(branch.revenue / 1000000).toFixed(0)}M
+                                </Badge>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </ScrollArea>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div 
         ref={mapRef} 
