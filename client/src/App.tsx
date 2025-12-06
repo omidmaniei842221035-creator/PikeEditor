@@ -17,6 +17,7 @@ import { BackupRestore } from "@/pages/backup-restore";
 import DesktopDownload from "@/pages/DesktopDownload";
 import AIFeatures from "@/pages/ai-features";
 import BulkImport from "@/pages/bulk-import";
+import IntelligentMap from "@/pages/intelligent-map";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/desktop-download" component={DesktopDownload} />
       <Route path="/ai-features" component={AIFeatures} />
       <Route path="/bulk-import" component={BulkImport} />
+      <Route path="/intelligent-map" component={IntelligentMap} />
       <Route path="/grafana">
         {() => <DashboardBuilder />}
       </Route>

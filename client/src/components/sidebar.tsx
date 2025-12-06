@@ -20,7 +20,8 @@ const menuItems = [
 ];
 
 const navigationItems = [
-  { path: "/ai-features", label: "تحلیل‌های هوش مصنوعی", icon: "🧠" },
+  { path: "/intelligent-map", label: "مانیتورینگ هوشمند نقشه", icon: "🧠" },
+  { path: "/ai-features", label: "تحلیل‌های هوش مصنوعی", icon: "🔮" },
   { path: "/strategic-analysis", label: "تحلیل استراتژیک", icon: "📈" },
   { path: "/territories", label: "مدیریت مناطق", icon: "🗺️" },
   { path: "/geo-spider-network", label: "نقشه تار عنکبوت شهری", icon: "🕸️" },
