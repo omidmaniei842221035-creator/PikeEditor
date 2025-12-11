@@ -50,7 +50,8 @@ import {
   Sparkles,
   Crown,
   Settings,
-  Grid3X3
+  Grid3X3,
+  CreditCard
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Delaunay } from "d3-delaunay";
@@ -2189,6 +2190,166 @@ export default function IntelligentMap() {
                         </p>
                         <p className="text-xs text-muted-foreground">بازاریابی</p>
                       </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-emerald-500" />
+                      وضعیت کارآمدی پوز
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
+                        <p className="text-lg font-bold text-emerald-600">
+                          {customers.filter((c: any) => c.status === 'active' || c.status === 'کارآمد').length}
+                        </p>
+                        <p className="text-xs text-muted-foreground">کارآمد</p>
+                      </div>
+                      <div className="text-center p-2 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                        <p className="text-lg font-bold text-red-600">
+                          {customers.filter((c: any) => c.status === 'loss' || c.status === 'زیان‌ده' || c.status === 'زیانده').length}
+                        </p>
+                        <p className="text-xs text-muted-foreground">زیان‌ده</p>
+                      </div>
+                      <div className="text-center p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+                        <p className="text-lg font-bold text-amber-600">
+                          {customers.filter((c: any) => c.status === 'marketing' || c.status === 'بازاریابی').length}
+                        </p>
+                        <p className="text-xs text-muted-foreground">بازاریابی</p>
+                      </div>
+                      <div className="text-center p-2 bg-gray-50 dark:bg-gray-950/30 rounded-lg">
+                        <p className="text-lg font-bold text-gray-600">
+                          {customers.filter((c: any) => c.status === 'collected' || c.status === 'جمع‌آوری شده').length}
+                        </p>
+                        <p className="text-xs text-muted-foreground">جمع‌آوری</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 p-2 bg-muted/50 rounded-lg">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>نرخ کارآمدی</span>
+                        <span className="font-medium">
+                          {customers.length > 0 
+                            ? ((customers.filter((c: any) => c.status === 'active' || c.status === 'کارآمد').length / customers.length) * 100).toFixed(1)
+                            : 0}%
+                        </span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-emerald-500 rounded-full transition-all"
+                          style={{ 
+                            width: `${customers.length > 0 
+                              ? (customers.filter((c: any) => c.status === 'active' || c.status === 'کارآمد').length / customers.length) * 100 
+                              : 0}%` 
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-blue-500" />
+                      خلاصه مالی ترمینال‌ها
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                        <span className="text-xs">مجموع تراکنش‌ها</span>
+                        <Badge variant="outline" className="text-xs">
+                          {(customers.reduce((sum: number, c: any) => sum + (c.totalTransactions || 0), 0)).toLocaleString('fa-IR')}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                        <span className="text-xs">درآمد کل پذیرندگان</span>
+                        <Badge variant="outline" className="text-xs text-green-600">
+                          {(customers.reduce((sum: number, c: any) => sum + (c.totalRevenue || c.monthlyProfit || 0), 0) / 1000000000).toFixed(2)}B
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
+                        <span className="text-xs">سود خالص</span>
+                        <Badge variant="outline" className={`text-xs ${
+                          customers.reduce((sum: number, c: any) => sum + (c.profitLoss || 0), 0) >= 0 
+                            ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {(customers.reduce((sum: number, c: any) => sum + (c.profitLoss || 0), 0) / 1000000000).toFixed(2)}B
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
+                        <span className="text-xs">فاصله تا کارآمدی</span>
+                        <Badge variant="outline" className="text-xs text-orange-600">
+                          {(customers.reduce((sum: number, c: any) => sum + (c.distanceToEfficiency || 0), 0) / 1000000).toFixed(1)}M
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-indigo-500" />
+                      روند سوددهی ماهانه
+                    </h4>
+                    <div className="space-y-1">
+                      {(() => {
+                        const monthlyData = customers.reduce((acc: any, c: any) => {
+                          const installDate = c.installDate || c.reportDate || '';
+                          let month = 'نامشخص';
+                          if (installDate) {
+                            const parts = installDate.split('/');
+                            if (parts.length >= 2) {
+                              const monthNames = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+                              const monthIndex = parseInt(parts[1]) - 1;
+                              if (monthIndex >= 0 && monthIndex < 12) {
+                                month = monthNames[monthIndex];
+                              }
+                            }
+                          }
+                          if (!acc[month]) {
+                            acc[month] = { profit: 0, count: 0, loss: 0 };
+                          }
+                          const profit = c.profitLoss || c.monthlyProfit || 0;
+                          if (profit >= 0) {
+                            acc[month].profit += profit;
+                          } else {
+                            acc[month].loss += Math.abs(profit);
+                          }
+                          acc[month].count++;
+                          return acc;
+                        }, {});
+                        
+                        const sortedMonths = Object.entries(monthlyData)
+                          .filter(([month]) => month !== 'نامشخص')
+                          .slice(0, 6);
+                        
+                        const maxProfit = Math.max(...sortedMonths.map(([, data]: [string, any]) => data.profit), 1);
+                        
+                        return sortedMonths.map(([month, data]: [string, any]) => (
+                          <div key={month} className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span>{month}</span>
+                              <span className="text-muted-foreground">
+                                {data.count} پوز | {(data.profit / 1000000).toFixed(0)}M
+                              </span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden flex">
+                              <div 
+                                className="h-full bg-green-500 rounded-l-full"
+                                style={{ width: `${(data.profit / maxProfit) * 100}%` }}
+                              />
+                              {data.loss > 0 && (
+                                <div 
+                                  className="h-full bg-red-400 rounded-r-full"
+                                  style={{ width: `${(data.loss / maxProfit) * 100}%` }}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        ));
+                      })()}
                     </div>
                   </div>
 
