@@ -906,9 +906,14 @@ function formatPhoneNumber(phone: string): string {
     return normalized;
   }
   
-  // If it's 10 digits and doesn't start with 0, add 09
+  // If it's 10 digits starting with 9, add leading 0 (e.g., 9123456789 → 09123456789)
+  if (normalized.length === 10 && normalized.startsWith('9')) {
+    return '0' + normalized;
+  }
+  
+  // If it's 10 digits and doesn't start with 0 or 9, assume it needs 0 prefix
   if (normalized.length === 10 && !normalized.startsWith('0')) {
-    return '09' + normalized;
+    return '0' + normalized;
   }
   
   // If it's 9 digits, add 09
@@ -916,8 +921,8 @@ function formatPhoneNumber(phone: string): string {
     return '09' + normalized;
   }
   
-  // Return original if can't normalize
-  return phone;
+  // Return normalized if can't format properly
+  return normalized || phone;
 }
 
 // Function to format currency values
