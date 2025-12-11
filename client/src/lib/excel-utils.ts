@@ -12,6 +12,27 @@ export interface ExcelCustomerData {
   supportEmployee?: string;
   latitude?: string;
   longitude?: string;
+  nationalId?: string;
+  customerNumber?: string;
+  terminalCode?: string;
+  companyName?: string;
+  branchCode?: string;
+  depositNumber?: string;
+  depositTitle?: string;
+  depositType?: string;
+  totalTransactions?: number;
+  totalTransactionAmount?: number;
+  totalCost?: number;
+  totalRevenue?: number;
+  profitLoss?: number;
+  installDate?: string;
+  terminalStatus?: string;
+  supportCode?: string;
+  marketer?: string;
+  notes?: string;
+  deviceType?: string;
+  customerType?: string;
+  businessCategoryCode?: string;
 }
 
 export interface ExcelBankingUnitData {
@@ -210,14 +231,44 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
     const dataRows = jsonData.slice(1);
 
     // Define column mapping (Persian to English field names)
+    // Support both old format and new banking format
     const columnMapping: Record<string, keyof ExcelCustomerData> = {
+      // New banking format columns
+      'کد ملی': 'nationalId',
+      'شماره مشتری': 'customerNumber',
+      'نام و نام خانوادگی مشتری': 'ownerName',
+      'کد ترمینال': 'terminalCode',
+      'نام ترمینال': 'shopName',
+      'نام شرکت': 'companyName',
+      'کد شعبه': 'branchCode',
+      'شماره سپرده متصل به ترمینال': 'depositNumber',
+      'عنوان سپرده': 'depositTitle',
+      'نوع سپرده': 'depositType',
+      'موبایل': 'phone',
+      'آدرس': 'address',
+      'تعداد کل تراکنش های ترمینال': 'totalTransactions',
+      'مبلغ کل تراکنش های ترمینال': 'totalTransactionAmount',
+      'هزینه کل ترمینال': 'totalCost',
+      'درآمد کل پذیرنده': 'totalRevenue',
+      'درآمد تسهیم به نسبت (تعداد ترمینال مشتری)': 'monthlyProfit',
+      'سود و زیان': 'profitLoss',
+      'وضعیت': 'status',
+      'تاریخ نصب': 'installDate',
+      'وضعیت ترمینال': 'terminalStatus',
+      'کد پشتیبان': 'supportCode',
+      'نام پشتیبان': 'supportEmployee',
+      'بازاریاب': 'marketer',
+      'توضیحات': 'notes',
+      'نوع دستگاه': 'deviceType',
+      'نوع مشتری': 'customerType',
+      'کد صنف': 'businessCategoryCode',
+      'عنوان صنف': 'businessType',
+      // Old format columns (for backward compatibility)
       'نام فروشگاه': 'shopName',
       'نام مالک': 'ownerName',
       'شماره تماس': 'phone',
       'نوع کسب‌وکار': 'businessType',
-      'آدرس': 'address',
       'سود ماهانه': 'monthlyProfit',
-      'وضعیت': 'status',
       'شعبه': 'branch',
       'کارمند پشتیبان': 'supportEmployee',
       'عرض جغرافیایی': 'latitude',
@@ -234,12 +285,26 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
       }
     });
 
-    // Check if required columns exist
+    // Check if required columns exist - support both old and new formats
+    // New format requires: نام ترمینال (shopName), نام و نام خانوادگی مشتری (ownerName), موبایل (phone)
+    // Old format requires: نام فروشگاه (shopName), نام مالک (ownerName), شماره تماس (phone)
+    const hasNewFormat = columnIndices.terminalCode !== undefined || columnIndices.nationalId !== undefined;
+    
+    // For new format, shopName comes from نام ترمینال, ownerName from نام و نام خانوادگی مشتری
+    // For old format, use original columns
     const requiredFields: (keyof ExcelCustomerData)[] = ['shopName', 'ownerName', 'phone'];
     const missingFields = requiredFields.filter(field => columnIndices[field] === undefined);
     
     if (missingFields.length > 0) {
       const missingPersianFields = missingFields.map(field => {
+        if (hasNewFormat) {
+          const newFormatMapping: Record<string, string> = {
+            'shopName': 'نام ترمینال',
+            'ownerName': 'نام و نام خانوادگی مشتری',
+            'phone': 'موبایل'
+          };
+          return newFormatMapping[field] || Object.keys(columnMapping).find(key => columnMapping[key] === field);
+        }
         return Object.keys(columnMapping).find(key => columnMapping[key] === field);
       }).join(', ');
       throw new Error(`ستون‌های ضروری موجود نیست: ${missingPersianFields}`);
@@ -254,6 +319,23 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
         return;
       }
 
+      // Parse status from Persian to English
+      let statusValue = 'active';
+      if (columnIndices.status !== undefined) {
+        const rawStatus = row[columnIndices.status]?.toString().trim() || '';
+        const statusMapping: Record<string, string> = {
+          'کارآمد': 'active',
+          'فعال': 'active',
+          'غیرفعال': 'inactive',
+          'بازاریابی': 'marketing',
+          'زیان‌ده': 'loss',
+          'زیانده': 'loss',
+          'جمع‌آوری شده': 'collected',
+          'جمع آوری شده': 'collected'
+        };
+        statusValue = statusMapping[rawStatus] || rawStatus || 'active';
+      }
+
       const customer: ExcelCustomerData = {
         shopName: row[columnIndices.shopName]?.toString().trim() || '',
         ownerName: row[columnIndices.ownerName]?.toString().trim() || '',
@@ -264,16 +346,59 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
           row[columnIndices.address]?.toString().trim() || '' : '',
         monthlyProfit: columnIndices.monthlyProfit !== undefined ? 
           parseMonetaryValue(row[columnIndices.monthlyProfit]) : 0,
-        status: columnIndices.status !== undefined ? 
-          row[columnIndices.status]?.toString().trim() || 'active' : 'active',
+        status: statusValue,
         branch: columnIndices.branch !== undefined ? 
-          row[columnIndices.branch]?.toString().trim() || '' : '',
+          row[columnIndices.branch]?.toString().trim() || '' : 
+          (columnIndices.branchCode !== undefined ? row[columnIndices.branchCode]?.toString().trim() || '' : ''),
         supportEmployee: columnIndices.supportEmployee !== undefined ? 
           row[columnIndices.supportEmployee]?.toString().trim() || '' : '',
         latitude: columnIndices.latitude !== undefined ? 
           row[columnIndices.latitude]?.toString().trim() || '' : '',
         longitude: columnIndices.longitude !== undefined ? 
-          row[columnIndices.longitude]?.toString().trim() || '' : ''
+          row[columnIndices.longitude]?.toString().trim() || '' : '',
+        // New banking format fields
+        nationalId: columnIndices.nationalId !== undefined ?
+          row[columnIndices.nationalId]?.toString().trim() || '' : '',
+        customerNumber: columnIndices.customerNumber !== undefined ?
+          row[columnIndices.customerNumber]?.toString().trim() || '' : '',
+        terminalCode: columnIndices.terminalCode !== undefined ?
+          row[columnIndices.terminalCode]?.toString().trim() || '' : '',
+        companyName: columnIndices.companyName !== undefined ?
+          row[columnIndices.companyName]?.toString().trim() || '' : '',
+        branchCode: columnIndices.branchCode !== undefined ?
+          row[columnIndices.branchCode]?.toString().trim() || '' : '',
+        depositNumber: columnIndices.depositNumber !== undefined ?
+          row[columnIndices.depositNumber]?.toString().trim() || '' : '',
+        depositTitle: columnIndices.depositTitle !== undefined ?
+          row[columnIndices.depositTitle]?.toString().trim() || '' : '',
+        depositType: columnIndices.depositType !== undefined ?
+          row[columnIndices.depositType]?.toString().trim() || '' : '',
+        totalTransactions: columnIndices.totalTransactions !== undefined ?
+          parseMonetaryValue(row[columnIndices.totalTransactions]) : 0,
+        totalTransactionAmount: columnIndices.totalTransactionAmount !== undefined ?
+          parseMonetaryValue(row[columnIndices.totalTransactionAmount]) : 0,
+        totalCost: columnIndices.totalCost !== undefined ?
+          parseMonetaryValue(row[columnIndices.totalCost]) : 0,
+        totalRevenue: columnIndices.totalRevenue !== undefined ?
+          parseMonetaryValue(row[columnIndices.totalRevenue]) : 0,
+        profitLoss: columnIndices.profitLoss !== undefined ?
+          parseMonetaryValue(row[columnIndices.profitLoss]) : 0,
+        installDate: columnIndices.installDate !== undefined ?
+          row[columnIndices.installDate]?.toString().trim() || '' : '',
+        terminalStatus: columnIndices.terminalStatus !== undefined ?
+          row[columnIndices.terminalStatus]?.toString().trim() || '' : '',
+        supportCode: columnIndices.supportCode !== undefined ?
+          row[columnIndices.supportCode]?.toString().trim() || '' : '',
+        marketer: columnIndices.marketer !== undefined ?
+          row[columnIndices.marketer]?.toString().trim() || '' : '',
+        notes: columnIndices.notes !== undefined ?
+          row[columnIndices.notes]?.toString().trim() || '' : '',
+        deviceType: columnIndices.deviceType !== undefined ?
+          row[columnIndices.deviceType]?.toString().trim() || '' : '',
+        customerType: columnIndices.customerType !== undefined ?
+          row[columnIndices.customerType]?.toString().trim() || '' : '',
+        businessCategoryCode: columnIndices.businessCategoryCode !== undefined ?
+          row[columnIndices.businessCategoryCode]?.toString().trim() || '' : ''
       };
 
       customers.push(customer);
@@ -287,46 +412,76 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
 }
 
 export function downloadSampleExcel(): void {
-  // Create sample data structure with geo-location
+  // Create sample data structure with new banking format (without geo-location)
   const sampleData = [
     {
-      "نام فروشگاه": "سوپرمارکت نمونه",
-      "نام مالک": "احمد محمدی",
-      "شماره تماس": "09123456789",
-      "نوع کسب‌وکار": "سوپرمارکت",
+      "کد ملی": "1234567890",
+      "شماره مشتری": "C001",
+      "نام و نام خانوادگی مشتری": "احمد محمدی",
+      "کد ترمینال": "T001",
+      "نام ترمینال": "سوپرمارکت نمونه",
+      "نام شرکت": "فروشگاه محمدی",
+      "کد شعبه": "B001",
+      "موبایل": "09123456789",
       "آدرس": "تبریز، خیابان اصلی، پلاک 123",
-      "سود ماهانه": 25000000,
-      "وضعیت": "active",
-      "شعبه": "شعبه مرکزی تبریز",
-      "کارمند پشتیبان": "علی احمدی",
-      "عرض جغرافیایی": 38.0792,
-      "طول جغرافیایی": 46.2887,
+      "تعداد کل تراکنش های ترمینال": 1500,
+      "مبلغ کل تراکنش های ترمینال": 250000000,
+      "درآمد کل پذیرنده": 25000000,
+      "سود و زیان": 15000000,
+      "وضعیت": "کارآمد",
+      "تاریخ نصب": "1403/01/15",
+      "وضعیت ترمینال": "فعال",
+      "نام پشتیبان": "علی احمدی",
+      "نوع دستگاه": "کارتخوان سیار",
+      "نوع مشتری": "حقیقی",
+      "عنوان صنف": "سوپرمارکت",
+      "توضیحات": ""
     },
     {
-      "نام فروشگاه": "رستوران طعم",
-      "نام مالک": "مریم کریمی",
-      "شماره تماس": "09123456788",
-      "نوع کسب‌وکار": "رستوران",
+      "کد ملی": "0987654321",
+      "شماره مشتری": "C002",
+      "نام و نام خانوادگی مشتری": "مریم کریمی",
+      "کد ترمینال": "T002",
+      "نام ترمینال": "رستوران طعم",
+      "نام شرکت": "رستوران کریمی",
+      "کد شعبه": "B002",
+      "موبایل": "09123456788",
       "آدرس": "تبریز، میدان ساعت، طبقه دوم",
-      "سود ماهانه": 18000000,
-      "وضعیت": "marketing",
-      "شعبه": "شعبه بازار تبریز",
-      "کارمند پشتیبان": "زهرا کریمی",
-      "عرض جغرافیایی": 38.0756,
-      "طول جغرافیایی": 46.2915,
+      "تعداد کل تراکنش های ترمینال": 800,
+      "مبلغ کل تراکنش های ترمینال": 180000000,
+      "درآمد کل پذیرنده": 18000000,
+      "سود و زیان": 8000000,
+      "وضعیت": "بازاریابی",
+      "تاریخ نصب": "1403/02/20",
+      "وضعیت ترمینال": "فعال",
+      "نام پشتیبان": "زهرا کریمی",
+      "نوع دستگاه": "کارتخوان ثابت",
+      "نوع مشتری": "حقوقی",
+      "عنوان صنف": "رستوران",
+      "توضیحات": ""
     },
     {
-      "نام فروشگاه": "داروخانه سلامت",
-      "نام مالک": "حسن رضایی",
-      "شماره تماس": "09123456787",
-      "نوع کسب‌وکار": "داروخانه",
+      "کد ملی": "1122334455",
+      "شماره مشتری": "C003",
+      "نام و نام خانوادگی مشتری": "حسن رضایی",
+      "کد ترمینال": "T003",
+      "نام ترمینال": "داروخانه سلامت",
+      "نام شرکت": "داروخانه رضایی",
+      "کد شعبه": "B001",
+      "موبایل": "09123456787",
       "آدرس": "تبریز، خیابان فردوسی",
-      "سود ماهانه": 12000000,
-      "وضعیت": "loss",
-      "شعبه": "شعبه شهرک صنعتی",
-      "کارمند پشتیبان": "محمد رضایی",
-      "عرض جغرافیایی": 38.0823,
-      "طول جغرافیایی": 46.2956,
+      "تعداد کل تراکنش های ترمینال": 450,
+      "مبلغ کل تراکنش های ترمینال": 120000000,
+      "درآمد کل پذیرنده": 12000000,
+      "سود و زیان": -2000000,
+      "وضعیت": "زیان‌ده",
+      "تاریخ نصب": "1402/10/05",
+      "وضعیت ترمینال": "فعال",
+      "نام پشتیبان": "محمد رضایی",
+      "نوع دستگاه": "کارتخوان سیار",
+      "نوع مشتری": "حقیقی",
+      "عنوان صنف": "داروخانه",
+      "توضیحات": ""
     },
   ];
 
@@ -338,17 +493,27 @@ export function downloadSampleExcel(): void {
   
   // Set column widths for better readability
   const columnWidths = [
-    { wch: 20 }, // نام فروشگاه
-    { wch: 20 }, // نام مالک
-    { wch: 15 }, // شماره تماس
-    { wch: 15 }, // نوع کسب‌وکار
-    { wch: 30 }, // آدرس
-    { wch: 15 }, // سود ماهانه
+    { wch: 15 }, // کد ملی
+    { wch: 12 }, // شماره مشتری
+    { wch: 25 }, // نام و نام خانوادگی مشتری
+    { wch: 12 }, // کد ترمینال
+    { wch: 20 }, // نام ترمینال
+    { wch: 20 }, // نام شرکت
+    { wch: 10 }, // کد شعبه
+    { wch: 15 }, // موبایل
+    { wch: 35 }, // آدرس
+    { wch: 15 }, // تعداد کل تراکنش
+    { wch: 20 }, // مبلغ کل تراکنش
+    { wch: 15 }, // درآمد کل
+    { wch: 15 }, // سود و زیان
     { wch: 12 }, // وضعیت
-    { wch: 20 }, // شعبه
-    { wch: 20 }, // کارمند پشتیبان
-    { wch: 15 }, // عرض جغرافیایی
-    { wch: 15 }, // طول جغرافیایی
+    { wch: 12 }, // تاریخ نصب
+    { wch: 12 }, // وضعیت ترمینال
+    { wch: 15 }, // نام پشتیبان
+    { wch: 15 }, // نوع دستگاه
+    { wch: 12 }, // نوع مشتری
+    { wch: 15 }, // عنوان صنف
+    { wch: 20 }, // توضیحات
   ];
   worksheet['!cols'] = columnWidths;
   
@@ -364,7 +529,7 @@ export function downloadSampleExcel(): void {
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
-  link.setAttribute('download', 'فایل_نمونه_مشتریان.xlsx');
+  link.setAttribute('download', 'فایل_نمونه_مشتریان_بانکی.xlsx');
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
