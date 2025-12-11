@@ -1,0 +1,17 @@
+{
+  "name": "pos-monitoring-desktop",
+  "version": "1.0.2",
+  "description": "سامانه مانیتورینگ هوشمند پایانه‌های فروشگاهی - نسخه دسکتاپ",
+  "main": "server.cjs",
+  "scripts": {
+    "start": "node server.cjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "express": "^4.21.2",
+    "ws": "^8.18.0",
+    "drizzle-orm": "^0.39.1",
+    "express-session": "^1.18.1",
+    "memorystore": "^1.6.7"
+  }
+}
