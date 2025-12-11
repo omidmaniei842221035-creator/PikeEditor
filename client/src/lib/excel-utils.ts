@@ -12,6 +12,7 @@ export interface ExcelCustomerData {
   supportEmployee?: string;
   latitude?: string;
   longitude?: string;
+  // New banking format fields (39 columns)
   nationalId?: string;
   customerNumber?: string;
   terminalCode?: string;
@@ -23,15 +24,26 @@ export interface ExcelCustomerData {
   totalTransactions?: number;
   totalTransactionAmount?: number;
   totalCost?: number;
+  costShare?: number;
+  avgDepositTerminal?: number;
+  avgCurrentDeposit?: number;
+  avgShortTermDeposit?: number;
+  avgTotalDeposit?: number;
+  shortTermProfit?: number;
   totalRevenue?: number;
+  revenueShare?: number;
   profitLoss?: number;
+  distanceToEfficiency?: number;
   installDate?: string;
   terminalStatus?: string;
   supportCode?: string;
   marketer?: string;
   notes?: string;
+  reportDate?: string;
+  shaprakFee?: number;
   deviceType?: string;
   customerType?: string;
+  depositBranchCode?: string;
   businessCategoryCode?: string;
 }
 
@@ -231,9 +243,9 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
     const dataRows = jsonData.slice(1);
 
     // Define column mapping (Persian to English field names)
-    // Support both old format and new banking format
+    // Support all 39 columns from user's banking Excel format
     const columnMapping: Record<string, keyof ExcelCustomerData> = {
-      // New banking format columns
+      // All 39 columns from user's Excel file
       'کد ملی': 'nationalId',
       'شماره مشتری': 'customerNumber',
       'نام و نام خانوادگی مشتری': 'ownerName',
@@ -249,9 +261,16 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
       'تعداد کل تراکنش های ترمینال': 'totalTransactions',
       'مبلغ کل تراکنش های ترمینال': 'totalTransactionAmount',
       'هزینه کل ترمینال': 'totalCost',
+      'هزینه تسهیم به نسبت (تعداد ترمینال مشتری)': 'costShare',
+      'میانگین سپرده متصل به ترمینال': 'avgDepositTerminal',
+      'مجموع میانگین سپرده های جاری و قرض الحسنه پذیرنده': 'avgCurrentDeposit',
+      'مجموع میانگین سپرده های کوتاه مدت پذیرنده': 'avgShortTermDeposit',
+      'مجموع میانگین سپرده های جاری، قرض الحسنه و کوتاه مدت پذیرنده': 'avgTotalDeposit',
+      'سود پرداختی به سپرده های کوتاه مدت پذیرنده': 'shortTermProfit',
       'درآمد کل پذیرنده': 'totalRevenue',
-      'درآمد تسهیم به نسبت (تعداد ترمینال مشتری)': 'monthlyProfit',
+      'درآمد تسهیم به نسبت (تعداد ترمینال مشتری)': 'revenueShare',
       'سود و زیان': 'profitLoss',
+      'فاصله تا کارآمد شدن به ازای هر پذیرنده ': 'distanceToEfficiency',
       'وضعیت': 'status',
       'تاریخ نصب': 'installDate',
       'وضعیت ترمینال': 'terminalStatus',
@@ -259,8 +278,11 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
       'نام پشتیبان': 'supportEmployee',
       'بازاریاب': 'marketer',
       'توضیحات': 'notes',
+      'تاریخ': 'reportDate',
+      'کارمزد شاپرکی': 'shaprakFee',
       'نوع دستگاه': 'deviceType',
       'نوع مشتری': 'customerType',
+      'کد شعبه صاحب سپرده': 'depositBranchCode',
       'کد صنف': 'businessCategoryCode',
       'عنوان صنف': 'businessType',
       // Old format columns (for backward compatibility)
@@ -345,7 +367,8 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
         address: columnIndices.address !== undefined ? 
           row[columnIndices.address]?.toString().trim() || '' : '',
         monthlyProfit: columnIndices.monthlyProfit !== undefined ? 
-          parseMonetaryValue(row[columnIndices.monthlyProfit]) : 0,
+          parseMonetaryValue(row[columnIndices.monthlyProfit]) : 
+          (columnIndices.revenueShare !== undefined ? parseMonetaryValue(row[columnIndices.revenueShare]) : 0),
         status: statusValue,
         branch: columnIndices.branch !== undefined ? 
           row[columnIndices.branch]?.toString().trim() || '' : 
@@ -356,7 +379,7 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
           row[columnIndices.latitude]?.toString().trim() || '' : '',
         longitude: columnIndices.longitude !== undefined ? 
           row[columnIndices.longitude]?.toString().trim() || '' : '',
-        // New banking format fields
+        // All 39 banking format fields
         nationalId: columnIndices.nationalId !== undefined ?
           row[columnIndices.nationalId]?.toString().trim() || '' : '',
         customerNumber: columnIndices.customerNumber !== undefined ?
@@ -379,10 +402,26 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
           parseMonetaryValue(row[columnIndices.totalTransactionAmount]) : 0,
         totalCost: columnIndices.totalCost !== undefined ?
           parseMonetaryValue(row[columnIndices.totalCost]) : 0,
+        costShare: columnIndices.costShare !== undefined ?
+          parseMonetaryValue(row[columnIndices.costShare]) : 0,
+        avgDepositTerminal: columnIndices.avgDepositTerminal !== undefined ?
+          parseMonetaryValue(row[columnIndices.avgDepositTerminal]) : 0,
+        avgCurrentDeposit: columnIndices.avgCurrentDeposit !== undefined ?
+          parseMonetaryValue(row[columnIndices.avgCurrentDeposit]) : 0,
+        avgShortTermDeposit: columnIndices.avgShortTermDeposit !== undefined ?
+          parseMonetaryValue(row[columnIndices.avgShortTermDeposit]) : 0,
+        avgTotalDeposit: columnIndices.avgTotalDeposit !== undefined ?
+          parseMonetaryValue(row[columnIndices.avgTotalDeposit]) : 0,
+        shortTermProfit: columnIndices.shortTermProfit !== undefined ?
+          parseMonetaryValue(row[columnIndices.shortTermProfit]) : 0,
         totalRevenue: columnIndices.totalRevenue !== undefined ?
           parseMonetaryValue(row[columnIndices.totalRevenue]) : 0,
+        revenueShare: columnIndices.revenueShare !== undefined ?
+          parseMonetaryValue(row[columnIndices.revenueShare]) : 0,
         profitLoss: columnIndices.profitLoss !== undefined ?
           parseMonetaryValue(row[columnIndices.profitLoss]) : 0,
+        distanceToEfficiency: columnIndices.distanceToEfficiency !== undefined ?
+          parseMonetaryValue(row[columnIndices.distanceToEfficiency]) : 0,
         installDate: columnIndices.installDate !== undefined ?
           row[columnIndices.installDate]?.toString().trim() || '' : '',
         terminalStatus: columnIndices.terminalStatus !== undefined ?
@@ -393,10 +432,16 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
           row[columnIndices.marketer]?.toString().trim() || '' : '',
         notes: columnIndices.notes !== undefined ?
           row[columnIndices.notes]?.toString().trim() || '' : '',
+        reportDate: columnIndices.reportDate !== undefined ?
+          row[columnIndices.reportDate]?.toString().trim() || '' : '',
+        shaprakFee: columnIndices.shaprakFee !== undefined ?
+          parseMonetaryValue(row[columnIndices.shaprakFee]) : 0,
         deviceType: columnIndices.deviceType !== undefined ?
           row[columnIndices.deviceType]?.toString().trim() || '' : '',
         customerType: columnIndices.customerType !== undefined ?
           row[columnIndices.customerType]?.toString().trim() || '' : '',
+        depositBranchCode: columnIndices.depositBranchCode !== undefined ?
+          row[columnIndices.depositBranchCode]?.toString().trim() || '' : '',
         businessCategoryCode: columnIndices.businessCategoryCode !== undefined ?
           row[columnIndices.businessCategoryCode]?.toString().trim() || '' : ''
       };
