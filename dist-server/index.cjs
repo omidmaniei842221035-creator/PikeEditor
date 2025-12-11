@@ -44411,26 +44411,32 @@ async function registerRoutes(app2) {
       let successCount = 0;
       let errorCount = 0;
       const errors = [];
-      const branches5 = await storage.getAllBranches();
-      const defaultBranch = branches5.find((b) => b.code === "TBR-001") || branches5[0];
-      if (!defaultBranch) {
-        return res.status(500).json({
-          error: "\u0647\u06CC\u0686 \u0634\u0639\u0628\u0647\u200C\u0627\u06CC \u062F\u0631 \u0633\u06CC\u0633\u062A\u0645 \u06CC\u0627\u0641\u062A \u0646\u0634\u062F",
-          success: false
-        });
+      let branches5 = await storage.getAllBranches();
+      if (branches5.length === 0) {
+        const defaultBranchData = {
+          name: "\u0634\u0639\u0628\u0647 \u0645\u0631\u06A9\u0632\u06CC",
+          code: "TBR-001",
+          type: "branch",
+          address: "\u062A\u0628\u0631\u06CC\u0632",
+          phone: "",
+          latitude: "38.0792",
+          longitude: "46.2887"
+        };
+        await storage.createBranch(defaultBranchData);
+        branches5 = await storage.getAllBranches();
       }
+      const defaultBranch = branches5.find((b) => b.code === "TBR-001") || branches5[0];
       for (let i = 0; i < customers5.length; i++) {
         const customerData = customers5[i];
         try {
-          let branchId = defaultBranch.id;
-          if (customerData.branch) {
+          let branchId = defaultBranch?.id || 1;
+          if (customerData.branch && customerData.branch.trim() !== "") {
+            const branchSearch = customerData.branch.trim().toLowerCase();
             const matchingBranch = branches5.find(
-              (b) => b.name === customerData.branch || b.code === customerData.branch
+              (b) => b.name.toLowerCase() === branchSearch || b.code.toLowerCase() === branchSearch || b.name.toLowerCase().includes(branchSearch) || branchSearch.includes(b.name.toLowerCase())
             );
             if (matchingBranch) {
               branchId = matchingBranch.id;
-            } else {
-              throw new Error(`\u0634\u0639\u0628\u0647 "${customerData.branch}" \u06CC\u0627\u0641\u062A \u0646\u0634\u062F`);
             }
           }
           let latitude = null;
