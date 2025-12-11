@@ -270,6 +270,7 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
       'درآمد کل پذیرنده': 'totalRevenue',
       'درآمد تسهیم به نسبت (تعداد ترمینال مشتری)': 'revenueShare',
       'سود و زیان': 'profitLoss',
+      'فاصله تا کارآمد شدن به ازای هر پذیرنده': 'distanceToEfficiency',
       'فاصله تا کارآمد شدن به ازای هر پذیرنده ': 'distanceToEfficiency',
       'وضعیت': 'status',
       'تاریخ نصب': 'installDate',
@@ -348,15 +349,52 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
         const statusMapping: Record<string, string> = {
           'کارآمد': 'active',
           'فعال': 'active',
+          'معمولی': 'active',
           'غیرفعال': 'inactive',
           'بازاریابی': 'marketing',
           'زیان‌ده': 'loss',
           'زیانده': 'loss',
+          'زیان ده': 'loss',
           'جمع‌آوری شده': 'collected',
-          'جمع آوری شده': 'collected'
+          'جمع آوری شده': 'collected',
+          'درخواست جمع آوری': 'collected',
+          'درخواست جمع‌آوری': 'collected'
         };
         statusValue = statusMapping[rawStatus] || rawStatus || 'active';
       }
+
+      // Parse terminalStatus from Persian
+      let terminalStatusValue = '';
+      if (columnIndices.terminalStatus !== undefined) {
+        const rawTerminalStatus = row[columnIndices.terminalStatus]?.toString().trim() || '';
+        const terminalStatusMapping: Record<string, string> = {
+          'فعال': 'active',
+          'غیرفعال': 'inactive',
+          'درخواست جمع آوری': 'collected',
+          'درخواست جمع‌آوری': 'collected',
+          'جمع آوری شده': 'collected',
+          'جمع‌آوری شده': 'collected'
+        };
+        terminalStatusValue = terminalStatusMapping[rawTerminalStatus] || rawTerminalStatus;
+      }
+
+      // Parse dates - handle YYMMDD format (e.g., 140405 means 1404/05)
+      const parseDateValue = (value: any): string => {
+        if (!value) return '';
+        const strValue = value.toString().trim();
+        // Handle YYMMDD format (6 digits like 140405)
+        if (/^\d{6}$/.test(strValue)) {
+          const year = '14' + strValue.substring(0, 2);
+          const month = strValue.substring(2, 4);
+          const day = strValue.substring(4, 6);
+          return `${year}/${month}/${day}`;
+        }
+        // Handle YYYY/MM/DD format
+        if (/^\d{4}\/\d{2}\/\d{2}$/.test(strValue)) {
+          return strValue;
+        }
+        return strValue;
+      };
 
       const customer: ExcelCustomerData = {
         shopName: row[columnIndices.shopName]?.toString().trim() || '',
@@ -423,9 +461,8 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
         distanceToEfficiency: columnIndices.distanceToEfficiency !== undefined ?
           parseMonetaryValue(row[columnIndices.distanceToEfficiency]) : 0,
         installDate: columnIndices.installDate !== undefined ?
-          row[columnIndices.installDate]?.toString().trim() || '' : '',
-        terminalStatus: columnIndices.terminalStatus !== undefined ?
-          row[columnIndices.terminalStatus]?.toString().trim() || '' : '',
+          parseDateValue(row[columnIndices.installDate]) : '',
+        terminalStatus: terminalStatusValue,
         supportCode: columnIndices.supportCode !== undefined ?
           row[columnIndices.supportCode]?.toString().trim() || '' : '',
         marketer: columnIndices.marketer !== undefined ?
@@ -433,7 +470,7 @@ function parseExcelContent(buffer: any): ExcelCustomerData[] {
         notes: columnIndices.notes !== undefined ?
           row[columnIndices.notes]?.toString().trim() || '' : '',
         reportDate: columnIndices.reportDate !== undefined ?
-          row[columnIndices.reportDate]?.toString().trim() || '' : '',
+          parseDateValue(row[columnIndices.reportDate]) : '',
         shaprakFee: columnIndices.shaprakFee !== undefined ?
           parseMonetaryValue(row[columnIndices.shaprakFee]) : 0,
         deviceType: columnIndices.deviceType !== undefined ?
