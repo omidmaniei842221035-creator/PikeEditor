@@ -8,6 +8,7 @@ import { BranchFormModal } from "./branch-form-modal";
 import { BranchExcelImportModal } from "./branch-excel-import-modal";
 import { BankingUnitFormModal } from "./banking-unit-form-modal";
 import { BankingUnitExcelImportModal } from "./banking-unit-excel-import-modal";
+import { LocationPickerModal } from "@/components/common/location-picker-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -30,6 +31,8 @@ export function BranchManagement() {
   const [showBankingUnitExcelModal, setShowBankingUnitExcelModal] = useState(false);
   const [editingBranch, setEditingBranch] = useState<any>(null);
   const [editingBankingUnit, setEditingBankingUnit] = useState<any>(null);
+  const [locationBankingUnit, setLocationBankingUnit] = useState<any>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { toast } = useToast();
@@ -82,6 +85,43 @@ export function BranchManagement() {
       });
     },
   });
+
+  const updateLocationMutation = useMutation({
+    mutationFn: async ({ unitId, latitude, longitude }: { unitId: string; latitude: string; longitude: string }) => {
+      return apiRequest("PATCH", `/api/banking-units/${unitId}`, { latitude, longitude });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/banking-units"] });
+      toast({
+        title: "موقعیت ذخیره شد",
+        description: "موقعیت جغرافیایی واحد بانکی با موفقیت ثبت شد",
+      });
+      setShowLocationPicker(false);
+      setLocationBankingUnit(null);
+    },
+    onError: () => {
+      toast({
+        title: "خطا",
+        description: "خطا در ذخیره موقعیت جغرافیایی",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLocationSelect = (lat: number, lng: number) => {
+    if (locationBankingUnit) {
+      updateLocationMutation.mutate({
+        unitId: locationBankingUnit.id,
+        latitude: lat.toString(),
+        longitude: lng.toString(),
+      });
+    }
+  };
+
+  const openLocationPicker = (unit: any) => {
+    setLocationBankingUnit(unit);
+    setShowLocationPicker(true);
+  };
 
   const filteredBranches = branches.filter((branch: any) => {
     return (
@@ -266,6 +306,14 @@ export function BranchManagement() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => openLocationPicker(unit)}
+                        data-testid={`button-location-banking-unit-${unit.id}`}
+                      >
+                        <MapPin className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleEditBankingUnit(unit)}
                         data-testid={`button-edit-banking-unit-${unit.id}`}
                       >
@@ -321,7 +369,28 @@ export function BranchManagement() {
                         unit.unitType === 'counter' ? 'باجه' : 'خودپرداز'
                       }</p>
                     </div>
-                    <div className="md:col-span-2 lg:col-span-3">
+                    <div>
+                      <span className="font-medium text-muted-foreground">موقعیت جغرافیایی:</span>
+                      <p className="mt-1">
+                        {unit.latitude && unit.longitude ? (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                            <MapPin className="w-3 h-3 ml-1" />
+                            ثبت شده
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openLocationPicker(unit)}
+                            data-testid={`set-location-unit-${unit.id}`}
+                          >
+                            <MapPin className="w-3 h-3 ml-1" />
+                            ثبت موقعیت
+                          </Button>
+                        )}
+                      </p>
+                    </div>
+                    <div className="md:col-span-2">
                       <span className="font-medium text-muted-foreground">آدرس:</span>
                       <p className="mt-1">{unit.address || "آدرس ثبت نشده"}</p>
                     </div>
@@ -447,6 +516,16 @@ export function BranchManagement() {
         open={showBankingUnitExcelModal}
         onOpenChange={setShowBankingUnitExcelModal}
         onImportComplete={handleBankingUnitImportComplete}
+      />
+
+      <LocationPickerModal
+        open={showLocationPicker}
+        onOpenChange={setShowLocationPicker}
+        initialLocation={locationBankingUnit?.latitude && locationBankingUnit?.longitude 
+          ? { lat: parseFloat(locationBankingUnit.latitude), lng: parseFloat(locationBankingUnit.longitude) }
+          : null}
+        onLocationSelected={handleLocationSelect}
+        title={`تعیین موقعیت: ${locationBankingUnit?.name || ''}`}
       />
     </div>
   );

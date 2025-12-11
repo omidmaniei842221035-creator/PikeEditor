@@ -1,18 +1,27 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { CustomerFormModal } from "./customer-form-modal";
+import { LocationPickerModal } from "@/components/common/location-picker-modal";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { MapPin, Edit, Trash2, Eye } from "lucide-react";
 
 export function CustomerManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [locationCustomer, setLocationCustomer] = useState<any>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [businessTypeFilter, setBusinessTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: customers = [] } = useQuery<any[]>({
     queryKey: ["/api/customers", { 
@@ -30,6 +39,55 @@ export function CustomerManagement() {
   const { data: analytics } = useQuery({
     queryKey: ["/api/analytics/overview"],
   });
+
+  const updateLocationMutation = useMutation({
+    mutationFn: async ({ customerId, latitude, longitude }: { customerId: string; latitude: string; longitude: string }) => {
+      return apiRequest("PUT", `/api/customers/${customerId}`, { latitude, longitude });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      toast({
+        title: "موقعیت ذخیره شد",
+        description: "موقعیت جغرافیایی مشتری با موفقیت ثبت شد",
+      });
+      setShowLocationPicker(false);
+      setLocationCustomer(null);
+    },
+    onError: () => {
+      toast({
+        title: "خطا",
+        description: "خطا در ذخیره موقعیت جغرافیایی",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLocationSelect = (lat: number, lng: number) => {
+    if (locationCustomer) {
+      updateLocationMutation.mutate({
+        customerId: locationCustomer.id,
+        latitude: lat.toString(),
+        longitude: lng.toString(),
+      });
+    }
+  };
+
+  const openLocationPicker = (customer: any) => {
+    setLocationCustomer(customer);
+    setShowLocationPicker(true);
+  };
+
+  const handleEditCustomer = (customer: any) => {
+    setEditingCustomer(customer);
+    setShowAddModal(true);
+  };
+
+  const handleCloseModal = (open: boolean) => {
+    setShowAddModal(open);
+    if (!open) {
+      setEditingCustomer(null);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const styles = {
@@ -222,7 +280,7 @@ export function CustomerManagement() {
                   <th className="text-right p-4 font-medium">نوع کسب‌وکار</th>
                   <th className="text-right p-4 font-medium">وضعیت</th>
                   <th className="text-right p-4 font-medium">سود ماهانه</th>
-                  <th className="text-right p-4 font-medium">شعبه</th>
+                  <th className="text-right p-4 font-medium">موقعیت</th>
                   <th className="text-right p-4 font-medium">عملیات</th>
                 </tr>
               </thead>
@@ -242,6 +300,7 @@ export function CustomerManagement() {
                 ) : (
                   customers.map((customer: any, index: number) => {
                     const branch = branches.find((b: any) => b.id === customer.branchId);
+                    const hasLocation = customer.latitude && customer.longitude;
                     return (
                       <tr 
                         key={customer.id} 
@@ -251,7 +310,7 @@ export function CustomerManagement() {
                         <td className="p-4">
                           <div className="font-medium">{customer.shopName}</div>
                           <div className="text-sm text-muted-foreground">
-                            شناسه: {customer.id.slice(0, 8)}
+                            {customer.terminalCode || customer.id.slice(0, 8)}
                           </div>
                         </td>
                         <td className="p-4">{customer.ownerName}</td>
@@ -262,28 +321,51 @@ export function CustomerManagement() {
                           {getStatusBadge(customer.status)}
                         </td>
                         <td className="p-4 font-medium">
-                          {customer.monthlyProfit 
-                            ? `${Math.round(customer.monthlyProfit / 1000000)}M تومان`
-                            : "نامشخص"
+                          {customer.profitLoss !== undefined && customer.profitLoss !== null
+                            ? `${Math.round(customer.profitLoss / 1000000)}M تومان`
+                            : customer.monthlyProfit 
+                              ? `${Math.round(customer.monthlyProfit / 1000000)}M تومان`
+                              : "نامشخص"
                           }
                         </td>
-                        <td className="p-4">{branch?.name || "نامشخص"}</td>
                         <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              size="sm" 
+                          {hasLocation ? (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                              <MapPin className="w-3 h-3 ml-1" />
+                              ثبت شده
+                            </Badge>
+                          ) : (
+                            <Button
+                              size="sm"
                               variant="outline"
+                              onClick={() => openLocationPicker(customer)}
+                              data-testid={`set-location-${index}`}
+                            >
+                              <MapPin className="w-3 h-3 ml-1" />
+                              ثبت موقعیت
+                            </Button>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              size="icon" 
+                              variant="ghost"
+                              onClick={() => handleEditCustomer(customer)}
                               data-testid={`edit-customer-${index}`}
                             >
-                              ✏️
+                              <Edit className="w-4 h-4" />
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              data-testid={`delete-customer-${index}`}
-                            >
-                              🗑️
-                            </Button>
+                            {hasLocation && (
+                              <Button 
+                                size="icon" 
+                                variant="ghost"
+                                onClick={() => openLocationPicker(customer)}
+                                data-testid={`edit-location-${index}`}
+                              >
+                                <MapPin className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -318,7 +400,18 @@ export function CustomerManagement() {
 
       <CustomerFormModal 
         open={showAddModal} 
-        onOpenChange={setShowAddModal}
+        onOpenChange={handleCloseModal}
+        customer={editingCustomer}
+      />
+
+      <LocationPickerModal
+        open={showLocationPicker}
+        onOpenChange={setShowLocationPicker}
+        initialLocation={locationCustomer?.latitude && locationCustomer?.longitude 
+          ? { lat: parseFloat(locationCustomer.latitude), lng: parseFloat(locationCustomer.longitude) }
+          : null}
+        onLocationSelected={handleLocationSelect}
+        title={`تعیین موقعیت: ${locationCustomer?.shopName || ''}`}
       />
     </div>
   );
