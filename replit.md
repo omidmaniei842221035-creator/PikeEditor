@@ -57,6 +57,10 @@ Preferred communication style: Simple, everyday language.
   - Full database backup/restore system (JSON export/import)
 - **Desktop Version**: Electron-based desktop application with SQLite database for standalone PC installation.
 - **Map Location Picker**: Reusable LocationPickerModal component for selecting geographic locations on a Leaflet map. Available in both web and desktop versions for customers and banking units.
+- **Banking Analytics Integration**: The intelligent map monitoring panel now uses all 39 Excel banking columns for advanced analytics:
+  - **POS Efficiency Status (وضعیت کارآمدی پوز)**: Real-time breakdown by کارآمد/زیان‌ده/بازاریابی/جمع‌آوری شده with efficiency rate calculation.
+  - **Terminal Financial Summary (خلاصه مالی ترمینال‌ها)**: Aggregated metrics including total transactions, total revenue, net profit/loss, and distance to efficiency.
+  - **Monthly Profitability Trend (روند سوددهی ماهانه)**: Time-series visualization based on installDate/reportDate showing monthly profit and loss trends per terminal.
 
 ## External Dependencies
 
