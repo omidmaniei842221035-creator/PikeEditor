@@ -55,7 +55,12 @@ Preferred communication style: Simple, everyday language.
   - Excel import/export utilities in `client/src/lib/excel-utils.ts`
   - Comprehensive CRM, employee management (role-based access), branch and territory management
   - Full database backup/restore system (JSON export/import)
-- **Desktop Version**: Electron-based desktop application with SQLite database for standalone PC installation.
+- **Desktop Version**: Electron-based desktop application with SQLite database for standalone PC installation. Includes automatic database version management for seamless upgrades.
+- **Business Type Icons (Enhanced)**: Intelligent icon mapping system for 200+ Persian business types from Excel column AM ("عنوان صنف"):
+  - Exact match for common types (سوپرمارکت, رستوران, داروخانه, etc.)
+  - Fuzzy/partial matching for long formal names (e.g., "سوپرمارکتها و فروشگاههای محصولات غذایی" → 🛒)
+  - Keyword-based fallback matching (سوپر → 🛒, غذا → 🍽️, دارو → 💊, etc.)
+  - Default icon 🏪 for unrecognized types
 - **Map Location Picker**: Reusable LocationPickerModal component for selecting geographic locations on a Leaflet map. Available in both web and desktop versions for customers and banking units.
 - **Banking Analytics Integration**: The intelligent map monitoring panel now uses all 39 Excel banking columns for advanced analytics:
   - **POS Efficiency Status (وضعیت کارآمدی پوز)**: Real-time breakdown by کارآمد/زیان‌ده/بازاریابی/جمع‌آوری شده with efficiency rate calculation.

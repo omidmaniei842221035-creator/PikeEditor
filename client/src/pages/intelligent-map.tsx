@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { getBusinessIcon } from "@/lib/map-utils";
 import { 
   ArrowRight,
   Brain,
@@ -320,23 +321,46 @@ export default function IntelligentMap() {
         if (showClusters && assignmentMap.has(customer.id)) {
           const clusterId = assignmentMap.get(customer.id)!;
           color = CLUSTER_COLORS[clusterId % CLUSTER_COLORS.length];
-          radius = 10;
         } else {
-          if (customer.status === 'active') color = '#10b981';
-          else if (customer.status === 'inactive') color = '#ef4444';
+          if (customer.status === 'active') color = '#22c55e';
+          else if (customer.status === 'inactive' || customer.status === 'loss') color = '#ef4444';
           else if (customer.status === 'marketing') color = '#f59e0b';
+          else if (customer.status === 'collected') color = '#374151';
+          else color = '#9ca3af';
         }
 
-        const marker = L.circleMarker(
+        const businessIcon = getBusinessIcon(customer.businessType || 'سایر');
+        
+        const icon = L.divIcon({
+          className: 'customer-business-marker',
+          html: `
+            <div style="
+              background: ${color};
+              width: 32px;
+              height: 32px;
+              border-radius: 50% 50% 50% 0;
+              transform: rotate(-45deg);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border: 2px solid white;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            ">
+              <span style="
+                transform: rotate(45deg);
+                font-size: 14px;
+                line-height: 1;
+              ">${businessIcon}</span>
+            </div>
+          `,
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
+          popupAnchor: [0, -32],
+        });
+
+        const marker = L.marker(
           [parseFloat(customer.latitude), parseFloat(customer.longitude)],
-          {
-            radius,
-            fillColor: color,
-            color: '#fff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.85
-          }
+          { icon }
         ).addTo(map);
 
         marker.on('click', () => handleEntityClick('customer', customer));
