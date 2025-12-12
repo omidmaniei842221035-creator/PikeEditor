@@ -7,8 +7,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MapPin, Target, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { MapPin, Target } from "lucide-react";
+import { getBusinessIcon, getCustomerMarkerColor } from "@/lib/map-utils";
 
 interface LocationPickerModalProps {
   open: boolean;
@@ -16,6 +16,8 @@ interface LocationPickerModalProps {
   onLocationSelected: (lat: number, lng: number) => void;
   initialLocation?: { lat: number; lng: number } | null;
   title?: string;
+  businessType?: string;
+  customerStatus?: string;
 }
 
 export function LocationPickerModal({
@@ -24,6 +26,8 @@ export function LocationPickerModal({
   onLocationSelected,
   initialLocation,
   title = "انتخاب موقعیت روی نقشه",
+  businessType,
+  customerStatus,
 }: LocationPickerModalProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -32,7 +36,45 @@ export function LocationPickerModal({
     initialLocation || null
   );
   const [mapReady, setMapReady] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+
+  const createMarkerIcon = (L: any) => {
+    const icon = businessType ? getBusinessIcon(businessType) : null;
+    const color = customerStatus ? getCustomerMarkerColor(customerStatus) : '#3b82f6';
+    
+    if (icon && businessType) {
+      return L.divIcon({
+        className: "custom-business-marker",
+        html: `<div style="
+          background: ${color};
+          width: 40px;
+          height: 40px;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 3px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        ">
+          <span style="
+            transform: rotate(45deg);
+            font-size: 18px;
+          ">${icon}</span>
+        </div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+      });
+    } else {
+      return L.divIcon({
+        className: "custom-location-marker",
+        html: `<div style="background-color: ${color}; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); font-size: 20px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+      });
+    }
+  };
 
   useEffect(() => {
     if (!open) {
@@ -86,14 +128,7 @@ export function LocationPickerModal({
         if (initialLocation) {
           const marker = L.marker([initialLocation.lat, initialLocation.lng], {
             draggable: true,
-            icon: L.divIcon({
-              className: "custom-location-marker",
-              html: `<div style="background-color: #3b82f6; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); font-size: 20px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              </div>`,
-              iconSize: [40, 40],
-              iconAnchor: [20, 40],
-            }),
+            icon: createMarkerIcon(L),
           }).addTo(map);
 
           marker.on("dragend", (e: any) => {
@@ -113,14 +148,7 @@ export function LocationPickerModal({
           } else {
             const marker = L.marker([lat, lng], {
               draggable: true,
-              icon: L.divIcon({
-                className: "custom-location-marker",
-                html: `<div style="background-color: #3b82f6; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); font-size: 20px;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                </div>`,
-                iconSize: [40, 40],
-                iconAnchor: [20, 40],
-              }),
+              icon: createMarkerIcon(L),
             }).addTo(map);
 
             marker.on("dragend", (e: any) => {
@@ -158,7 +186,7 @@ export function LocationPickerModal({
         markerRef.current = null;
       }
     };
-  }, [open, initialLocation]);
+  }, [open, initialLocation, businessType, customerStatus]);
 
   const handleCenterOnTabriz = () => {
     if (mapRef.current) {
@@ -183,13 +211,17 @@ export function LocationPickerModal({
       <DialogContent className="max-w-4xl max-h-[90vh]" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-primary" />
+            {businessType ? (
+              <span className="text-xl">{getBusinessIcon(businessType)}</span>
+            ) : (
+              <MapPin className="w-5 h-5 text-primary" />
+            )}
             {title}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               type="button"
               variant="outline"
@@ -200,6 +232,12 @@ export function LocationPickerModal({
               <Target className="w-4 h-4 ml-1" />
               تبریز
             </Button>
+            {businessType && (
+              <div className="bg-muted px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                <span>{getBusinessIcon(businessType)}</span>
+                <span>{businessType}</span>
+              </div>
+            )}
             <div className="text-sm text-muted-foreground">
               برای انتخاب موقعیت روی نقشه کلیک کنید یا نشانگر را بکشید
             </div>

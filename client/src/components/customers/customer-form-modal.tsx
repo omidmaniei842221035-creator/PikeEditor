@@ -586,6 +586,8 @@ export function CustomerFormModal({
         }}
         initialLocation={selectedLocation}
         title="انتخاب موقعیت مشتری روی نقشه"
+        businessType={form.watch("businessType")}
+        customerStatus={form.watch("status")}
       />
     </Dialog>
   );

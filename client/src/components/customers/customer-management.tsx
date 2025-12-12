@@ -412,6 +412,8 @@ export function CustomerManagement() {
           : null}
         onLocationSelected={handleLocationSelect}
         title={`تعیین موقعیت: ${locationCustomer?.shopName || ''}`}
+        businessType={locationCustomer?.businessType}
+        customerStatus={locationCustomer?.status}
       />
     </div>
   );
