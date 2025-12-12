@@ -52,7 +52,47 @@ function startServer() {
   }
 
   const dbPath = path.join(app.getPath('userData'), 'pos-system.db');
+  const dbVersionPath = path.join(app.getPath('userData'), '.db-version');
   const fs = require('fs');
+  
+  // Database version - increment this when schema changes require fresh database
+  const CURRENT_DB_VERSION = '2.0.0';
+  
+  // Check if database needs reset (version mismatch or fresh install marker)
+  let needsReset = false;
+  try {
+    if (fs.existsSync(dbVersionPath)) {
+      const savedVersion = fs.readFileSync(dbVersionPath, 'utf8').trim();
+      if (savedVersion !== CURRENT_DB_VERSION) {
+        console.log(`📦 Database version mismatch: ${savedVersion} -> ${CURRENT_DB_VERSION}`);
+        needsReset = true;
+      }
+    } else if (fs.existsSync(dbPath)) {
+      // Old database without version file - needs reset
+      console.log('📦 Old database detected without version marker');
+      needsReset = true;
+    }
+  } catch (e) {
+    console.log('📦 Could not read database version');
+  }
+  
+  // Reset database if needed
+  if (needsReset && fs.existsSync(dbPath)) {
+    console.log('🔄 Resetting old database to apply fixes...');
+    try {
+      fs.unlinkSync(dbPath);
+      console.log('✅ Old database removed');
+    } catch (e) {
+      console.error('⚠️ Could not remove old database:', e);
+    }
+  }
+  
+  // Save current database version
+  try {
+    fs.writeFileSync(dbVersionPath, CURRENT_DB_VERSION);
+  } catch (e) {
+    console.error('⚠️ Could not save database version:', e);
+  }
   
   // Server is in resources/server/index.cjs (extraResources copies dist-server/ to server/)
   const serverPath = path.join(process.resourcesPath, 'server', 'index.cjs');
