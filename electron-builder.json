@@ -1,0 +1,35 @@
+{
+  "productName": "POS Monitoring System",
+  "appId": "ir.posmonitoring.app",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist-electron/**/*",
+    "dist-server/**/*",
+    "dist-public/**/*",
+    "node_modules/better-sqlite3/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "dist-public",
+      "to": "public"
+    },
+    {
+      "from": "dist-server",
+      "to": "server"
+    }
+  ],
+  "win": {
+    "target": "portable",
+    "artifactName": "${productName}-${version}.${ext}"
+  },
+  "portable": {
+    "artifactName": "${productName}-Portable-${version}.${ext}"
+  },
+  "electronDownload": {
+    "mirror": "https://npmmirror.com/mirrors/electron/"
+  },
+  "buildDependenciesFromSource": false,
+  "npmRebuild": false
+}

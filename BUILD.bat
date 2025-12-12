@@ -66,8 +66,8 @@ echo This takes about 5 minutes...
 echo.
 
 call npx tsc -p electron/tsconfig.json
-call node scripts/rename-to-cjs.cjs
-call npx electron-builder --win portable
+if exist scripts\rename-to-cjs.cjs call node scripts\rename-to-cjs.cjs
+call npx electron-builder --win portable --config electron-builder.json
 
 if %errorlevel% neq 0 (
     echo.
