@@ -23,8 +23,7 @@
   "win": {
     "target": "portable",
     "artifactName": "${productName}-${version}.${ext}",
-    "signAndEditExecutable": false,
-    "sign": null
+    "signAndEditExecutable": false
   },
   "portable": {
     "artifactName": "${productName}-Portable-${version}.${ext}"
