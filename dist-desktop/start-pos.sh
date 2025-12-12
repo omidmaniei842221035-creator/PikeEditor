@@ -15,12 +15,25 @@ fi
 # Check if dependencies are installed
 if [ ! -d "node_modules/better-sqlite3" ]; then
     echo "📦 Installing dependencies..."
+    echo ""
     npm install
     if [ $? -ne 0 ]; then
         echo ""
         echo "❌ Installation failed!"
         exit 1
     fi
+    echo ""
+    echo "✅ Dependencies installed"
+    echo ""
+fi
+
+# Check for first run - remove old db if .fresh_install marker exists
+if [ -f ".fresh_install" ]; then
+    if [ -f "pos-system.db" ]; then
+        echo "🔄 Resetting old database..."
+        rm -f pos-system.db
+    fi
+    rm -f .fresh_install
 fi
 
 echo ""

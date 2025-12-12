@@ -22,6 +22,7 @@ REM Check if dependencies are installed
 if not exist node_modules\better-sqlite3 (
     echo 📦 نصب وابستگی‌ها...
     echo 📦 Installing dependencies...
+    echo.
     call npm install
     if %ERRORLEVEL% NEQ 0 (
         echo.
@@ -30,6 +31,20 @@ if not exist node_modules\better-sqlite3 (
         pause
         exit /b 1
     )
+    echo.
+    echo ✅ وابستگی‌ها نصب شد
+    echo ✅ Dependencies installed
+    echo.
+)
+
+REM Check for first run - remove old db if .fresh_install marker exists
+if exist .fresh_install (
+    if exist pos-system.db (
+        echo 🔄 بازنشانی دیتابیس قدیمی...
+        echo 🔄 Resetting old database...
+        del /f pos-system.db >nul 2>nul
+    )
+    del /f .fresh_install >nul 2>nul
 )
 
 echo.

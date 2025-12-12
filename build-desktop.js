@@ -106,6 +106,7 @@ REM Check if dependencies are installed
 if not exist node_modules\\better-sqlite3 (
     echo 📦 نصب وابستگی‌ها...
     echo 📦 Installing dependencies...
+    echo.
     call npm install
     if %ERRORLEVEL% NEQ 0 (
         echo.
@@ -114,6 +115,20 @@ if not exist node_modules\\better-sqlite3 (
         pause
         exit /b 1
     )
+    echo.
+    echo ✅ وابستگی‌ها نصب شد
+    echo ✅ Dependencies installed
+    echo.
+)
+
+REM Check for first run - remove old db if .fresh_install marker exists
+if exist .fresh_install (
+    if exist pos-system.db (
+        echo 🔄 بازنشانی دیتابیس قدیمی...
+        echo 🔄 Resetting old database...
+        del /f pos-system.db >nul 2>nul
+    )
+    del /f .fresh_install >nul 2>nul
 )
 
 echo.
@@ -156,12 +171,25 @@ fi
 # Check if dependencies are installed
 if [ ! -d "node_modules/better-sqlite3" ]; then
     echo "📦 Installing dependencies..."
+    echo ""
     npm install
     if [ $? -ne 0 ]; then
         echo ""
         echo "❌ Installation failed!"
         exit 1
     fi
+    echo ""
+    echo "✅ Dependencies installed"
+    echo ""
+fi
+
+# Check for first run - remove old db if .fresh_install marker exists
+if [ -f ".fresh_install" ]; then
+    if [ -f "pos-system.db" ]; then
+        echo "🔄 Resetting old database..."
+        rm -f pos-system.db
+    fi
+    rm -f .fresh_install
 fi
 
 echo ""
@@ -270,10 +298,11 @@ try {
     await fs.chmod('dist-desktop/reset-database.sh', 0o755);
   } catch (e) {}
   
-  // Remove old database file from dist-desktop to ensure fresh start
+  // Remove old database file and create fresh install marker
   try {
     await fs.rm('dist-desktop/pos-system.db', { force: true });
-    console.log('   📋 Old database file removed (if existed)');
+    await fs.writeFile('dist-desktop/.fresh_install', 'This marker triggers automatic database reset on first run');
+    console.log('   📋 Fresh install marker created');
   } catch (e) {}
   
   const readmeContent = `# سامانه مانیتورینگ POS - نسخه دسکتاپ
