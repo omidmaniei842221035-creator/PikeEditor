@@ -189,12 +189,91 @@ fi
 node server.cjs
 `;
 
+// Reset database script for Windows
+const resetBatchContent = `@echo off
+chcp 65001 >nul
+echo ========================================
+echo   بازنشانی دیتابیس - Reset Database
+echo ========================================
+echo.
+echo ⚠️  این عملیات تمام داده‌های موجود را حذف می‌کند!
+echo ⚠️  This will DELETE all existing data!
+echo.
+set /p confirm="آیا مطمئن هستید؟ (Y/N) Are you sure? "
+if /i not "%confirm%"=="Y" (
+    echo عملیات لغو شد / Operation cancelled
+    pause
+    exit /b 0
+)
+
+echo.
+echo 🗑️  در حال حذف دیتابیس قدیمی...
+echo 🗑️  Deleting old database...
+
+if exist pos-system.db (
+    del /f pos-system.db
+    echo ✅ دیتابیس حذف شد / Database deleted
+) else (
+    echo ℹ️  دیتابیسی یافت نشد / No database found
+)
+
+echo.
+echo ✅ بازنشانی کامل شد!
+echo ✅ Reset complete!
+echo.
+echo 📝 اکنون برنامه را اجرا کنید و داده‌ها را مجدداً وارد کنید
+echo 📝 Now run the application and re-import your data
+echo.
+pause
+`;
+
+// Reset database script for Linux/Mac
+const resetShellContent = `#!/bin/bash
+echo "========================================"
+echo "  بازنشانی دیتابیس - Reset Database"
+echo "========================================"
+echo ""
+echo "⚠️  این عملیات تمام داده‌های موجود را حذف می‌کند!"
+echo "⚠️  This will DELETE all existing data!"
+echo ""
+read -p "آیا مطمئن هستید؟ (y/n) Are you sure? " confirm
+if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    echo "عملیات لغو شد / Operation cancelled"
+    exit 0
+fi
+
+echo ""
+echo "🗑️  Deleting old database..."
+
+if [ -f "pos-system.db" ]; then
+    rm -f pos-system.db
+    echo "✅ Database deleted"
+else
+    echo "ℹ️  No database found"
+fi
+
+echo ""
+echo "✅ Reset complete!"
+echo ""
+echo "📝 Now run the application and re-import your data"
+echo ""
+`;
+
 try {
   await fs.writeFile('dist-desktop/Start-POS.bat', batchContent);
   await fs.writeFile('dist-desktop/start-pos.sh', shellContent);
+  await fs.writeFile('dist-desktop/Reset-Database.bat', resetBatchContent);
+  await fs.writeFile('dist-desktop/reset-database.sh', resetShellContent);
   
   try {
     await fs.chmod('dist-desktop/start-pos.sh', 0o755);
+    await fs.chmod('dist-desktop/reset-database.sh', 0o755);
+  } catch (e) {}
+  
+  // Remove old database file from dist-desktop to ensure fresh start
+  try {
+    await fs.rm('dist-desktop/pos-system.db', { force: true });
+    console.log('   📋 Old database file removed (if existed)');
   } catch (e) {}
   
   const readmeContent = `# سامانه مانیتورینگ POS - نسخه دسکتاپ
@@ -225,12 +304,20 @@ chmod +x start-pos.sh
 - ✅ دیتابیس محلی SQLite (بدون نیاز به اینترنت)
 - ✅ مدیریت مشتریان با انتخاب موقعیت روی نقشه
 - ✅ مدیریت واحدهای بانکی با انتخاب موقعیت روی نقشه
-- ✅ ورود گروهی از اکسل
+- ✅ ورود گروهی از اکسل با پشتیبانی ۲۰۰+ نوع کسب‌وکار
+- ✅ آیکون‌های متنوع بر اساس نوع صنف (ستون AM اکسل)
 - ✅ تحلیل هوشمند و نقشه مانیتورینگ
 - ✅ پشتیبان‌گیری و بازیابی دیتابیس
 
 ## دیتابیس / Database
 دیتابیس SQLite در کنار برنامه ذخیره می‌شود: \`pos-system.db\`
+
+## بازنشانی دیتابیس / Reset Database
+اگر نیاز به پاک کردن داده‌ها و شروع از نو دارید:
+- Windows: فایل \`Reset-Database.bat\` را اجرا کنید
+- Linux/Mac: \`./reset-database.sh\` را اجرا کنید
+
+⚠️ توجه: این عملیات تمام داده‌های موجود را حذف می‌کند!
 
 ## توقف سرور / Stop Server
 در ترمینال دکمه \`Ctrl + C\` را بزنید.
