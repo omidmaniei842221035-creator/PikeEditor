@@ -714,13 +714,9 @@ export function validateExcelData(data: ExcelCustomerData[]): {
       errors.push('وضعیت معتبر نیست (active, inactive, marketing, loss, collected)');
     }
 
-    // Business type validation (optional but helpful)
-    const validBusinessTypes = [
-      'سوپرمارکت', 'داروخانه', 'رستوران', 'کافه', 'فروشگاه', 'پوشاک', 
-      'موبایل‌فروشی', 'کتاب‌فروشی', 'آرایشگاه', 'نانوایی', 'سایر'
-    ];
-    if (row.businessType && !validBusinessTypes.includes(row.businessType)) {
-      // This is a warning, not an error
+    // Business type - preserve the value from Excel "عنوان صنف" column (AM)
+    // No validation needed - map-utils.ts will use the icon if it exists, otherwise default to 🏪
+    if (!row.businessType || row.businessType.trim() === '') {
       row.businessType = 'سایر';
     }
 
