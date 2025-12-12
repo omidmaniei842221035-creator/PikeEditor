@@ -22,7 +22,9 @@
   ],
   "win": {
     "target": "portable",
-    "artifactName": "${productName}-${version}.${ext}"
+    "artifactName": "${productName}-${version}.${ext}",
+    "signAndEditExecutable": false,
+    "sign": null
   },
   "portable": {
     "artifactName": "${productName}-Portable-${version}.${ext}"
@@ -31,5 +33,6 @@
     "mirror": "https://npmmirror.com/mirrors/electron/"
   },
   "buildDependenciesFromSource": false,
-  "npmRebuild": false
+  "npmRebuild": false,
+  "forceCodeSigning": false
 }
