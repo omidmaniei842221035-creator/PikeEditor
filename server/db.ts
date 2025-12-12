@@ -17,6 +17,7 @@ import {
   insertTerritorySchema as sqliteInsertTerritorySchema,
   insertTransactionSchema as sqliteInsertTransactionSchema,
 } from "@shared/schema.sqlite";
+import { updateCustomerSchema } from "@shared/schema";
 
 const isElectronMode = !!process.env.DATABASE_PATH;
 
@@ -393,6 +394,7 @@ export {
   schema,
   dbReady,
   insertCustomerSchema,
+  updateCustomerSchema,
   insertEmployeeSchema,
   insertBranchSchema,
   insertAlertSchema,

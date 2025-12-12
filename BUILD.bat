@@ -13,8 +13,6 @@ set CSC_LINK=
 set WIN_CSC_LINK=
 set CSC_KEY_PASSWORD=
 set WIN_CSC_KEY_PASSWORD=
-
-REM Skip winCodeSign download completely
 set ELECTRON_BUILDER_SKIP_SIGNTOOL_DOWNLOAD=true
 
 REM NPM config
@@ -29,8 +27,12 @@ set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
 set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
 
 REM Clear problematic cache
-echo [2/6] Clearing winCodeSign cache...
+echo [2/6] Clearing caches...
 rmdir /s /q "%LOCALAPPDATA%\electron-builder\Cache\winCodeSign" 2>nul
+rmdir /s /q "dist-public" 2>nul
+rmdir /s /q "dist-server" 2>nul
+rmdir /s /q "dist-electron" 2>nul
+rmdir /s /q "release" 2>nul
 echo Done.
 echo.
 
@@ -64,16 +66,22 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
+
+REM Build Electron main with esbuild (not tsc)
+if not exist "dist-electron" mkdir dist-electron
+call npx esbuild electron/main.js --platform=node --bundle --format=cjs --outfile=dist-electron/main.cjs --external:electron --external:better-sqlite3
+if %errorlevel% neq 0 (
+    echo ERROR: Electron main build failed
+    pause
+    exit /b 1
+)
 echo Done.
 echo.
 
-REM Build Electron main
+REM Build Electron portable
 echo [6/6] Building portable exe...
 echo This may take 3-5 minutes...
 echo.
-
-call npx tsc -p electron/tsconfig.json
-if exist scripts\rename-to-cjs.cjs call node scripts\rename-to-cjs.cjs
 
 REM Build with no code signing
 call npx electron-builder --win portable --config electron-builder.json -p never
@@ -83,8 +91,9 @@ if %errorlevel% neq 0 (
     echo ========================================
     echo   BUILD FAILED
     echo   
-    echo   Try running as Administrator if you
-    echo   see symbolic link errors.
+    echo   Solutions:
+    echo   1. Run CMD as Administrator
+    echo   2. Or use BUILD_SIMPLE.bat instead
     echo ========================================
     pause
     exit /b 1

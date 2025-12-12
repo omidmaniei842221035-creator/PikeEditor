@@ -201,6 +201,54 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   }),
 });
 
+export const updateCustomerSchema = z.object({
+  shopName: z.string().min(2, "نام فروشگاه باید حداقل ۲ کاراکتر باشد").optional(),
+  ownerName: z.string().min(2, "نام مالک باید حداقل ۲ کاراکتر باشد").optional(),
+  phone: z.string().optional().transform((val) => {
+    if (!val || val.trim() === '') return undefined;
+    return val;
+  }).refine((val) => {
+    if (!val || val === '' || val === undefined) return true;
+    return /^09\d{9}$/.test(val);
+  }, { message: "شماره تلفن باید ۱۱ رقم و با 09 شروع شود" }),
+  businessType: z.string().optional().transform((val) => {
+    if (!val || val.trim() === '') return undefined;
+    return val;
+  }),
+  address: z.string().optional(),
+  status: z.string().optional(),
+  nationalId: z.string().optional().nullable(),
+  monthlyProfit: z.union([z.number(), z.string()]).optional().transform((val) => {
+    if (val === undefined || val === null) return undefined;
+    const num = typeof val === 'string' ? parseInt(val, 10) : val;
+    return isNaN(num) ? undefined : Math.max(0, num);
+  }),
+  latitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
+    if (!val) return undefined;
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num) || num < -90 || num > 90) return undefined;
+    return String(num);
+  }),
+  longitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
+    if (!val) return undefined;
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num) || num < -180 || num > 180) return undefined;
+    return String(num);
+  }),
+  branchId: z.string().optional().nullable(),
+  bankingUnitId: z.string().optional().nullable(),
+  supportEmployeeId: z.string().optional().nullable(),
+  installDate: z.union([z.date(), z.string(), z.null()]).optional().transform((val) => {
+    if (!val) return undefined;
+    if (val instanceof Date) return val;
+    if (typeof val === 'string') {
+      const parsed = new Date(val);
+      return isNaN(parsed.getTime()) ? undefined : parsed;
+    }
+    return undefined;
+  }),
+});
+
 export const insertPosDeviceSchema = createInsertSchema(posDevices).omit({
   id: true,
   createdAt: true,

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema, insertTerritorySchema, insertTransactionSchema } from "./db";
+import { insertCustomerSchema, updateCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema, insertTerritorySchema, insertTransactionSchema } from "./db";
 import { z } from "zod";
 import { grafanaRouter } from "./routes/grafana";
 
@@ -370,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/customers/:id", async (req, res) => {
     try {
-      const updateData = insertCustomerSchema.partial().parse(req.body);
+      const updateData = updateCustomerSchema.parse(req.body);
       
       const cleanedData: any = {};
       if (updateData.shopName !== undefined) cleanedData.shopName = updateData.shopName;
