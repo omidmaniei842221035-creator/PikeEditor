@@ -1,37 +1,61 @@
 {
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "productName": "POS Monitoring System",
   "appId": "ir.posmonitoring.app",
   "directories": {
-    "output": "release"
+    "output": "release",
+    "buildResources": "build"
   },
   "files": [
-    "dist-electron/**/*",
-    "dist-server/**/*",
-    "dist-public/**/*",
-    "node_modules/better-sqlite3/**/*"
+    "dist-electron/**/*"
   ],
   "extraResources": [
     {
       "from": "dist-public",
-      "to": "public"
+      "to": "public",
+      "filter": ["**/*"]
     },
     {
       "from": "dist-server",
-      "to": "server"
+      "to": "server",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "node_modules/better-sqlite3",
+      "to": "node_modules/better-sqlite3",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "node_modules/bindings",
+      "to": "node_modules/bindings",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "node_modules/file-uri-to-path",
+      "to": "node_modules/file-uri-to-path",
+      "filter": ["**/*"]
     }
   ],
   "win": {
-    "target": "portable",
-    "artifactName": "${productName}-${version}.${ext}",
+    "target": [
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "artifactName": "${productName}-${version}-Portable.${ext}",
     "signAndEditExecutable": false
   },
   "portable": {
-    "artifactName": "${productName}-Portable-${version}.${ext}"
+    "artifactName": "${productName}-${version}-Portable.${ext}"
   },
   "electronDownload": {
     "mirror": "https://npmmirror.com/mirrors/electron/"
   },
-  "buildDependenciesFromSource": false,
+  "compression": "store",
+  "asar": false,
   "npmRebuild": false,
+  "nodeGypRebuild": false,
+  "buildDependenciesFromSource": false,
   "forceCodeSigning": false
 }
