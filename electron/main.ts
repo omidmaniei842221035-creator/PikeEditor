@@ -142,7 +142,8 @@ function startServer() {
       PORT: SERVER_PORT.toString(),
       DATABASE_PATH: dbPath,
       ELECTRON_RUN_AS_NODE: '1',
-      NODE_PATH: newNodePath
+      NODE_PATH: newNodePath,
+      RESOURCES_PATH: process.resourcesPath
     },
     cwd: process.resourcesPath,
     stdio: ['ignore', 'pipe', 'pipe']

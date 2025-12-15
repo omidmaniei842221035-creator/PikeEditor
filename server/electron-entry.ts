@@ -38,16 +38,22 @@ app.use((req, res, next) => {
 async function startServer() {
   const server = await registerRoutes(app);
   
-  const resourcesPath = (process as any).resourcesPath || '';
+  const resourcesPath = process.env.RESOURCES_PATH || '';
+  console.log('[Electron Server] RESOURCES_PATH:', resourcesPath);
+  console.log('[Electron Server] __dirname:', __dirname);
+  console.log('[Electron Server] cwd:', process.cwd());
+  
   const possiblePaths = [
     resourcesPath ? path.join(resourcesPath, 'public') : '',
+    path.join(process.cwd(), 'public'),
     path.join(process.cwd(), 'resources', 'public'),
-    path.join(process.cwd(), '..', 'public'),
+    path.join(__dirname, 'public'),
     path.join(__dirname, '..', 'public'),
     path.join(__dirname, '..', '..', 'public'),
-    path.join(__dirname, '..', '..', 'dist-public'),
     'dist-public',
   ].filter(p => p);
+  
+  console.log('[Electron Server] Checking paths:', possiblePaths);
 
   let staticPath = '';
   for (const p of possiblePaths) {
