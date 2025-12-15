@@ -70,7 +70,7 @@ echo Done.
 echo.
 
 echo [4/7] Building server...
-call npx esbuild server/electron-entry.ts --platform=node --packages=bundle --bundle --format=cjs --outfile=dist-server/index.cjs --external:better-sqlite3 --external:@neondatabase/serverless --external:ws --external:lightningcss
+call npx esbuild server/electron-entry.ts --platform=node --packages=bundle --bundle --format=cjs --outfile=dist-server/index.cjs --external:better-sqlite3 --external:@neondatabase/serverless --external:lightningcss
 if %errorlevel% neq 0 (
     echo ERROR: Server build failed
     pause
