@@ -66,6 +66,14 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
+if not exist "dist-public\index.html" (
+    echo ERROR: dist-public\index.html not found!
+    echo Vite build may have failed silently.
+    pause
+    exit /b 1
+)
+echo Verifying: dist-public\index.html exists
+dir dist-public\index.html
 echo Done.
 echo.
 
@@ -112,6 +120,18 @@ echo Done.
 echo.
 
 echo [8/8] Packaging EXE (3-5 minutes)...
+echo.
+echo Verifying files before packaging:
+echo   - dist-public exists: 
+if exist "dist-public" (echo     YES) else (echo     NO - ERROR!)
+echo   - dist-public\index.html exists:
+if exist "dist-public\index.html" (echo     YES) else (echo     NO - ERROR!)
+echo   - dist-server exists:
+if exist "dist-server" (echo     YES) else (echo     NO - ERROR!)
+echo   - dist-server\index.cjs exists:
+if exist "dist-server\index.cjs" (echo     YES) else (echo     NO - ERROR!)
+echo.
+
 call npx electron-builder --win --config electron-builder.json -p never
 
 if %errorlevel% neq 0 (

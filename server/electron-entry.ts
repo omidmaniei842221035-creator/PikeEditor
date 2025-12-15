@@ -100,6 +100,33 @@ async function startServer() {
   app.get("/health", (_req, res) => {
     res.json({ status: "ok", timestamp: Date.now() });
   });
+  
+  app.get("/debug-paths", (_req, res) => {
+    const debugInfo: any = {
+      resourcesPath,
+      staticPath,
+      __dirname,
+      cwd: process.cwd(),
+      resourcesContents: [],
+      publicContents: [],
+    };
+    
+    try {
+      if (resourcesPath && fs.existsSync(resourcesPath)) {
+        debugInfo.resourcesContents = fs.readdirSync(resourcesPath);
+        const publicDir = path.join(resourcesPath, 'public');
+        if (fs.existsSync(publicDir)) {
+          debugInfo.publicContents = fs.readdirSync(publicDir);
+        } else {
+          debugInfo.publicError = 'public folder does not exist';
+        }
+      }
+    } catch (e: any) {
+      debugInfo.error = e.message;
+    }
+    
+    res.json(debugInfo);
+  });
 
   app.get("*", (_req, res) => {
     const indexPath = path.join(staticPath, "index.html");
