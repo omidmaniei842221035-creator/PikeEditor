@@ -1,0 +1,45 @@
+[2025-12-15T16:59:55.114Z] [LOG] 🎯 Electron app is ready
+[2025-12-15T16:59:55.114Z] [LOG] 📌 isDev: false
+[2025-12-15T16:59:55.114Z] [LOG] 📌 __dirname: C:\Users\PC\AppData\Local\Temp\36tFK2ecXb35BLZNyM54bNyeVhj\resources\app\dist-electron
+[2025-12-15T16:59:55.114Z] [LOG] 📌 process.cwd(): C:\Users\PC\AppData\Local\Temp\36tFK2ecXb35BLZNyM54bNyeVhj
+[2025-12-15T16:59:55.114Z] [LOG] 📝 Log file: C:\Users\PC\AppData\Roaming\pos-monitoring-system\logs\electron-2025-12-15T16-59-55-112Z.log
+[2025-12-15T16:59:55.115Z] [LOG] 🔍 Looking for server at: C:\Users\PC\AppData\Local\Temp\36tFK2ecXb35BLZNyM54bNyeVhj\resources\server\index.cjs
+[2025-12-15T16:59:55.115Z] [LOG]    Exists: true
+[2025-12-15T16:59:55.115Z] [LOG] 🚀 Starting POS Monitoring Server...
+[2025-12-15T16:59:55.115Z] [LOG] 📂 App path: C:\Users\PC\AppData\Local\Temp\36tFK2ecXb35BLZNyM54bNyeVhj\resources\app
+[2025-12-15T16:59:55.115Z] [LOG] 📂 Resources path: C:\Users\PC\AppData\Local\Temp\36tFK2ecXb35BLZNyM54bNyeVhj\resources
+[2025-12-15T16:59:55.115Z] [LOG] 📂 User data path: C:\Users\PC\AppData\Roaming\pos-monitoring-system
+[2025-12-15T16:59:55.115Z] [LOG] 📂 SQLite database: C:\Users\PC\AppData\Roaming\pos-monitoring-system\pos-system.db
+[2025-12-15T16:59:55.115Z] [LOG] 📂 Server path: C:\Users\PC\AppData\Local\Temp\36tFK2ecXb35BLZNyM54bNyeVhj\resources\server\index.cjs
+[2025-12-15T16:59:55.115Z] [LOG] 📦 NODE_PATH: C:\Users\PC\AppData\Local\Temp\36tFK2ecXb35BLZNyM54bNyeVhj\resources\node_modules
+[2025-12-15T16:59:55.122Z] [LOG] ✅ Server process spawned
+[2025-12-15T16:59:55.122Z] [LOG] ⏳ Waiting for server to be ready (max 60s)...
+[2025-12-15T16:59:55.245Z] [LOG] [SERVER] Using SQLite database at: C:\Users\PC\AppData\Roaming\pos-monitoring-system\pos-system.db
+[2025-12-15T16:59:55.260Z] [LOG] [SERVER] SQLite database initialized
+[2025-12-15T16:59:55.264Z] [LOG] [SERVER] 🔄 Starting real-time POS device monitoring simulation...
+[2025-12-15T16:59:55.265Z] [LOG] [SERVER] ✅ WebSocket server and device simulation initialized
+[2025-12-15T16:59:55.265Z] [LOG] [SERVER] [Electron Server] RESOURCES_PATH: C:\Users\PC\AppData\Local\Temp\36tFK2ecXb35BLZNyM54bNyeVhj\resources
+[Electron Server] __dirname: C:\Users\PC\AppData\Local\Temp\36tFK2ecXb35BLZNyM54bNyeVhj\resources\server
+[2025-12-15T16:59:55.265Z] [LOG] [SERVER] [Electron Server] cwd: C:\Users\PC\AppData\Local\Temp\36tFK2ecXb35BLZNyM54bNyeVhj\resources
+[2025-12-15T16:59:55.266Z] [LOG] [SERVER] [Electron Server] Checking paths: [
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\resources\\public',
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\resources\\public',
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\resources\\resources\\public',
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\resources\\server\\public',
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\resources\\public',
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\public',
+  'dist-public'
+]
+[2025-12-15T16:59:55.266Z] [ERROR] [SERVER ERROR] Could not find static files! Checked: [
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\resources\\public',
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\resources\\public',
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\resources\\resources\\public',
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\resources\\server\\public',
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\resources\\public',
+  'C:\\Users\\PC\\AppData\\Local\\Temp\\36tFK2ecXb35BLZNyM54bNyeVhj\\public',
+  'dist-public'
+]
+[2025-12-15T16:59:55.267Z] [LOG] [SERVER] [Electron] Binding to 127.0.0.1:5000
+[2025-12-15T16:59:55.276Z] [LOG] [SERVER] Server running on http://127.0.0.1:5000
+[2025-12-15T16:59:55.649Z] [LOG] ✅ Server is ready! (took 527ms)
+[2025-12-15T17:00:00.277Z] [LOG] [SERVER] 📊 Device simulation tick: checking 0 devices, 0 connected clients

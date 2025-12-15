@@ -39,35 +39,60 @@ async function startServer() {
   const server = await registerRoutes(app);
   
   const resourcesPath = process.env.RESOURCES_PATH || '';
-  console.log('[Electron Server] RESOURCES_PATH:', resourcesPath);
+  console.log('[Electron Server] === PATH DEBUG ===');
+  console.log('[Electron Server] RESOURCES_PATH env:', resourcesPath);
   console.log('[Electron Server] __dirname:', __dirname);
-  console.log('[Electron Server] cwd:', process.cwd());
+  console.log('[Electron Server] process.cwd():', process.cwd());
+  
+  // List contents of resources path if exists
+  if (resourcesPath && fs.existsSync(resourcesPath)) {
+    try {
+      const contents = fs.readdirSync(resourcesPath);
+      console.log('[Electron Server] Resources contents:', contents.join(', '));
+      
+      // Check if public folder exists
+      const publicDir = path.join(resourcesPath, 'public');
+      if (fs.existsSync(publicDir)) {
+        const publicContents = fs.readdirSync(publicDir);
+        console.log('[Electron Server] Public folder contents:', publicContents.join(', '));
+      } else {
+        console.log('[Electron Server] Public folder NOT FOUND at:', publicDir);
+      }
+    } catch (e) {
+      console.log('[Electron Server] Error reading resources:', e);
+    }
+  } else {
+    console.log('[Electron Server] Resources path does not exist or is empty');
+  }
   
   const possiblePaths = [
     resourcesPath ? path.join(resourcesPath, 'public') : '',
     path.join(process.cwd(), 'public'),
-    path.join(process.cwd(), 'resources', 'public'),
-    path.join(__dirname, 'public'),
     path.join(__dirname, '..', 'public'),
-    path.join(__dirname, '..', '..', 'public'),
     'dist-public',
   ].filter(p => p);
   
-  console.log('[Electron Server] Checking paths:', possiblePaths);
+  console.log('[Electron Server] Will check these paths:');
+  possiblePaths.forEach((p, i) => {
+    const indexPath = path.join(p, 'index.html');
+    const exists = fs.existsSync(indexPath);
+    console.log(`  [${i}] ${p} => index.html exists: ${exists}`);
+  });
 
   let staticPath = '';
   for (const p of possiblePaths) {
     const indexPath = path.join(p, 'index.html');
     if (fs.existsSync(indexPath)) {
       staticPath = p;
-      console.log(`Found static files at: ${staticPath}`);
+      console.log(`[Electron Server] ✅ Found static files at: ${staticPath}`);
       break;
     }
   }
 
   if (!staticPath) {
-    console.error('Could not find static files! Checked:', possiblePaths);
-    staticPath = possiblePaths[0];
+    console.error('[Electron Server] ❌ Could not find static files!');
+    staticPath = possiblePaths[0] || path.join(process.cwd(), 'public');
+    console.log('[Electron Server] Using fallback path:', staticPath);
   }
 
   app.use(express.static(staticPath));
