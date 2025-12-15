@@ -101,7 +101,17 @@ if %errorlevel% neq 0 (
 echo Done.
 echo.
 
-echo [7/7] Packaging EXE (3-5 minutes)...
+echo [7/8] Rebuilding native modules for Electron...
+call npx electron-rebuild -f -w better-sqlite3
+if %errorlevel% neq 0 (
+    echo ERROR: electron-rebuild failed
+    pause
+    exit /b 1
+)
+echo Done.
+echo.
+
+echo [8/8] Packaging EXE (3-5 minutes)...
 call npx electron-builder --win --config electron-builder.json -p never
 
 if %errorlevel% neq 0 (
