@@ -38,14 +38,16 @@ app.use((req, res, next) => {
 async function startServer() {
   const server = await registerRoutes(app);
   
+  const resourcesPath = (process as any).resourcesPath || '';
   const possiblePaths = [
+    resourcesPath ? path.join(resourcesPath, 'public') : '',
     path.join(process.cwd(), 'resources', 'public'),
     path.join(process.cwd(), '..', 'public'),
     path.join(__dirname, '..', 'public'),
     path.join(__dirname, '..', '..', 'public'),
     path.join(__dirname, '..', '..', 'dist-public'),
     'dist-public',
-  ];
+  ].filter(p => p);
 
   let staticPath = '';
   for (const p of possiblePaths) {
