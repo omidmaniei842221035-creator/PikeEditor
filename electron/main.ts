@@ -201,7 +201,42 @@ function stopServer() {
   }
 }
 
-app.whenReady().then(() => {
+async function waitForServer(maxWaitMs: number = 60000): Promise<boolean> {
+  const startTime = Date.now();
+  const checkInterval = 500;
+  
+  console.log(`⏳ Waiting for server to be ready (max ${maxWaitMs / 1000}s)...`);
+  
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      const http = require('http');
+      const result = await new Promise<boolean>((resolve) => {
+        const req = http.get(`http://127.0.0.1:${SERVER_PORT}/health`, (res: any) => {
+          resolve(res.statusCode === 200);
+        });
+        req.on('error', () => resolve(false));
+        req.setTimeout(1000, () => {
+          req.destroy();
+          resolve(false);
+        });
+      });
+      
+      if (result) {
+        console.log(`✅ Server is ready! (took ${Date.now() - startTime}ms)`);
+        return true;
+      }
+    } catch {
+      // Server not ready yet
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, checkInterval));
+  }
+  
+  console.error(`❌ Server failed to start within ${maxWaitMs / 1000} seconds`);
+  return false;
+}
+
+app.whenReady().then(async () => {
   // Initialize file logger first
   initLogger();
   
@@ -213,13 +248,25 @@ app.whenReady().then(() => {
   
   startServer();
   
-  // Give server more time to start in production
-  const startupDelay = isDev ? 1000 : 5000;
-  console.log(`⏱️  Waiting ${startupDelay}ms for server to start...`);
-  
-  setTimeout(() => {
-    createWindow();
-  }, startupDelay);
+  if (isDev) {
+    // In dev mode, just wait a bit
+    setTimeout(() => {
+      createWindow();
+    }, 1000);
+  } else {
+    // In production, wait for server to actually be ready
+    const serverReady = await waitForServer(60000);
+    
+    if (serverReady) {
+      createWindow();
+    } else {
+      dialog.showErrorBox(
+        'خطا در راه‌اندازی',
+        'سرور برنامه نتوانست در زمان مناسب راه‌اندازی شود.\n\nلطفاً برنامه را مجدداً اجرا کنید.'
+      );
+      app.quit();
+    }
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

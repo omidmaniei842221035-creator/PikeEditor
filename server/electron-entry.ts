@@ -64,6 +64,10 @@ async function startServer() {
 
   app.use(express.static(staticPath));
 
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: Date.now() });
+  });
+
   app.get("*", (_req, res) => {
     const indexPath = path.join(staticPath, "index.html");
     if (fs.existsSync(indexPath)) {
