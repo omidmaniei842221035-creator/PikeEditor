@@ -18,6 +18,7 @@ import DesktopDownload from "@/pages/DesktopDownload";
 import AIFeatures from "@/pages/ai-features";
 import BulkImport from "@/pages/bulk-import";
 import IntelligentMap from "@/pages/intelligent-map";
+import RegionManager from "@/pages/region-manager";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/ai-features" component={AIFeatures} />
       <Route path="/bulk-import" component={BulkImport} />
       <Route path="/intelligent-map" component={IntelligentMap} />
+      <Route path="/region-manager" component={RegionManager} />
       <Route path="/grafana">
         {() => <DashboardBuilder />}
       </Route>
