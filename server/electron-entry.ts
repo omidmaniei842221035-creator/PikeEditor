@@ -39,93 +39,44 @@ async function startServer() {
   const server = await registerRoutes(app);
   
   const resourcesPath = process.env.RESOURCES_PATH || '';
-  console.log('[Electron Server] === PATH DEBUG ===');
-  console.log('[Electron Server] RESOURCES_PATH env:', resourcesPath);
-  console.log('[Electron Server] __dirname:', __dirname);
-  console.log('[Electron Server] process.cwd():', process.cwd());
+  console.log('[Server] RESOURCES_PATH:', resourcesPath);
+  console.log('[Server] __dirname:', __dirname);
+  console.log('[Server] cwd:', process.cwd());
   
-  // List contents of resources path if exists
+  // List resources folder contents
   if (resourcesPath && fs.existsSync(resourcesPath)) {
     try {
-      const contents = fs.readdirSync(resourcesPath);
-      console.log('[Electron Server] Resources contents:', contents.join(', '));
-      
-      // Check if public folder exists
-      const publicDir = path.join(resourcesPath, 'public');
-      if (fs.existsSync(publicDir)) {
-        const publicContents = fs.readdirSync(publicDir);
-        console.log('[Electron Server] Public folder contents:', publicContents.join(', '));
-      } else {
-        console.log('[Electron Server] Public folder NOT FOUND at:', publicDir);
-      }
-    } catch (e) {
-      console.log('[Electron Server] Error reading resources:', e);
-    }
-  } else {
-    console.log('[Electron Server] Resources path does not exist or is empty');
+      console.log('[Server] Resources contents:', fs.readdirSync(resourcesPath).join(', '));
+    } catch (e) {}
   }
   
   const possiblePaths = [
     resourcesPath ? path.join(resourcesPath, 'public') : '',
     path.join(process.cwd(), 'public'),
     path.join(__dirname, '..', 'public'),
-    'dist-public',
   ].filter(p => p);
-  
-  console.log('[Electron Server] Will check these paths:');
-  possiblePaths.forEach((p, i) => {
-    const indexPath = path.join(p, 'index.html');
-    const exists = fs.existsSync(indexPath);
-    console.log(`  [${i}] ${p} => index.html exists: ${exists}`);
-  });
 
   let staticPath = '';
   for (const p of possiblePaths) {
     const indexPath = path.join(p, 'index.html');
+    console.log('[Server] Checking:', indexPath, '- exists:', fs.existsSync(indexPath));
     if (fs.existsSync(indexPath)) {
       staticPath = p;
-      console.log(`[Electron Server] ✅ Found static files at: ${staticPath}`);
       break;
     }
   }
 
   if (!staticPath) {
-    console.error('[Electron Server] ❌ Could not find static files!');
+    console.error('[Server] Static files not found!');
     staticPath = possiblePaths[0] || path.join(process.cwd(), 'public');
-    console.log('[Electron Server] Using fallback path:', staticPath);
   }
+  
+  console.log('[Server] Using static path:', staticPath);
 
   app.use(express.static(staticPath));
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok", timestamp: Date.now() });
-  });
-  
-  app.get("/debug-paths", (_req, res) => {
-    const debugInfo: any = {
-      resourcesPath,
-      staticPath,
-      __dirname,
-      cwd: process.cwd(),
-      resourcesContents: [],
-      publicContents: [],
-    };
-    
-    try {
-      if (resourcesPath && fs.existsSync(resourcesPath)) {
-        debugInfo.resourcesContents = fs.readdirSync(resourcesPath);
-        const publicDir = path.join(resourcesPath, 'public');
-        if (fs.existsSync(publicDir)) {
-          debugInfo.publicContents = fs.readdirSync(publicDir);
-        } else {
-          debugInfo.publicError = 'public folder does not exist';
-        }
-      }
-    } catch (e: any) {
-      debugInfo.error = e.message;
-    }
-    
-    res.json(debugInfo);
   });
 
   app.get("*", (_req, res) => {
@@ -133,15 +84,15 @@ async function startServer() {
     if (fs.existsSync(indexPath)) {
       res.sendFile(indexPath);
     } else {
-      res.status(404).send("index.html not found");
+      res.status(404).send("index.html not found at: " + indexPath);
     }
   });
 
   const port = parseInt(process.env.PORT || "5000", 10);
   const host = "127.0.0.1";
-  console.log(`[Electron] Binding to ${host}:${port}`);
+  console.log(`[Server] Starting on ${host}:${port}`);
   server.listen(port, host, () => {
-    console.log(`Server running on http://${host}:${port}`);
+    console.log(`[Server] Running at http://${host}:${port}`);
   });
 }
 
