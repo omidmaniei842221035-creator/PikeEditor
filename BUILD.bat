@@ -52,6 +52,7 @@ echo.
 
 :build_frontend
 echo [2/7] Cleaning previous builds...
+if exist "dist" rmdir /s /q "dist" 2>nul
 if exist "dist-public" rmdir /s /q "dist-public" 2>nul
 if exist "dist-server" rmdir /s /q "dist-server" 2>nul
 if exist "dist-electron" rmdir /s /q "dist-electron" 2>nul
@@ -60,20 +61,25 @@ echo Done.
 echo.
 
 echo [3/7] Building frontend...
-call npx vite build --outDir dist-public
+call npx vite build
 if %errorlevel% neq 0 (
     echo ERROR: Frontend build failed
     pause
     exit /b 1
 )
-if not exist "dist-public\index.html" (
-    echo ERROR: dist-public\index.html not found!
+REM Vite outputs to dist/public based on vite.config.ts
+if not exist "dist\public\index.html" (
+    echo ERROR: dist\public\index.html not found!
     echo Vite build may have failed silently.
     pause
     exit /b 1
 )
-echo Verifying: dist-public\index.html exists
-dir dist-public\index.html
+echo Verifying: dist\public\index.html exists
+dir dist\public\index.html
+
+REM Copy to dist-public for electron-builder
+if exist "dist-public" rmdir /s /q "dist-public" 2>nul
+xcopy /E /I /Y "dist\public" "dist-public"
 echo Done.
 echo.
 
