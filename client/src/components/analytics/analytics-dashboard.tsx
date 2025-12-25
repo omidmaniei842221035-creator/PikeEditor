@@ -16,6 +16,7 @@ import GeoHealthDashboard from "./geo-health-dashboard";
 import { GeoForecastDashboard } from "./geo-forecast-dashboard";
 import ComprehensiveReportingSystem from "./comprehensive-reporting-system";
 import { RegionalAnalysisDashboard } from "./regional-analysis-dashboard";
+import { LossRadarFullscreen } from "./loss-radar-fullscreen";
 import { useState, useMemo } from "react";
 import { useFilter } from "@/pages/dashboard";
 
@@ -277,6 +278,9 @@ export function AnalyticsDashboard() {
       </div>
       
       <RegionalAnalysisDashboard className="mb-12" />
+
+      {/* Loss Radar Fullscreen - شناسایی دستگاه‌های زیان‌ده */}
+      <LossRadarFullscreen />
 
       {/* Urban Graph Analysis Highlight Banner */}
       <div className="relative mb-8">
