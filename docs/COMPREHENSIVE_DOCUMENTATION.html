@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مستندات جامع سامانه مانیتورینگ هوشمند POS</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700&display=swap');
+    
+    body {
+      font-family: 'Vazirmatn', 'Tahoma', Arial, sans-serif;
+      direction: rtl;
+      text-align: right;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+      line-height: 1.8;
+      color: #333;
+      background: #fff;
+    }
+    
+    h1 {
+      color: #1a365d;
+      border-bottom: 3px solid #3182ce;
+      padding-bottom: 15px;
+      font-size: 28px;
+      text-align: center;
+    }
+    
+    h2 {
+      color: #2c5282;
+      border-bottom: 2px solid #63b3ed;
+      padding-bottom: 10px;
+      margin-top: 40px;
+      font-size: 22px;
+    }
+    
+    h3 {
+      color: #2b6cb0;
+      margin-top: 30px;
+      font-size: 18px;
+    }
+    
+    h4 {
+      color: #3182ce;
+      font-size: 16px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    
+    th, td {
+      border: 1px solid #cbd5e0;
+      padding: 12px;
+      text-align: right;
+    }
+    
+    th {
+      background-color: #e2e8f0;
+      font-weight: 700;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f7fafc;
+    }
+    
+    code {
+      background-color: #edf2f7;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      direction: ltr;
+      display: inline-block;
+    }
+    
+    pre {
+      background-color: #1a202c;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      direction: ltr;
+      text-align: left;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    ul, ol {
+      padding-right: 30px;
+    }
+    
+    li {
+      margin: 8px 0;
+    }
+    
+    .toc {
+      background: #f7fafc;
+      padding: 25px;
+      border-radius: 10px;
+      margin: 30px 0;
+    }
+    
+    .toc h2 {
+      margin-top: 0;
+      border: none;
+    }
+    
+    .toc ol {
+      list-style-type: decimal;
+    }
+    
+    .toc a {
+      color: #2b6cb0;
+      text-decoration: none;
+    }
+    
+    .toc a:hover {
+      text-decoration: underline;
+    }
+    
+    .formula {
+      background: #f0fff4;
+      border: 1px solid #9ae6b4;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      direction: ltr;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .diagram {
+      background: #ebf8ff;
+      border: 1px solid #90cdf4;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      direction: ltr;
+      text-align: left;
+      font-family: 'Courier New', monospace;
+      white-space: pre;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    
+    .note {
+      background: #fffaf0;
+      border-right: 4px solid #ed8936;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    
+    .version-info {
+      text-align: center;
+      color: #718096;
+      font-size: 14px;
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+    }
+    
+    @media print {
+      body {
+        padding: 20px;
+      }
+      pre {
+        white-space: pre-wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>مستندات جامع سامانه مانیتورینگ هوشمند پایانه‌های فروشگاهی (POS)</h1>
+<p style="text-align: center; font-size: 18px; color: #4a5568;">نسخه 1.0.2</p>
+
+<div class="toc">
+  <h2>فهرست مطالب</h2>
+  <ol>
+    <li><a href="#section1">معرفی کلی سیستم</a></li>
+    <li><a href="#section2">معماری نرم‌افزار</a></li>
+    <li><a href="#section3">مدل داده و پایگاه‌داده</a></li>
+    <li><a href="#section4">ماژول‌های اصلی سیستم</a></li>
+    <li><a href="#section5">الگوریتم‌های هوش مصنوعی و یادگیری ماشین</a></li>
+    <li><a href="#section6">تحلیل‌های جغرافیایی پیشرفته</a></li>
+    <li><a href="#section7">سیستم مانیتورینگ بلادرنگ</a></li>
+    <li><a href="#section8">APIها و سرویس‌های Backend</a></li>
+    <li><a href="#section9">واسط کاربری و کامپوننت‌ها</a></li>
+    <li><a href="#section10">ویژگی‌های پیشرفته</a></li>
+    <li><a href="#section11">امنیت و عملکرد</a></li>
+    <li><a href="#section12">راهنمای استقرار</a></li>
+  </ol>
+</div>
+
+<h2 id="section1">1. معرفی کلی سیستم</h2>
+
+<h3>1.1 هدف و چشم‌انداز</h3>
+
+<p>سامانه مانیتورینگ هوشمند پایانه‌های فروشگاهی (POS) یک پلتفرم جامع مدیریت، تحلیل و پیش‌بینی برای شبکه دستگاه‌های کارت‌خوان است. این سیستم با استفاده از فناوری‌های پیشرفته هوش مصنوعی، یادگیری ماشین و تحلیل‌های جغرافیایی، امکانات زیر را فراهم می‌کند:</p>
+
+<ul>
+  <li><strong>مانیتورینگ بلادرنگ</strong> وضعیت تمامی دستگاه‌ها</li>
+  <li><strong>پیش‌بینی هوشمند</strong> روندهای فروش و تراکنش</li>
+  <li><strong>شناسایی خودکار</strong> مشتریان در معرض ریسک</li>
+  <li><strong>بهینه‌سازی مکان‌یابی</strong> واحدهای بانکی</li>
+  <li><strong>تحلیل جغرافیایی</strong> با نقشه‌های حرارتی پیشرفته</li>
+</ul>
+
+<h3>1.2 ویژگی‌های کلیدی</h3>
+
+<table>
+  <tr>
+    <th>ویژگی</th>
+    <th>توضیحات</th>
+  </tr>
+  <tr>
+    <td>داشبورد هوشمند</td>
+    <td>نمایش آماری کامل با بروزرسانی لحظه‌ای</td>
+  </tr>
+  <tr>
+    <td>نقشه تعاملی</td>
+    <td>نمایش موقعیت مشتریان و واحدهای بانکی</td>
+  </tr>
+  <tr>
+    <td>هوش مصنوعی</td>
+    <td>پیش‌بینی فروش، ریزش مشتری، بهینه‌سازی قیمت</td>
+  </tr>
+  <tr>
+    <td>گزارش‌گیری پیشرفته</td>
+    <td>تولید PDF/Excel با نمودارهای تحلیلی</td>
+  </tr>
+  <tr>
+    <td>مدیریت مشتریان</td>
+    <td>ثبت، ویرایش و پیگیری کامل اطلاعات</td>
+  </tr>
+  <tr>
+    <td>واردات دسته‌ای</td>
+    <td>بارگذاری Excel برای داده‌های حجیم</td>
+  </tr>
+  <tr>
+    <td>نسخه دسکتاپ</td>
+    <td>اجرای آفلاین با Electron</td>
+  </tr>
+</table>
+
+<h2 id="section2">2. معماری نرم‌افزار</h2>
+
+<h3>2.1 نمای کلی معماری</h3>
+
+<div class="diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                        Client Layer                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │   React 18  │  │  TanStack   │  │    Shadcn/ui + Radix   │  │
+│  │   + Wouter  │  │   Query v5  │  │    Component Library    │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │   Leaflet   │  │  Recharts   │  │     TensorFlow.js      │  │
+│  │   + H3-js   │  │  + D3.js    │  │   (AI Predictions)     │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       Server Layer                               │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │  Express.js │  │  WebSocket  │  │      Drizzle ORM       │  │
+│  │   REST API  │  │    Server   │  │   Type-safe Database   │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      Database Layer                              │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                    PostgreSQL (Neon)                        ││
+│  │   - Real-time replication                                   ││
+│  │   - Serverless scaling                                      ││
+│  │   - Point-in-time recovery                                  ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+</div>
+
+<h3>2.2 پشته فناوری</h3>
+
+<h4>Frontend</h4>
+<table>
+  <tr>
+    <th>فناوری</th>
+    <th>نسخه</th>
+    <th>کاربرد</th>
+  </tr>
+  <tr><td>React</td><td>18.3.1</td><td>فریم‌ورک UI اصلی</td></tr>
+  <tr><td>TypeScript</td><td>5.6.3</td><td>تایپ استاتیک</td></tr>
+  <tr><td>TanStack Query</td><td>5.60.5</td><td>مدیریت state سرور</td></tr>
+  <tr><td>Wouter</td><td>3.3.5</td><td>مسیریابی سبک</td></tr>
+  <tr><td>Tailwind CSS</td><td>3.4.17</td><td>استایل‌دهی</td></tr>
+  <tr><td>Leaflet</td><td>1.9.4</td><td>نقشه تعاملی</td></tr>
+  <tr><td>Recharts</td><td>2.15.2</td><td>نمودارها</td></tr>
+  <tr><td>D3.js</td><td>7.9.0</td><td>تجسم داده پیشرفته</td></tr>
+  <tr><td>H3-js</td><td>4.3.0</td><td>سیستم شبکه‌بندی شش‌ضلعی</td></tr>
+</table>
+
+<h4>Backend</h4>
+<table>
+  <tr>
+    <th>فناوری</th>
+    <th>نسخه</th>
+    <th>کاربرد</th>
+  </tr>
+  <tr><td>Node.js</td><td>20.x</td><td>محیط اجرا</td></tr>
+  <tr><td>Express</td><td>4.21.2</td><td>فریم‌ورک HTTP</td></tr>
+  <tr><td>Drizzle ORM</td><td>0.39.1</td><td>ORM تایپ‌سیف</td></tr>
+  <tr><td>WebSocket (ws)</td><td>8.18.0</td><td>ارتباط بلادرنگ</td></tr>
+  <tr><td>Zod</td><td>3.24.2</td><td>اعتبارسنجی داده</td></tr>
+</table>
+
+<h2 id="section3">3. مدل داده و پایگاه‌داده</h2>
+
+<h3>3.1 نمودار موجودیت-رابطه (ERD)</h3>
+
+<div class="diagram">
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   branches   │     │  employees   │     │  customers   │
+├──────────────┤     ├──────────────┤     ├──────────────┤
+│ id (PK)      │     │ id (PK)      │     │ id (PK)      │
+│ name         │◄───┐│ name         │◄───┐│ shopName     │
+│ code         │    ││ employeeCode │    ││ ownerName    │
+│ type         │    ││ position     │    ││ phone        │
+│ manager      │    ││ branchId(FK) │────┘│ businessType │
+│ latitude     │    │└──────────────┘     │ latitude     │
+│ longitude    │    │                     │ longitude    │
+│ monthlyTarget│    │                     │ monthlyProfit│
+└──────────────┘    │                     │ branchId(FK) │───┐
+                    │                     │ bankingUnitId│   │
+                    │                     └──────────────┘   │
+                    │                           │            │
+                    │                           ▼            │
+┌──────────────┐    │                    ┌──────────────┐   │
+│ posDevices   │    │                    │ transactions │   │
+├──────────────┤    │                    ├──────────────┤   │
+│ id (PK)      │    │                    │ id (PK)      │   │
+│ customerId   │────┼────────────────────│ posDeviceId  │   │
+│ deviceCode   │    │                    │ amount       │   │
+│ status       │    │                    │ date         │   │
+│ lastConnection    │                    └──────────────┘   │
+└──────────────┘    │                                       │
+                    │     ┌──────────────┐                  │
+                    │     │bankingUnits  │◄─────────────────┘
+                    │     ├──────────────┤
+                    │     │ id (PK)      │
+                    └─────│ code         │
+                          │ name         │
+                          │ unitType     │
+                          │ latitude     │
+                          │ longitude    │
+                          └──────────────┘
+</div>
+
+<h3>3.2 جداول اصلی</h3>
+
+<h4>customers (مشتریان)</h4>
+<table>
+  <tr><th>فیلد</th><th>نوع</th><th>توضیحات</th></tr>
+  <tr><td>id</td><td>VARCHAR (UUID)</td><td>شناسه یکتا</td></tr>
+  <tr><td>nationalId</td><td>TEXT</td><td>کد ملی</td></tr>
+  <tr><td>shopName</td><td>TEXT</td><td>نام فروشگاه</td></tr>
+  <tr><td>ownerName</td><td>TEXT</td><td>نام مالک</td></tr>
+  <tr><td>phone</td><td>TEXT</td><td>شماره تماس</td></tr>
+  <tr><td>businessType</td><td>TEXT</td><td>نوع کسب‌وکار</td></tr>
+  <tr><td>latitude/longitude</td><td>DECIMAL</td><td>موقعیت جغرافیایی</td></tr>
+  <tr><td>monthlyProfit</td><td>INTEGER</td><td>سود ماهانه (تومان)</td></tr>
+  <tr><td>status</td><td>TEXT</td><td>وضعیت (active/inactive)</td></tr>
+  <tr><td>bankingUnitId</td><td>VARCHAR (FK)</td><td>واحد بانکی مرتبط</td></tr>
+</table>
+
+<h4>posDevices (دستگاه‌های POS)</h4>
+<table>
+  <tr><th>فیلد</th><th>نوع</th><th>توضیحات</th></tr>
+  <tr><td>id</td><td>VARCHAR (UUID)</td><td>شناسه یکتا</td></tr>
+  <tr><td>customerId</td><td>VARCHAR (FK)</td><td>مشتری مالک</td></tr>
+  <tr><td>deviceCode</td><td>TEXT</td><td>کد دستگاه</td></tr>
+  <tr><td>status</td><td>TEXT</td><td>وضعیت (active/offline/maintenance)</td></tr>
+  <tr><td>lastConnection</td><td>TIMESTAMP</td><td>آخرین اتصال</td></tr>
+</table>
+
+<h4>bankingUnits (واحدهای بانکی)</h4>
+<table>
+  <tr><th>فیلد</th><th>نوع</th><th>توضیحات</th></tr>
+  <tr><td>id</td><td>VARCHAR (UUID)</td><td>شناسه یکتا</td></tr>
+  <tr><td>code</td><td>VARCHAR</td><td>کد واحد</td></tr>
+  <tr><td>name</td><td>VARCHAR</td><td>نام واحد</td></tr>
+  <tr><td>unitType</td><td>TEXT</td><td>نوع (branch/counter/shahrbnet_kiosk)</td></tr>
+  <tr><td>latitude/longitude</td><td>DECIMAL</td><td>موقعیت</td></tr>
+  <tr><td>isActive</td><td>BOOLEAN</td><td>وضعیت فعال</td></tr>
+</table>
+
+<h2 id="section4">4. ماژول‌های اصلی سیستم</h2>
+
+<h3>4.1 داشبورد اصلی (Dashboard)</h3>
+<p><strong>مسیر:</strong> <code>/</code> (صفحه اصلی)</p>
+<p><strong>قابلیت‌ها:</strong></p>
+<ul>
+  <li>نمایش تعداد کل دستگاه‌ها، مشتریان، واحدهای بانکی</li>
+  <li>نرخ پوشش و بهره‌وری</li>
+  <li>نقشه حرارتی تعاملی</li>
+  <li>فیلترهای پیشرفته</li>
+</ul>
+
+<h3>4.2 مدیریت مشتریان (Customer Management)</h3>
+<p><strong>ویژگی‌ها:</strong></p>
+<ul>
+  <li>جستجوی پیشرفته با فیلتر</li>
+  <li>ثبت سریع از روی نقشه</li>
+  <li>مدیریت وضعیت مشتری</li>
+  <li>تاریخچه ویزیت‌ها</li>
+</ul>
+
+<h3>4.3 نقشه هوشمند (Intelligent Map)</h3>
+<p><strong>مسیر:</strong> <code>/intelligent-map</code></p>
+<p><strong>قابلیت‌ها:</strong></p>
+<ul>
+  <li>نمایش موقعیت مشتریان و واحدها</li>
+  <li>نقشه حرارتی تراکنش‌ها</li>
+  <li>ترسیم مناطق جغرافیایی</li>
+  <li>خوشه‌بندی خودکار</li>
+</ul>
+
+<h3>4.4 مانیتورینگ بلادرنگ (Real-time Monitoring)</h3>
+<p><strong>مسیر:</strong> <code>/monitoring</code></p>
+<p><strong>ویژگی‌ها:</strong></p>
+<ul>
+  <li>وضعیت لحظه‌ای دستگاه‌ها</li>
+  <li>هشدارهای آنی قطعی</li>
+  <li>نمودار زنده تراکنش‌ها</li>
+  <li>WebSocket برای بروزرسانی</li>
+</ul>
+
+<h2 id="section5">5. الگوریتم‌های هوش مصنوعی و یادگیری ماشین</h2>
+
+<h3>5.1 پیش‌بینی فروش (Sales Forecasting)</h3>
+
+<p><strong>الگوریتم:</strong> رگرسیون خطی با تحلیل فصلی</p>
+
+<p><strong>مراحل الگوریتم:</strong></p>
+<ol>
+  <li>گروه‌بندی تراکنش‌ها بر اساس ماه</li>
+  <li>محاسبه رگرسیون خطی (Least Squares)</li>
+  <li>تعیین روند (صعودی/نزولی/ثابت)</li>
+  <li>پیش‌بینی 6 ماه آینده</li>
+  <li>محاسبه ضریب اطمینان (R²)</li>
+</ol>
+
+<div class="formula">
+y = mx + b<br><br>
+m = (n∑xy - ∑x∑y) / (n∑x² - (∑x)²)<br>
+b = (∑y - m∑x) / n<br>
+R² = 1 - (SS_res / SS_tot)
+</div>
+
+<p><strong>خروجی:</strong></p>
+<ul>
+  <li>نرخ رشد ماه آینده (درصد)</li>
+  <li>روند کلی (growing/stable/declining)</li>
+  <li>ضریب اطمینان (0-1)</li>
+  <li>پیش‌بینی 6 ماهه</li>
+</ul>
+
+<h3>5.2 خوشه‌بندی مشتریان (Customer Segmentation)</h3>
+
+<p><strong>الگوریتم:</strong> K-Means Clustering</p>
+
+<p><strong>پارامترهای ورودی:</strong></p>
+<ul>
+  <li>monthlyProfit - سود ماهانه</li>
+  <li>accountAge - سن حساب</li>
+  <li>statusScore - امتیاز وضعیت</li>
+</ul>
+
+<div class="formula">
+فاصله اقلیدسی:<br>
+d(p,c) = √(∑(pᵢ - cᵢ)²)
+</div>
+
+<p><strong>خروجی بخش‌بندی:</strong></p>
+<table>
+  <tr><th>بخش</th><th>ویژگی</th></tr>
+  <tr><td>مشتریان VIP</td><td>درآمد بالا، وفاداری زیاد</td></tr>
+  <tr><td>مشتریان متوسط</td><td>درآمد متوسط، پتانسیل رشد</td></tr>
+  <tr><td>مشتریان در حال رشد</td><td>درآمد کم اما فعال</td></tr>
+  <tr><td>مشتریان پرخطر</td><td>درآمد پایین، فعالیت کم</td></tr>
+</table>
+
+<h3>5.3 پیش‌بینی ریزش مشتری (Churn Prediction)</h3>
+
+<p><strong>الگوریتم:</strong> امتیازدهی ریسک قطعی (Deterministic Risk Scoring)</p>
+
+<table>
+  <tr><th>عامل ریسک</th><th>وزن</th></tr>
+  <tr><td>وضعیت غیرفعال</td><td>+0.40</td></tr>
+  <tr><td>کاهش فعالیت اخیر</td><td>+0.30</td></tr>
+  <tr><td>درآمد پایین</td><td>+0.20</td></tr>
+  <tr><td>مشتری جدید</td><td>+0.10</td></tr>
+  <tr><td>تراکنش‌های کم</td><td>+0.15</td></tr>
+</table>
+
+<p><strong>اقدامات پیشنهادی:</strong></p>
+<ul>
+  <li><strong>ریسک > 0.8:</strong> تماس فوری و تخفیف ویژه</li>
+  <li><strong>ریسک > 0.6:</strong> پیگیری نیازهای مشتری</li>
+  <li><strong>ریسک > 0.5:</strong> پیام تشویقی</li>
+</ul>
+
+<h3>5.4 بهینه‌سازی قیمت (Pricing Optimization)</h3>
+
+<p><strong>الگوریتم:</strong> تحلیل کشش قیمت (Price Elasticity Analysis)</p>
+
+<table>
+  <tr><th>نوع کسب‌وکار</th><th>کشش قیمت</th><th>توضیح</th></tr>
+  <tr><td>رستوران</td><td>-0.8</td><td>کم‌کشش (خدمات ضروری)</td></tr>
+  <tr><td>فروشگاه</td><td>-1.5</td><td>پرکشش</td></tr>
+  <tr><td>کافه</td><td>-1.0</td><td>کشش واحد</td></tr>
+</table>
+
+<div class="formula">
+optimalPriceIncrease = |1 / (elasticity + 1)|<br>
+recommendedIncrease = min(0.20, optimalPriceIncrease)
+</div>
+
+<h3>5.5 پیش‌بینی تقاضا (Demand Forecasting)</h3>
+
+<p><strong>الگوریتم:</strong> تحلیل فصلی با تقویم ایرانی</p>
+
+<table>
+  <tr><th>فصل</th><th>ضریب فصلی</th><th>تغییر</th></tr>
+  <tr><td>بهار (نوروز)</td><td>1.3</td><td>افزایش 30%</td></tr>
+  <tr><td>تابستان</td><td>0.9</td><td>کاهش 10%</td></tr>
+  <tr><td>پاییز</td><td>1.1</td><td>افزایش 10%</td></tr>
+  <tr><td>زمستان</td><td>0.8</td><td>کاهش 20%</td></tr>
+</table>
+
+<h3>5.6 شبیه‌ساز What-If با TensorFlow.js</h3>
+
+<p><strong>معماری شبکه عصبی:</strong></p>
+<ul>
+  <li><strong>Layer 1:</strong> Dense(32 units, ReLU) + Dropout(0.2)</li>
+  <li><strong>Layer 2:</strong> Dense(16 units, ReLU)</li>
+  <li><strong>Layer 3:</strong> Dense(8 units, ReLU)</li>
+  <li><strong>Output:</strong> Dense(1 unit, Linear)</li>
+</ul>
+
+<p><strong>ویژگی‌های ورودی (8 فیچر):</strong></p>
+<ul>
+  <li>posCount - تعداد دستگاه</li>
+  <li>operatingHours - ساعات کاری</li>
+  <li>population - جمعیت</li>
+  <li>avgIncome - میانگین درآمد</li>
+  <li>businessDensity - تراکم کسب‌وکار</li>
+  <li>competitionLevel - سطح رقابت</li>
+  <li>internetQuality - کیفیت اینترنت</li>
+  <li>transportAccess - دسترسی حمل‌ونقل</li>
+</ul>
+
+<h2 id="section6">6. تحلیل‌های جغرافیایی پیشرفته</h2>
+
+<h3>6.1 سیستم شبکه‌بندی H3</h3>
+
+<p>H3 یک سیستم شبکه‌بندی شش‌ضلعی جهانی توسعه‌یافته توسط Uber است.</p>
+
+<p><strong>مزایا:</strong></p>
+<ul>
+  <li>پوشش یکنواخت سطح زمین</li>
+  <li>همسایگی‌های منظم</li>
+  <li>تجمیع سلسله‌مراتبی</li>
+  <li>Resolution 9 = شش‌ضلعی‌های ~200 متری</li>
+</ul>
+
+<h3>6.2 امتیاز سلامت جغرافیایی (Geo Health Score)</h3>
+
+<table>
+  <tr><th>شاخص</th><th>وزن</th><th>محاسبه</th></tr>
+  <tr><td>سلامت تراکنش</td><td>30%</td><td>رشد (50%) + ثبات (30%) + ارزش (20%)</td></tr>
+  <tr><td>تنوع کسب‌وکار</td><td>20%</td><td>تنوع اصناف (60%) + تراکم (40%)</td></tr>
+  <tr><td>زیرساخت</td><td>20%</td><td>Uptime (50%) + شبکه (30%) + برق (20%)</td></tr>
+  <tr><td>پروفایل ریسک</td><td>15%</td><td>تشخیص تقلب (70%) + رقابت (30%)</td></tr>
+  <tr><td>پتانسیل بازار</td><td>15%</td><td>جمعیت (40%) + درآمد (35%) + تردد (25%)</td></tr>
+</table>
+
+<div class="formula">
+Score = Σ(categoryScore × weight)<br><br>
+وضعیت:<br>
+≥ 0.85: عالی (excellent)<br>
+≥ 0.70: خوب (good)<br>
+≥ 0.50: متوسط (fair)<br>
+≥ 0.30: ضعیف (poor)<br>
+< 0.30: بحرانی (critical)
+</div>
+
+<h2 id="section7">7. سیستم مانیتورینگ بلادرنگ</h2>
+
+<h3>7.1 معماری WebSocket</h3>
+
+<p>سیستم از WebSocket برای ارتباط بلادرنگ استفاده می‌کند. سرور هر 30 ثانیه وضعیت دستگاه‌ها را به کلاینت‌ها ارسال می‌کند.</p>
+
+<h3>7.2 سیستم هشدار</h3>
+
+<table>
+  <tr><th>نوع هشدار</th><th>توضیح</th></tr>
+  <tr><td>error</td><td>قطعی دستگاه</td></tr>
+  <tr><td>warning</td><td>کاهش عملکرد</td></tr>
+  <tr><td>info</td><td>اطلاع‌رسانی</td></tr>
+</table>
+
+<table>
+  <tr><th>اولویت</th><th>توضیح</th></tr>
+  <tr><td>high</td><td>نیازمند اقدام فوری</td></tr>
+  <tr><td>medium</td><td>بررسی در ساعات کاری</td></tr>
+  <tr><td>low</td><td>اطلاع‌رسانی</td></tr>
+</table>
+
+<h2 id="section8">8. APIها و سرویس‌های Backend</h2>
+
+<h3>8.1 فهرست کامل Endpoints</h3>
+
+<h4>مشتریان (Customers)</h4>
+<table>
+  <tr><th>متد</th><th>مسیر</th><th>توضیحات</th></tr>
+  <tr><td>GET</td><td>/api/customers</td><td>لیست تمام مشتریان</td></tr>
+  <tr><td>GET</td><td>/api/customers/:id</td><td>جزئیات یک مشتری</td></tr>
+  <tr><td>POST</td><td>/api/customers</td><td>ثبت مشتری جدید</td></tr>
+  <tr><td>PUT</td><td>/api/customers/:id</td><td>ویرایش مشتری</td></tr>
+  <tr><td>DELETE</td><td>/api/customers/:id</td><td>حذف مشتری</td></tr>
+</table>
+
+<h4>دستگاه‌های POS</h4>
+<table>
+  <tr><th>متد</th><th>مسیر</th><th>توضیحات</th></tr>
+  <tr><td>GET</td><td>/api/pos-devices</td><td>لیست دستگاه‌ها</td></tr>
+  <tr><td>GET</td><td>/api/pos-devices/customer/:id</td><td>دستگاه‌های یک مشتری</td></tr>
+  <tr><td>GET</td><td>/api/pos-devices/banking-unit/:id</td><td>دستگاه‌های واحد بانکی</td></tr>
+</table>
+
+<h4>واحدهای بانکی</h4>
+<table>
+  <tr><th>متد</th><th>مسیر</th><th>توضیحات</th></tr>
+  <tr><td>GET</td><td>/api/banking-units</td><td>لیست واحدها</td></tr>
+  <tr><td>POST</td><td>/api/banking-units</td><td>ثبت واحد جدید</td></tr>
+  <tr><td>POST</td><td>/api/banking-units/bulk-import</td><td>واردات دسته‌ای</td></tr>
+  <tr><td>PATCH</td><td>/api/banking-units/:id</td><td>ویرایش واحد</td></tr>
+  <tr><td>DELETE</td><td>/api/banking-units/:id</td><td>حذف واحد</td></tr>
+</table>
+
+<h4>آمار و تحلیل</h4>
+<table>
+  <tr><th>متد</th><th>مسیر</th><th>توضیحات</th></tr>
+  <tr><td>GET</td><td>/api/stats</td><td>آمار کلی سیستم</td></tr>
+  <tr><td>GET</td><td>/api/monthly-stats</td><td>آمار ماهانه</td></tr>
+  <tr><td>GET</td><td>/api/monthly-stats/customer/:id</td><td>آمار یک مشتری</td></tr>
+</table>
+
+<h2 id="section9">9. واسط کاربری و کامپوننت‌ها</h2>
+
+<h3>9.1 ساختار صفحات</h3>
+
+<table>
+  <tr><th>صفحه</th><th>فایل</th><th>توضیحات</th></tr>
+  <tr><td>داشبورد اصلی</td><td>dashboard.tsx</td><td>نمای کلی سیستم</td></tr>
+  <tr><td>مانیتورینگ</td><td>monitoring.tsx</td><td>وضعیت بلادرنگ</td></tr>
+  <tr><td>نقشه هوشمند</td><td>intelligent-map.tsx</td><td>تحلیل جغرافیایی</td></tr>
+  <tr><td>هوش مصنوعی</td><td>ai-features.tsx</td><td>ابزارهای AI</td></tr>
+  <tr><td>تحلیل استراتژیک</td><td>strategic-analysis.tsx</td><td>گزارش‌های پیشرفته</td></tr>
+  <tr><td>واردات دسته‌ای</td><td>bulk-import.tsx</td><td>آپلود Excel</td></tr>
+</table>
+
+<h2 id="section10">10. ویژگی‌های پیشرفته</h2>
+
+<h3>10.1 سیستم گرافانا داخلی</h3>
+<ul>
+  <li>ساخت داشبورد سفارشی</li>
+  <li>تعریف پنل‌های مختلف</li>
+  <li>متغیرهای پویا</li>
+  <li>گزارش‌گیری زمان‌بندی‌شده</li>
+</ul>
+
+<h3>10.2 تحلیل شبکه Spider Web</h3>
+<ul>
+  <li>تجسم روابط بین کسب‌وکارها</li>
+  <li>تحلیل جریان درآمد</li>
+  <li>شناسایی خوشه‌های تجاری</li>
+</ul>
+
+<h2 id="section11">11. امنیت و عملکرد</h2>
+
+<h3>11.1 اعتبارسنجی و امنیت</h3>
+<ul>
+  <li>اعتبارسنجی ورودی با Zod</li>
+  <li>محدودیت حجم درخواست</li>
+  <li>محافظت از SQL Injection</li>
+  <li>رمزنگاری اطلاعات حساس</li>
+  <li>UUID برای شناسه‌ها</li>
+</ul>
+
+<h3>11.2 بهینه‌سازی عملکرد</h3>
+<ul>
+  <li>React Query برای کش</li>
+  <li>Lazy Loading کامپوننت‌ها</li>
+  <li>Virtual Scrolling برای لیست‌های بزرگ</li>
+  <li>Connection Pooling برای دیتابیس</li>
+  <li>Indexed Queries</li>
+</ul>
+
+<h2 id="section12">12. راهنمای استقرار</h2>
+
+<h3>12.1 نسخه وب (Replit)</h3>
+<pre>
+# توسعه
+npm run dev
+
+# ساخت Production
+npm run build
+
+# اجرای Production
+npm start
+</pre>
+
+<h3>12.2 نسخه دسکتاپ (Electron)</h3>
+<pre>
+# ساخت برای ویندوز
+npm run electron:build:win
+
+# خروجی
+release/POS-Monitoring-1.0.2.exe
+</pre>
+
+<h3>12.3 متغیرهای محیطی</h3>
+<table>
+  <tr><th>متغیر</th><th>توضیحات</th></tr>
+  <tr><td>DATABASE_URL</td><td>رشته اتصال PostgreSQL</td></tr>
+  <tr><td>NODE_ENV</td><td>محیط (development/production)</td></tr>
+  <tr><td>PGHOST</td><td>هاست دیتابیس</td></tr>
+  <tr><td>PGPORT</td><td>پورت دیتابیس</td></tr>
+  <tr><td>PGUSER</td><td>کاربر دیتابیس</td></tr>
+  <tr><td>PGPASSWORD</td><td>رمز دیتابیس</td></tr>
+  <tr><td>PGDATABASE</td><td>نام دیتابیس</td></tr>
+</table>
+
+<h2>پیوست: معادله‌های ریاضی کلیدی</h2>
+
+<h3>فرمول Haversine (محاسبه فاصله جغرافیایی)</h3>
+<div class="formula">
+a = sin²(Δlat/2) + cos(lat1)·cos(lat2)·sin²(Δlng/2)<br>
+c = 2·atan2(√a, √(1-a))<br>
+d = R·c (km)
+</div>
+
+<h3>انحراف معیار</h3>
+<div class="formula">
+σ = √(Σ(xᵢ - μ)² / n)
+</div>
+
+<h3>ضریب تعیین (R²)</h3>
+<div class="formula">
+R² = 1 - (SS_res / SS_tot)<br>
+SS_res = Σ(yᵢ - ŷᵢ)²<br>
+SS_tot = Σ(yᵢ - ȳ)²
+</div>
+
+<div class="version-info">
+  <p><strong>نسخه:</strong> 1.0.2</p>
+  <p><strong>تاریخ مستندات:</strong> دی ۱۴۰۴</p>
+  <p><strong>نویسنده:</strong> تیم توسعه POS Monitoring</p>
+</div>
+
+</body>
+</html>
