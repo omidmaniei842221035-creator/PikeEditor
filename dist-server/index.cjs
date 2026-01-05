@@ -35998,6 +35998,83 @@ var init_schema_sqlite = __esm({
   }
 });
 
+// node_modules/drizzle-orm/pg-core/alias.js
+var init_alias3 = __esm({
+  "node_modules/drizzle-orm/pg-core/alias.js"() {
+  }
+});
+
+// node_modules/drizzle-orm/pg-core/checks.js
+var CheckBuilder2, Check2;
+var init_checks2 = __esm({
+  "node_modules/drizzle-orm/pg-core/checks.js"() {
+    init_entity();
+    CheckBuilder2 = class {
+      constructor(name, value) {
+        this.name = name;
+        this.value = value;
+      }
+      static [entityKind] = "PgCheckBuilder";
+      brand;
+      /** @internal */
+      build(table) {
+        return new Check2(table, this);
+      }
+    };
+    Check2 = class {
+      constructor(table, builder) {
+        this.table = table;
+        this.name = builder.name;
+        this.value = builder.value;
+      }
+      static [entityKind] = "PgCheck";
+      name;
+      value;
+    };
+  }
+});
+
+// node_modules/drizzle-orm/pg-core/columns/index.js
+var init_columns2 = __esm({
+  "node_modules/drizzle-orm/pg-core/columns/index.js"() {
+    init_bigint();
+    init_bigserial();
+    init_boolean();
+    init_char();
+    init_cidr();
+    init_common();
+    init_custom();
+    init_date();
+    init_double_precision();
+    init_enum();
+    init_inet();
+    init_int_common();
+    init_integer();
+    init_interval();
+    init_json();
+    init_jsonb();
+    init_line();
+    init_macaddr();
+    init_macaddr8();
+    init_numeric();
+    init_point();
+    init_geometry();
+    init_real();
+    init_serial();
+    init_smallint();
+    init_smallserial();
+    init_text();
+    init_time();
+    init_timestamp();
+    init_uuid();
+    init_varchar();
+    init_bit();
+    init_halfvec();
+    init_sparsevec();
+    init_vector();
+  }
+});
+
 // node_modules/drizzle-orm/pg-core/query-builders/delete.js
 var PgDeleteBase;
 var init_delete2 = __esm({
@@ -36098,47 +36175,6 @@ var init_delete2 = __esm({
         return this;
       }
     };
-  }
-});
-
-// node_modules/drizzle-orm/pg-core/columns/index.js
-var init_columns2 = __esm({
-  "node_modules/drizzle-orm/pg-core/columns/index.js"() {
-    init_bigint();
-    init_bigserial();
-    init_boolean();
-    init_char();
-    init_cidr();
-    init_common();
-    init_custom();
-    init_date();
-    init_double_precision();
-    init_enum();
-    init_inet();
-    init_int_common();
-    init_integer();
-    init_interval();
-    init_json();
-    init_jsonb();
-    init_line();
-    init_macaddr();
-    init_macaddr8();
-    init_numeric();
-    init_point();
-    init_geometry();
-    init_real();
-    init_serial();
-    init_smallint();
-    init_smallserial();
-    init_text();
-    init_time();
-    init_timestamp();
-    init_uuid();
-    init_varchar();
-    init_bit();
-    init_halfvec();
-    init_sparsevec();
-    init_vector();
   }
 });
 
@@ -39121,42 +39157,6 @@ var init_db2 = __esm({
   }
 });
 
-// node_modules/drizzle-orm/pg-core/alias.js
-var init_alias3 = __esm({
-  "node_modules/drizzle-orm/pg-core/alias.js"() {
-  }
-});
-
-// node_modules/drizzle-orm/pg-core/checks.js
-var CheckBuilder2, Check2;
-var init_checks2 = __esm({
-  "node_modules/drizzle-orm/pg-core/checks.js"() {
-    init_entity();
-    CheckBuilder2 = class {
-      constructor(name, value) {
-        this.name = name;
-        this.value = value;
-      }
-      static [entityKind] = "PgCheckBuilder";
-      brand;
-      /** @internal */
-      build(table) {
-        return new Check2(table, this);
-      }
-    };
-    Check2 = class {
-      constructor(table, builder) {
-        this.table = table;
-        this.name = builder.name;
-        this.value = builder.value;
-      }
-      static [entityKind] = "PgCheck";
-      name;
-      value;
-    };
-  }
-});
-
 // node_modules/drizzle-orm/pg-core/indexes.js
 var IndexBuilderOn2, IndexBuilder2, Index2;
 var init_indexes2 = __esm({
@@ -39791,6 +39791,544 @@ var init_pg_core = __esm({
   }
 });
 
+// shared/schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  alertRules: () => alertRules2,
+  alerts: () => alerts2,
+  bankingUnits: () => bankingUnits2,
+  branches: () => branches2,
+  customerAccessLogs: () => customerAccessLogs2,
+  customers: () => customers2,
+  dashboardVersions: () => dashboardVersions2,
+  dashboards: () => dashboards2,
+  dataSources: () => dataSources2,
+  employees: () => employees2,
+  insertAlertRuleSchema: () => insertAlertRuleSchema2,
+  insertAlertSchema: () => insertAlertSchema2,
+  insertBankingUnitSchema: () => insertBankingUnitSchema2,
+  insertBranchSchema: () => insertBranchSchema2,
+  insertCustomerAccessLogSchema: () => insertCustomerAccessLogSchema2,
+  insertCustomerSchema: () => insertCustomerSchema2,
+  insertDashboardSchema: () => insertDashboardSchema2,
+  insertDashboardVersionSchema: () => insertDashboardVersionSchema2,
+  insertDataSourceSchema: () => insertDataSourceSchema2,
+  insertEmployeeSchema: () => insertEmployeeSchema2,
+  insertMlModelSchema: () => insertMlModelSchema2,
+  insertMlPredictionSchema: () => insertMlPredictionSchema2,
+  insertNetworkEdgeSchema: () => insertNetworkEdgeSchema2,
+  insertNetworkNodeSchema: () => insertNetworkNodeSchema2,
+  insertOrganizationSchema: () => insertOrganizationSchema2,
+  insertPosDeviceSchema: () => insertPosDeviceSchema2,
+  insertPosMonthlyStatsSchema: () => insertPosMonthlyStatsSchema2,
+  insertReportSchema: () => insertReportSchema2,
+  insertTerritorySchema: () => insertTerritorySchema2,
+  insertTransactionSchema: () => insertTransactionSchema2,
+  insertUserSchema: () => insertUserSchema2,
+  insertVisitSchema: () => insertVisitSchema2,
+  mlModels: () => mlModels2,
+  mlPredictions: () => mlPredictions2,
+  networkEdges: () => networkEdges2,
+  networkNodes: () => networkNodes2,
+  organizations: () => organizations2,
+  posDevices: () => posDevices2,
+  posMonthlyStats: () => posMonthlyStats2,
+  reports: () => reports2,
+  territories: () => territories2,
+  transactions: () => transactions2,
+  updateCustomerSchema: () => updateCustomerSchema,
+  users: () => users2,
+  visits: () => visits2
+});
+var users2, branches2, employees2, customers2, posDevices2, transactions2, alerts2, posMonthlyStats2, visits2, customerAccessLogs2, bankingUnits2, insertUserSchema2, insertBranchSchema2, insertEmployeeSchema2, insertCustomerSchema2, updateCustomerSchema, insertPosDeviceSchema2, insertTransactionSchema2, insertAlertSchema2, insertPosMonthlyStatsSchema2, insertVisitSchema2, insertCustomerAccessLogSchema2, insertBankingUnitSchema2, territories2, insertTerritorySchema2, organizations2, dataSources2, dashboards2, dashboardVersions2, alertRules2, mlModels2, mlPredictions2, reports2, insertOrganizationSchema2, insertDataSourceSchema2, insertDashboardSchema2, insertDashboardVersionSchema2, insertAlertRuleSchema2, insertMlModelSchema2, insertMlPredictionSchema2, insertReportSchema2, networkNodes2, networkEdges2, insertNetworkNodeSchema2, insertNetworkEdgeSchema2;
+var init_schema2 = __esm({
+  "shared/schema.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_pg_core();
+    init_drizzle_zod();
+    init_lib();
+    users2 = pgTable("users", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      username: text("username").notNull().unique(),
+      password: text("password").notNull(),
+      name: text("name").notNull(),
+      role: text("role").notNull(),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    branches2 = pgTable("branches", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      name: text("name").notNull(),
+      code: text("code").notNull().unique(),
+      type: text("type").notNull(),
+      // شعبه، باجه، گیشه، پیشخوان
+      manager: text("manager"),
+      phone: text("phone"),
+      address: text("address"),
+      latitude: decimal("latitude", { precision: 10, scale: 8 }),
+      longitude: decimal("longitude", { precision: 11, scale: 8 }),
+      coverageRadius: integer("coverage_radius").default(5),
+      // کیلومتر
+      monthlyTarget: integer("monthly_target").default(0),
+      // میلیون تومان
+      performance: integer("performance").default(0),
+      // درصد
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    employees2 = pgTable("employees", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      employeeCode: text("employee_code").notNull().unique(),
+      name: text("name").notNull(),
+      position: text("position").notNull(),
+      phone: text("phone"),
+      email: text("email"),
+      branchId: varchar("branch_id").references(() => branches2.id),
+      salary: integer("salary").default(0),
+      hireDate: timestamp("hire_date").defaultNow(),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    customers2 = pgTable("customers", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      nationalId: text("national_id"),
+      // کد ملی
+      shopName: text("shop_name").notNull(),
+      ownerName: text("owner_name").notNull(),
+      phone: text("phone"),
+      // Made optional for quick save from map
+      businessType: text("business_type").notNull(),
+      address: text("address"),
+      latitude: decimal("latitude", { precision: 10, scale: 8 }),
+      longitude: decimal("longitude", { precision: 11, scale: 8 }),
+      monthlyProfit: integer("monthly_profit").default(0),
+      // تومان
+      status: text("status").notNull().default("active"),
+      // active, normal, marketing, collected, loss
+      branchId: varchar("branch_id").references(() => branches2.id),
+      bankingUnitId: varchar("banking_unit_id").references(() => bankingUnits2.id),
+      // ربط بالوحدة المصرفية
+      supportEmployeeId: varchar("support_employee_id").references(() => employees2.id),
+      installDate: timestamp("install_date"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    posDevices2 = pgTable("pos_devices", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      customerId: varchar("customer_id").references(() => customers2.id),
+      deviceCode: text("device_code").notNull().unique(),
+      status: text("status").notNull().default("active"),
+      // active, offline, maintenance
+      lastConnection: timestamp("last_connection"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    transactions2 = pgTable("transactions", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      posDeviceId: varchar("pos_device_id").references(() => posDevices2.id),
+      amount: integer("amount").notNull(),
+      transactionDate: timestamp("transaction_date").defaultNow(),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    alerts2 = pgTable("alerts", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      title: text("title").notNull(),
+      message: text("message").notNull(),
+      type: text("type").notNull(),
+      // error, warning, info
+      priority: text("priority").notNull().default("medium"),
+      // high, medium, low
+      isRead: boolean("is_read").default(false),
+      customerId: varchar("customer_id").references(() => customers2.id),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    posMonthlyStats2 = pgTable("pos_monthly_stats", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      customerId: varchar("customer_id").references(() => customers2.id),
+      branchId: varchar("branch_id").references(() => branches2.id),
+      year: integer("year").notNull(),
+      month: integer("month").notNull(),
+      // 1-12
+      totalTransactions: integer("total_transactions").default(0),
+      totalAmount: integer("total_amount").default(0),
+      // تومان
+      revenue: integer("revenue").default(0),
+      // درآمد
+      profit: integer("profit").default(0),
+      // سود
+      status: text("status").notNull().default("active"),
+      // active, normal, marketing, collected, loss
+      notes: text("notes"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    visits2 = pgTable("visits", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      customerId: varchar("customer_id").references(() => customers2.id),
+      employeeId: varchar("employee_id").references(() => employees2.id),
+      visitDate: timestamp("visit_date").notNull(),
+      notes: text("notes"),
+      visitType: text("visit_type").notNull().default("routine"),
+      // routine, support, installation, maintenance
+      duration: integer("duration"),
+      // مدت زمان ویزیت به دقیقه
+      result: text("result"),
+      // نتیجه ویزیت
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    customerAccessLogs2 = pgTable("customer_access_logs", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      customerId: varchar("customer_id").references(() => customers2.id).notNull(),
+      accessType: text("access_type").notNull().$type(),
+      userAgent: text("user_agent"),
+      ipAddress: text("ip_address"),
+      customerSummary: jsonb("customer_summary"),
+      // خلاصه مشخصات مشتری
+      accessTime: timestamp("access_time").defaultNow()
+    });
+    bankingUnits2 = pgTable("banking_units", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      code: varchar("code", { length: 50 }).notNull().unique(),
+      // کد واحد
+      name: varchar("name", { length: 255 }).notNull(),
+      // نام واحد
+      unitType: text("unit_type").notNull().$type(),
+      // شعبه، باجه، پیشخوان شهرنت
+      managerName: varchar("manager_name", { length: 255 }),
+      // نام مسئول واحد
+      phone: varchar("phone", { length: 20 }),
+      // تلفن
+      address: text("address"),
+      // آدرس
+      latitude: decimal("latitude", { precision: 10, scale: 8 }),
+      // عرض جغرافیایی
+      longitude: decimal("longitude", { precision: 11, scale: 8 }),
+      // طول جغرافیایی
+      isActive: boolean("is_active").default(true),
+      // فعال/غیرفعال
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    insertUserSchema2 = createInsertSchema(users2).omit({
+      id: true,
+      createdAt: true
+    });
+    insertBranchSchema2 = createInsertSchema(branches2).omit({
+      id: true,
+      createdAt: true
+    });
+    insertEmployeeSchema2 = createInsertSchema(employees2).omit({
+      id: true,
+      createdAt: true
+    });
+    insertCustomerSchema2 = createInsertSchema(customers2).omit({
+      id: true,
+      createdAt: true,
+      installDate: true
+    }).extend({
+      shopName: z.string().min(2, "\u0646\u0627\u0645 \u0641\u0631\u0648\u0634\u06AF\u0627\u0647 \u0628\u0627\u06CC\u062F \u062D\u062F\u0627\u0642\u0644 \u06F2 \u06A9\u0627\u0631\u0627\u06A9\u062A\u0631 \u0628\u0627\u0634\u062F"),
+      ownerName: z.string().min(2, "\u0646\u0627\u0645 \u0645\u0627\u0644\u06A9 \u0628\u0627\u06CC\u062F \u062D\u062F\u0627\u0642\u0644 \u06F2 \u06A9\u0627\u0631\u0627\u06A9\u062A\u0631 \u0628\u0627\u0634\u062F"),
+      phone: z.string().optional().transform((val) => {
+        if (!val || val.trim() === "") return "";
+        return val;
+      }).refine((val) => {
+        if (!val || val === "") return true;
+        return /^09\d{9}$/.test(val);
+      }, { message: "\u0634\u0645\u0627\u0631\u0647 \u062A\u0644\u0641\u0646 \u0628\u0627\u06CC\u062F \u06F1\u06F1 \u0631\u0642\u0645 \u0648 \u0628\u0627 09 \u0634\u0631\u0648\u0639 \u0634\u0648\u062F" }),
+      businessType: z.string().min(1, "\u0646\u0648\u0639 \u06A9\u0633\u0628\u200C\u0648\u06A9\u0627\u0631 \u0628\u0627\u06CC\u062F \u0627\u0646\u062A\u062E\u0627\u0628 \u0634\u0648\u062F"),
+      monthlyProfit: z.union([z.number(), z.string()]).optional().transform((val) => {
+        if (val === void 0 || val === null) return 0;
+        const num = typeof val === "string" ? parseInt(val, 10) : val;
+        return isNaN(num) ? 0 : Math.max(0, num);
+      }),
+      latitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
+        if (!val) return null;
+        const num = typeof val === "string" ? parseFloat(val) : val;
+        if (isNaN(num) || num < -90 || num > 90) return null;
+        return String(num);
+      }),
+      longitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
+        if (!val) return null;
+        const num = typeof val === "string" ? parseFloat(val) : val;
+        if (isNaN(num) || num < -180 || num > 180) return null;
+        return String(num);
+      }),
+      installDate: z.union([z.date(), z.string(), z.null()]).optional().transform((val) => {
+        if (!val) return null;
+        if (val instanceof Date) return val;
+        if (typeof val === "string") {
+          const parsed = new Date(val);
+          return isNaN(parsed.getTime()) ? null : parsed;
+        }
+        return null;
+      })
+    });
+    updateCustomerSchema = z.object({
+      shopName: z.string().min(2, "\u0646\u0627\u0645 \u0641\u0631\u0648\u0634\u06AF\u0627\u0647 \u0628\u0627\u06CC\u062F \u062D\u062F\u0627\u0642\u0644 \u06F2 \u06A9\u0627\u0631\u0627\u06A9\u062A\u0631 \u0628\u0627\u0634\u062F").optional(),
+      ownerName: z.string().min(2, "\u0646\u0627\u0645 \u0645\u0627\u0644\u06A9 \u0628\u0627\u06CC\u062F \u062D\u062F\u0627\u0642\u0644 \u06F2 \u06A9\u0627\u0631\u0627\u06A9\u062A\u0631 \u0628\u0627\u0634\u062F").optional(),
+      phone: z.string().optional().transform((val) => {
+        if (!val || val.trim() === "") return void 0;
+        return val;
+      }).refine((val) => {
+        if (!val || val === "" || val === void 0) return true;
+        return /^09\d{9}$/.test(val);
+      }, { message: "\u0634\u0645\u0627\u0631\u0647 \u062A\u0644\u0641\u0646 \u0628\u0627\u06CC\u062F \u06F1\u06F1 \u0631\u0642\u0645 \u0648 \u0628\u0627 09 \u0634\u0631\u0648\u0639 \u0634\u0648\u062F" }),
+      businessType: z.string().optional().transform((val) => {
+        if (!val || val.trim() === "") return void 0;
+        return val;
+      }),
+      address: z.string().optional(),
+      status: z.string().optional(),
+      nationalId: z.string().optional().nullable(),
+      monthlyProfit: z.union([z.number(), z.string()]).optional().transform((val) => {
+        if (val === void 0 || val === null) return void 0;
+        const num = typeof val === "string" ? parseInt(val, 10) : val;
+        return isNaN(num) ? void 0 : Math.max(0, num);
+      }),
+      latitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
+        if (!val) return void 0;
+        const num = typeof val === "string" ? parseFloat(val) : val;
+        if (isNaN(num) || num < -90 || num > 90) return void 0;
+        return String(num);
+      }),
+      longitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
+        if (!val) return void 0;
+        const num = typeof val === "string" ? parseFloat(val) : val;
+        if (isNaN(num) || num < -180 || num > 180) return void 0;
+        return String(num);
+      }),
+      branchId: z.string().optional().nullable(),
+      bankingUnitId: z.string().optional().nullable(),
+      supportEmployeeId: z.string().optional().nullable(),
+      installDate: z.union([z.date(), z.string(), z.null()]).optional().transform((val) => {
+        if (!val) return void 0;
+        if (val instanceof Date) return val;
+        if (typeof val === "string") {
+          const parsed = new Date(val);
+          return isNaN(parsed.getTime()) ? void 0 : parsed;
+        }
+        return void 0;
+      })
+    });
+    insertPosDeviceSchema2 = createInsertSchema(posDevices2).omit({
+      id: true,
+      createdAt: true
+    });
+    insertTransactionSchema2 = createInsertSchema(transactions2).omit({
+      id: true,
+      createdAt: true
+    });
+    insertAlertSchema2 = createInsertSchema(alerts2).omit({
+      id: true,
+      createdAt: true
+    });
+    insertPosMonthlyStatsSchema2 = createInsertSchema(posMonthlyStats2).omit({
+      id: true,
+      createdAt: true
+    });
+    insertVisitSchema2 = createInsertSchema(visits2).omit({
+      id: true,
+      createdAt: true
+    });
+    insertCustomerAccessLogSchema2 = createInsertSchema(customerAccessLogs2).omit({
+      id: true,
+      accessTime: true,
+      ipAddress: true
+      // Server will set this
+    }).extend({
+      accessType: z.enum(["view_details", "add_visit"])
+    });
+    insertBankingUnitSchema2 = createInsertSchema(bankingUnits2).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    }).extend({
+      unitType: z.enum(["branch", "counter", "shahrbnet_kiosk"])
+    });
+    territories2 = pgTable("territories", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      name: text("name").notNull(),
+      // نام منطقه
+      color: varchar("color", { length: 7 }).notNull().default("#3b82f6"),
+      // رنگ نمایش (hex)
+      assignedBankingUnitId: varchar("assigned_banking_unit_id").references(() => bankingUnits2.id),
+      // واحد بانکی تخصیص یافته
+      businessFocus: text("business_focus"),
+      // نوع کسب‌وکار غالب
+      autoNamed: boolean("auto_named").default(false),
+      // آیا نام خودکار تولید شده است
+      geometry: jsonb("geometry").notNull(),
+      // GeoJSON Polygon or MultiPolygon
+      bbox: jsonb("bbox").notNull(),
+      // [minLng, minLat, maxLng, maxLat] for performance
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    insertTerritorySchema2 = createInsertSchema(territories2).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    organizations2 = pgTable("organizations", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      name: text("name").notNull(),
+      slug: text("slug").notNull().unique(),
+      settings: jsonb("settings").default({}),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    dataSources2 = pgTable("data_sources", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      organizationId: varchar("organization_id").references(() => organizations2.id),
+      name: text("name").notNull(),
+      type: text("type").notNull(),
+      // prometheus, clickhouse, loki, postgresql, csv, json
+      url: text("url"),
+      settings: jsonb("settings").default({}),
+      credentials: jsonb("credentials").default({}),
+      // encrypted
+      isDefault: boolean("is_default").default(false),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    dashboards2 = pgTable("dashboards", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      organizationId: varchar("organization_id").references(() => organizations2.id),
+      uid: text("uid").notNull().unique(),
+      title: text("title").notNull(),
+      tags: jsonb("tags").default([]),
+      panels: jsonb("panels").default([]),
+      timeRange: jsonb("time_range").default({}),
+      variables: jsonb("variables").default([]),
+      version: integer("version").default(1),
+      isStarred: boolean("is_starred").default(false),
+      folderId: varchar("folder_id"),
+      createdBy: varchar("created_by").references(() => users2.id),
+      updatedBy: varchar("updated_by").references(() => users2.id),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    dashboardVersions2 = pgTable("dashboard_versions", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      dashboardId: varchar("dashboard_id").references(() => dashboards2.id),
+      version: integer("version").notNull(),
+      data: jsonb("data").notNull(),
+      message: text("message"),
+      createdBy: varchar("created_by").references(() => users2.id),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    alertRules2 = pgTable("alert_rules", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      organizationId: varchar("organization_id").references(() => organizations2.id),
+      title: text("title").notNull(),
+      condition: text("condition").notNull(),
+      data: jsonb("data").notNull(),
+      intervalSeconds: integer("interval_seconds").default(60),
+      maxDataPoints: integer("max_data_points").default(43200),
+      noDataState: text("no_data_state").default("NoData"),
+      execErrState: text("exec_err_state").default("Alerting"),
+      forDuration: text("for_duration").default("5m"),
+      annotations: jsonb("annotations").default({}),
+      labels: jsonb("labels").default({}),
+      isPaused: boolean("is_paused").default(false),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    mlModels2 = pgTable("ml_models", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      organizationId: varchar("organization_id").references(() => organizations2.id),
+      name: text("name").notNull(),
+      type: text("type").notNull(),
+      // anomaly_detection, forecasting, classification
+      endpoint: text("endpoint"),
+      version: text("version"),
+      metadata: jsonb("metadata").default({}),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    mlPredictions2 = pgTable("ml_predictions", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      modelId: varchar("model_id").references(() => mlModels2.id),
+      inputData: jsonb("input_data").notNull(),
+      prediction: jsonb("prediction").notNull(),
+      confidence: decimal("confidence", { precision: 5, scale: 4 }),
+      explanation: jsonb("explanation"),
+      // SHAP values
+      deviceId: varchar("device_id").references(() => posDevices2.id),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    reports2 = pgTable("reports", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      organizationId: varchar("organization_id").references(() => organizations2.id),
+      dashboardId: varchar("dashboard_id").references(() => dashboards2.id),
+      name: text("name").notNull(),
+      format: text("format").default("pdf"),
+      // pdf, png, csv
+      schedule: text("schedule"),
+      // cron expression
+      recipients: jsonb("recipients").default([]),
+      settings: jsonb("settings").default({}),
+      isEnabled: boolean("is_enabled").default(true),
+      lastRun: timestamp("last_run"),
+      nextRun: timestamp("next_run"),
+      createdBy: varchar("created_by").references(() => users2.id),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    insertOrganizationSchema2 = createInsertSchema(organizations2);
+    insertDataSourceSchema2 = createInsertSchema(dataSources2);
+    insertDashboardSchema2 = createInsertSchema(dashboards2);
+    insertDashboardVersionSchema2 = createInsertSchema(dashboardVersions2);
+    insertAlertRuleSchema2 = createInsertSchema(alertRules2);
+    insertMlModelSchema2 = createInsertSchema(mlModels2);
+    insertMlPredictionSchema2 = createInsertSchema(mlPredictions2);
+    insertReportSchema2 = createInsertSchema(reports2);
+    networkNodes2 = pgTable("network_nodes", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      nodeType: varchar("node_type").notNull(),
+      // 'business_type', 'banking_unit', 'customer', 'territory'
+      entityId: varchar("entity_id").notNull(),
+      // Reference to actual entity
+      label: varchar("label").notNull(),
+      value: decimal("value", { precision: 15, scale: 2 }).default("0"),
+      // Revenue, transaction count, etc.
+      properties: jsonb("properties"),
+      // Additional metadata
+      x: decimal("x", { precision: 10, scale: 6 }),
+      y: decimal("y", { precision: 10, scale: 6 }),
+      group: varchar("group"),
+      color: varchar("color", { length: 7 }).default("#3b82f6"),
+      size: integer("size").default(10),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    networkEdges2 = pgTable("network_edges", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      sourceNodeId: varchar("source_node_id").notNull().references(() => networkNodes2.id),
+      targetNodeId: varchar("target_node_id").notNull().references(() => networkNodes2.id),
+      edgeType: varchar("edge_type").notNull(),
+      // 'revenue_flow', 'business_relation', 'geographic_proximity', 'banking_connection'
+      weight: decimal("weight", { precision: 10, scale: 4 }).default("1"),
+      // Strength of relationship
+      value: decimal("value", { precision: 15, scale: 2 }).default("0"),
+      // Transaction volume, etc.
+      properties: jsonb("properties"),
+      color: varchar("color", { length: 7 }).default("#64748b"),
+      width: integer("width").default(2),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    insertNetworkNodeSchema2 = createInsertSchema(networkNodes2).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertNetworkEdgeSchema2 = createInsertSchema(networkEdges2).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+  }
+});
+
 // node_modules/drizzle-orm/neon-serverless/session.js
 var import_serverless, NeonPreparedQuery, NeonSession, NeonTransaction;
 var init_session4 = __esm({
@@ -40061,496 +40599,6 @@ var init_neon_serverless = __esm({
   }
 });
 
-// shared/schema.ts
-var schema_exports = {};
-__export(schema_exports, {
-  alertRules: () => alertRules2,
-  alerts: () => alerts2,
-  bankingUnits: () => bankingUnits2,
-  branches: () => branches2,
-  customerAccessLogs: () => customerAccessLogs2,
-  customers: () => customers2,
-  dashboardVersions: () => dashboardVersions2,
-  dashboards: () => dashboards2,
-  dataSources: () => dataSources2,
-  employees: () => employees2,
-  insertAlertRuleSchema: () => insertAlertRuleSchema2,
-  insertAlertSchema: () => insertAlertSchema2,
-  insertBankingUnitSchema: () => insertBankingUnitSchema2,
-  insertBranchSchema: () => insertBranchSchema2,
-  insertCustomerAccessLogSchema: () => insertCustomerAccessLogSchema2,
-  insertCustomerSchema: () => insertCustomerSchema2,
-  insertDashboardSchema: () => insertDashboardSchema2,
-  insertDashboardVersionSchema: () => insertDashboardVersionSchema2,
-  insertDataSourceSchema: () => insertDataSourceSchema2,
-  insertEmployeeSchema: () => insertEmployeeSchema2,
-  insertMlModelSchema: () => insertMlModelSchema2,
-  insertMlPredictionSchema: () => insertMlPredictionSchema2,
-  insertNetworkEdgeSchema: () => insertNetworkEdgeSchema2,
-  insertNetworkNodeSchema: () => insertNetworkNodeSchema2,
-  insertOrganizationSchema: () => insertOrganizationSchema2,
-  insertPosDeviceSchema: () => insertPosDeviceSchema2,
-  insertPosMonthlyStatsSchema: () => insertPosMonthlyStatsSchema2,
-  insertReportSchema: () => insertReportSchema2,
-  insertTerritorySchema: () => insertTerritorySchema2,
-  insertTransactionSchema: () => insertTransactionSchema2,
-  insertUserSchema: () => insertUserSchema2,
-  insertVisitSchema: () => insertVisitSchema2,
-  mlModels: () => mlModels2,
-  mlPredictions: () => mlPredictions2,
-  networkEdges: () => networkEdges2,
-  networkNodes: () => networkNodes2,
-  organizations: () => organizations2,
-  posDevices: () => posDevices2,
-  posMonthlyStats: () => posMonthlyStats2,
-  reports: () => reports2,
-  territories: () => territories2,
-  transactions: () => transactions2,
-  users: () => users2,
-  visits: () => visits2
-});
-var users2, branches2, employees2, customers2, posDevices2, transactions2, alerts2, posMonthlyStats2, visits2, customerAccessLogs2, bankingUnits2, insertUserSchema2, insertBranchSchema2, insertEmployeeSchema2, insertCustomerSchema2, insertPosDeviceSchema2, insertTransactionSchema2, insertAlertSchema2, insertPosMonthlyStatsSchema2, insertVisitSchema2, insertCustomerAccessLogSchema2, insertBankingUnitSchema2, territories2, insertTerritorySchema2, organizations2, dataSources2, dashboards2, dashboardVersions2, alertRules2, mlModels2, mlPredictions2, reports2, insertOrganizationSchema2, insertDataSourceSchema2, insertDashboardSchema2, insertDashboardVersionSchema2, insertAlertRuleSchema2, insertMlModelSchema2, insertMlPredictionSchema2, insertReportSchema2, networkNodes2, networkEdges2, insertNetworkNodeSchema2, insertNetworkEdgeSchema2;
-var init_schema2 = __esm({
-  "shared/schema.ts"() {
-    "use strict";
-    init_drizzle_orm();
-    init_pg_core();
-    init_drizzle_zod();
-    init_lib();
-    users2 = pgTable("users", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      username: text("username").notNull().unique(),
-      password: text("password").notNull(),
-      name: text("name").notNull(),
-      role: text("role").notNull(),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    branches2 = pgTable("branches", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      name: text("name").notNull(),
-      code: text("code").notNull().unique(),
-      type: text("type").notNull(),
-      // شعبه، باجه، گیشه، پیشخوان
-      manager: text("manager"),
-      phone: text("phone"),
-      address: text("address"),
-      latitude: decimal("latitude", { precision: 10, scale: 8 }),
-      longitude: decimal("longitude", { precision: 11, scale: 8 }),
-      coverageRadius: integer("coverage_radius").default(5),
-      // کیلومتر
-      monthlyTarget: integer("monthly_target").default(0),
-      // میلیون تومان
-      performance: integer("performance").default(0),
-      // درصد
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    employees2 = pgTable("employees", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      employeeCode: text("employee_code").notNull().unique(),
-      name: text("name").notNull(),
-      position: text("position").notNull(),
-      phone: text("phone"),
-      email: text("email"),
-      branchId: varchar("branch_id").references(() => branches2.id),
-      salary: integer("salary").default(0),
-      hireDate: timestamp("hire_date").defaultNow(),
-      isActive: boolean("is_active").default(true),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    customers2 = pgTable("customers", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      nationalId: text("national_id"),
-      // کد ملی
-      shopName: text("shop_name").notNull(),
-      ownerName: text("owner_name").notNull(),
-      phone: text("phone"),
-      // Made optional for quick save from map
-      businessType: text("business_type").notNull(),
-      address: text("address"),
-      latitude: decimal("latitude", { precision: 10, scale: 8 }),
-      longitude: decimal("longitude", { precision: 11, scale: 8 }),
-      monthlyProfit: integer("monthly_profit").default(0),
-      // تومان
-      status: text("status").notNull().default("active"),
-      // active, normal, marketing, collected, loss
-      branchId: varchar("branch_id").references(() => branches2.id),
-      bankingUnitId: varchar("banking_unit_id").references(() => bankingUnits2.id),
-      // ربط بالوحدة المصرفية
-      supportEmployeeId: varchar("support_employee_id").references(() => employees2.id),
-      installDate: timestamp("install_date"),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    posDevices2 = pgTable("pos_devices", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      customerId: varchar("customer_id").references(() => customers2.id),
-      deviceCode: text("device_code").notNull().unique(),
-      status: text("status").notNull().default("active"),
-      // active, offline, maintenance
-      lastConnection: timestamp("last_connection"),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    transactions2 = pgTable("transactions", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      posDeviceId: varchar("pos_device_id").references(() => posDevices2.id),
-      amount: integer("amount").notNull(),
-      transactionDate: timestamp("transaction_date").defaultNow(),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    alerts2 = pgTable("alerts", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      title: text("title").notNull(),
-      message: text("message").notNull(),
-      type: text("type").notNull(),
-      // error, warning, info
-      priority: text("priority").notNull().default("medium"),
-      // high, medium, low
-      isRead: boolean("is_read").default(false),
-      customerId: varchar("customer_id").references(() => customers2.id),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    posMonthlyStats2 = pgTable("pos_monthly_stats", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      customerId: varchar("customer_id").references(() => customers2.id),
-      branchId: varchar("branch_id").references(() => branches2.id),
-      year: integer("year").notNull(),
-      month: integer("month").notNull(),
-      // 1-12
-      totalTransactions: integer("total_transactions").default(0),
-      totalAmount: integer("total_amount").default(0),
-      // تومان
-      revenue: integer("revenue").default(0),
-      // درآمد
-      profit: integer("profit").default(0),
-      // سود
-      status: text("status").notNull().default("active"),
-      // active, normal, marketing, collected, loss
-      notes: text("notes"),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    visits2 = pgTable("visits", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      customerId: varchar("customer_id").references(() => customers2.id),
-      employeeId: varchar("employee_id").references(() => employees2.id),
-      visitDate: timestamp("visit_date").notNull(),
-      notes: text("notes"),
-      visitType: text("visit_type").notNull().default("routine"),
-      // routine, support, installation, maintenance
-      duration: integer("duration"),
-      // مدت زمان ویزیت به دقیقه
-      result: text("result"),
-      // نتیجه ویزیت
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    customerAccessLogs2 = pgTable("customer_access_logs", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      customerId: varchar("customer_id").references(() => customers2.id).notNull(),
-      accessType: text("access_type").notNull().$type(),
-      userAgent: text("user_agent"),
-      ipAddress: text("ip_address"),
-      customerSummary: jsonb("customer_summary"),
-      // خلاصه مشخصات مشتری
-      accessTime: timestamp("access_time").defaultNow()
-    });
-    bankingUnits2 = pgTable("banking_units", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      code: varchar("code", { length: 50 }).notNull().unique(),
-      // کد واحد
-      name: varchar("name", { length: 255 }).notNull(),
-      // نام واحد
-      unitType: text("unit_type").notNull().$type(),
-      // شعبه، باجه، پیشخوان شهرنت
-      managerName: varchar("manager_name", { length: 255 }),
-      // نام مسئول واحد
-      phone: varchar("phone", { length: 20 }),
-      // تلفن
-      address: text("address"),
-      // آدرس
-      latitude: decimal("latitude", { precision: 10, scale: 8 }),
-      // عرض جغرافیایی
-      longitude: decimal("longitude", { precision: 11, scale: 8 }),
-      // طول جغرافیایی
-      isActive: boolean("is_active").default(true),
-      // فعال/غیرفعال
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    insertUserSchema2 = createInsertSchema(users2).omit({
-      id: true,
-      createdAt: true
-    });
-    insertBranchSchema2 = createInsertSchema(branches2).omit({
-      id: true,
-      createdAt: true
-    });
-    insertEmployeeSchema2 = createInsertSchema(employees2).omit({
-      id: true,
-      createdAt: true
-    });
-    insertCustomerSchema2 = createInsertSchema(customers2).omit({
-      id: true,
-      createdAt: true,
-      installDate: true
-    }).extend({
-      shopName: z.string().min(2, "\u0646\u0627\u0645 \u0641\u0631\u0648\u0634\u06AF\u0627\u0647 \u0628\u0627\u06CC\u062F \u062D\u062F\u0627\u0642\u0644 \u06F2 \u06A9\u0627\u0631\u0627\u06A9\u062A\u0631 \u0628\u0627\u0634\u062F"),
-      ownerName: z.string().min(2, "\u0646\u0627\u0645 \u0645\u0627\u0644\u06A9 \u0628\u0627\u06CC\u062F \u062D\u062F\u0627\u0642\u0644 \u06F2 \u06A9\u0627\u0631\u0627\u06A9\u062A\u0631 \u0628\u0627\u0634\u062F"),
-      phone: z.string().optional().transform((val) => {
-        if (!val || val.trim() === "") return "";
-        return val;
-      }).refine((val) => {
-        if (!val || val === "") return true;
-        return /^09\d{9}$/.test(val);
-      }, { message: "\u0634\u0645\u0627\u0631\u0647 \u062A\u0644\u0641\u0646 \u0628\u0627\u06CC\u062F \u06F1\u06F1 \u0631\u0642\u0645 \u0648 \u0628\u0627 09 \u0634\u0631\u0648\u0639 \u0634\u0648\u062F" }),
-      businessType: z.string().min(1, "\u0646\u0648\u0639 \u06A9\u0633\u0628\u200C\u0648\u06A9\u0627\u0631 \u0628\u0627\u06CC\u062F \u0627\u0646\u062A\u062E\u0627\u0628 \u0634\u0648\u062F"),
-      monthlyProfit: z.union([z.number(), z.string()]).optional().transform((val) => {
-        if (val === void 0 || val === null) return 0;
-        const num = typeof val === "string" ? parseInt(val, 10) : val;
-        return isNaN(num) ? 0 : Math.max(0, num);
-      }),
-      latitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
-        if (!val) return null;
-        const num = typeof val === "string" ? parseFloat(val) : val;
-        if (isNaN(num) || num < -90 || num > 90) return null;
-        return String(num);
-      }),
-      longitude: z.union([z.string(), z.number(), z.null()]).optional().transform((val) => {
-        if (!val) return null;
-        const num = typeof val === "string" ? parseFloat(val) : val;
-        if (isNaN(num) || num < -180 || num > 180) return null;
-        return String(num);
-      }),
-      installDate: z.union([z.date(), z.string(), z.null()]).optional().transform((val) => {
-        if (!val) return null;
-        if (val instanceof Date) return val;
-        if (typeof val === "string") {
-          const parsed = new Date(val);
-          return isNaN(parsed.getTime()) ? null : parsed;
-        }
-        return null;
-      })
-    });
-    insertPosDeviceSchema2 = createInsertSchema(posDevices2).omit({
-      id: true,
-      createdAt: true
-    });
-    insertTransactionSchema2 = createInsertSchema(transactions2).omit({
-      id: true,
-      createdAt: true
-    });
-    insertAlertSchema2 = createInsertSchema(alerts2).omit({
-      id: true,
-      createdAt: true
-    });
-    insertPosMonthlyStatsSchema2 = createInsertSchema(posMonthlyStats2).omit({
-      id: true,
-      createdAt: true
-    });
-    insertVisitSchema2 = createInsertSchema(visits2).omit({
-      id: true,
-      createdAt: true
-    });
-    insertCustomerAccessLogSchema2 = createInsertSchema(customerAccessLogs2).omit({
-      id: true,
-      accessTime: true,
-      ipAddress: true
-      // Server will set this
-    }).extend({
-      accessType: z.enum(["view_details", "add_visit"])
-    });
-    insertBankingUnitSchema2 = createInsertSchema(bankingUnits2).omit({
-      id: true,
-      createdAt: true,
-      updatedAt: true
-    }).extend({
-      unitType: z.enum(["branch", "counter", "shahrbnet_kiosk"])
-    });
-    territories2 = pgTable("territories", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      name: text("name").notNull(),
-      // نام منطقه
-      color: varchar("color", { length: 7 }).notNull().default("#3b82f6"),
-      // رنگ نمایش (hex)
-      assignedBankingUnitId: varchar("assigned_banking_unit_id").references(() => bankingUnits2.id),
-      // واحد بانکی تخصیص یافته
-      businessFocus: text("business_focus"),
-      // نوع کسب‌وکار غالب
-      autoNamed: boolean("auto_named").default(false),
-      // آیا نام خودکار تولید شده است
-      geometry: jsonb("geometry").notNull(),
-      // GeoJSON Polygon or MultiPolygon
-      bbox: jsonb("bbox").notNull(),
-      // [minLng, minLat, maxLng, maxLat] for performance
-      isActive: boolean("is_active").default(true),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    insertTerritorySchema2 = createInsertSchema(territories2).omit({
-      id: true,
-      createdAt: true,
-      updatedAt: true
-    });
-    organizations2 = pgTable("organizations", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      name: text("name").notNull(),
-      slug: text("slug").notNull().unique(),
-      settings: jsonb("settings").default({}),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    dataSources2 = pgTable("data_sources", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      organizationId: varchar("organization_id").references(() => organizations2.id),
-      name: text("name").notNull(),
-      type: text("type").notNull(),
-      // prometheus, clickhouse, loki, postgresql, csv, json
-      url: text("url"),
-      settings: jsonb("settings").default({}),
-      credentials: jsonb("credentials").default({}),
-      // encrypted
-      isDefault: boolean("is_default").default(false),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    dashboards2 = pgTable("dashboards", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      organizationId: varchar("organization_id").references(() => organizations2.id),
-      uid: text("uid").notNull().unique(),
-      title: text("title").notNull(),
-      tags: jsonb("tags").default([]),
-      panels: jsonb("panels").default([]),
-      timeRange: jsonb("time_range").default({}),
-      variables: jsonb("variables").default([]),
-      version: integer("version").default(1),
-      isStarred: boolean("is_starred").default(false),
-      folderId: varchar("folder_id"),
-      createdBy: varchar("created_by").references(() => users2.id),
-      updatedBy: varchar("updated_by").references(() => users2.id),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    dashboardVersions2 = pgTable("dashboard_versions", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      dashboardId: varchar("dashboard_id").references(() => dashboards2.id),
-      version: integer("version").notNull(),
-      data: jsonb("data").notNull(),
-      message: text("message"),
-      createdBy: varchar("created_by").references(() => users2.id),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    alertRules2 = pgTable("alert_rules", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      organizationId: varchar("organization_id").references(() => organizations2.id),
-      title: text("title").notNull(),
-      condition: text("condition").notNull(),
-      data: jsonb("data").notNull(),
-      intervalSeconds: integer("interval_seconds").default(60),
-      maxDataPoints: integer("max_data_points").default(43200),
-      noDataState: text("no_data_state").default("NoData"),
-      execErrState: text("exec_err_state").default("Alerting"),
-      forDuration: text("for_duration").default("5m"),
-      annotations: jsonb("annotations").default({}),
-      labels: jsonb("labels").default({}),
-      isPaused: boolean("is_paused").default(false),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    mlModels2 = pgTable("ml_models", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      organizationId: varchar("organization_id").references(() => organizations2.id),
-      name: text("name").notNull(),
-      type: text("type").notNull(),
-      // anomaly_detection, forecasting, classification
-      endpoint: text("endpoint"),
-      version: text("version"),
-      metadata: jsonb("metadata").default({}),
-      isActive: boolean("is_active").default(true),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    mlPredictions2 = pgTable("ml_predictions", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      modelId: varchar("model_id").references(() => mlModels2.id),
-      inputData: jsonb("input_data").notNull(),
-      prediction: jsonb("prediction").notNull(),
-      confidence: decimal("confidence", { precision: 5, scale: 4 }),
-      explanation: jsonb("explanation"),
-      // SHAP values
-      deviceId: varchar("device_id").references(() => posDevices2.id),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    reports2 = pgTable("reports", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      organizationId: varchar("organization_id").references(() => organizations2.id),
-      dashboardId: varchar("dashboard_id").references(() => dashboards2.id),
-      name: text("name").notNull(),
-      format: text("format").default("pdf"),
-      // pdf, png, csv
-      schedule: text("schedule"),
-      // cron expression
-      recipients: jsonb("recipients").default([]),
-      settings: jsonb("settings").default({}),
-      isEnabled: boolean("is_enabled").default(true),
-      lastRun: timestamp("last_run"),
-      nextRun: timestamp("next_run"),
-      createdBy: varchar("created_by").references(() => users2.id),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    insertOrganizationSchema2 = createInsertSchema(organizations2);
-    insertDataSourceSchema2 = createInsertSchema(dataSources2);
-    insertDashboardSchema2 = createInsertSchema(dashboards2);
-    insertDashboardVersionSchema2 = createInsertSchema(dashboardVersions2);
-    insertAlertRuleSchema2 = createInsertSchema(alertRules2);
-    insertMlModelSchema2 = createInsertSchema(mlModels2);
-    insertMlPredictionSchema2 = createInsertSchema(mlPredictions2);
-    insertReportSchema2 = createInsertSchema(reports2);
-    networkNodes2 = pgTable("network_nodes", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      nodeType: varchar("node_type").notNull(),
-      // 'business_type', 'banking_unit', 'customer', 'territory'
-      entityId: varchar("entity_id").notNull(),
-      // Reference to actual entity
-      label: varchar("label").notNull(),
-      value: decimal("value", { precision: 15, scale: 2 }).default("0"),
-      // Revenue, transaction count, etc.
-      properties: jsonb("properties"),
-      // Additional metadata
-      x: decimal("x", { precision: 10, scale: 6 }),
-      y: decimal("y", { precision: 10, scale: 6 }),
-      group: varchar("group"),
-      color: varchar("color", { length: 7 }).default("#3b82f6"),
-      size: integer("size").default(10),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    networkEdges2 = pgTable("network_edges", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      sourceNodeId: varchar("source_node_id").notNull().references(() => networkNodes2.id),
-      targetNodeId: varchar("target_node_id").notNull().references(() => networkNodes2.id),
-      edgeType: varchar("edge_type").notNull(),
-      // 'revenue_flow', 'business_relation', 'geographic_proximity', 'banking_connection'
-      weight: decimal("weight", { precision: 10, scale: 4 }).default("1"),
-      // Strength of relationship
-      value: decimal("value", { precision: 15, scale: 2 }).default("0"),
-      // Transaction volume, etc.
-      properties: jsonb("properties"),
-      color: varchar("color", { length: 7 }).default("#64748b"),
-      width: integer("width").default(2),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    insertNetworkNodeSchema2 = createInsertSchema(networkNodes2).omit({
-      id: true,
-      createdAt: true,
-      updatedAt: true
-    });
-    insertNetworkEdgeSchema2 = createInsertSchema(networkEdges2).omit({
-      id: true,
-      createdAt: true,
-      updatedAt: true
-    });
-  }
-});
-
 // server/db.ts
 async function initPostgres() {
   if (!isElectronMode) {
@@ -40589,6 +40637,7 @@ var init_db3 = __esm({
     path = __toESM(require("path"), 1);
     fs = __toESM(require("fs"), 1);
     init_schema_sqlite();
+    init_schema2();
     isElectronMode = !!process.env.DATABASE_PATH;
     pool = null;
     sqlite = null;
@@ -43187,7 +43236,7 @@ async function registerRoutes(app2) {
   });
   app2.put("/api/customers/:id", async (req, res) => {
     try {
-      const updateData = insertCustomerSchema3.partial().parse(req.body);
+      const updateData = updateCustomerSchema.parse(req.body);
       const cleanedData = {};
       if (updateData.shopName !== void 0) cleanedData.shopName = updateData.shopName;
       if (updateData.ownerName !== void 0) cleanedData.ownerName = updateData.ownerName;
