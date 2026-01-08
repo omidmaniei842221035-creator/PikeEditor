@@ -69,6 +69,17 @@ export interface ExcelEmployeeData {
   salary?: number;
 }
 
+export interface ExcelTimeSeriesData {
+  customerIdentifier: string; // کد ملی یا نام فروشگاه یا کد ترمینال
+  recordDate: string; // تاریخ ثبت
+  posStatus: string; // وضعیت پوز: active, inactive, efficient, inefficient
+  profitability: number; // سودآوری (تومان)
+  averageBalance: number; // میانگین حساب (تومان)
+  transactionCount?: number; // تعداد تراکنش
+  totalRevenue?: number; // درآمد کل
+  notes?: string; // یادداشت‌ها
+}
+
 export async function parseExcelFile(file: File): Promise<ExcelCustomerData[]> {
   return new Promise((resolve, reject) => {
     // Check if file is Excel format
@@ -1094,6 +1105,179 @@ export function validateEmployeeExcelData(data: ExcelEmployeeData[]): {
       invalid.push({ row: rowNumber, errors: rowErrors });
     } else {
       valid.push(employee);
+    }
+  });
+
+  return { valid, invalid };
+}
+
+// Time Series Excel parsing and validation functions
+export async function parseExcelTimeSeriesFile(file: File): Promise<ExcelTimeSeriesData[]> {
+  return new Promise((resolve, reject) => {
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      reject(new Error('فرمت فایل نامعتبر است. فقط فایل‌های Excel (.xlsx, .xls) پذیرفته می‌شود'));
+      return;
+    }
+
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const result = parseTimeSeriesExcelContent(e.target?.result);
+        resolve(result);
+      } catch (error) {
+        reject(new Error('خطا در خواندن فایل Excel: ' + (error as Error).message));
+      }
+    };
+
+    reader.onerror = () => {
+      reject(new Error('خطا در بارگذاری فایل'));
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function parseTimeSeriesExcelContent(buffer: any): ExcelTimeSeriesData[] {
+  try {
+    const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
+    
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error('فایل Excel خالی است');
+    }
+    
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+    
+    if (jsonData.length < 2) {
+      throw new Error('فایل Excel باید حداقل شامل سر ستون‌ها و یک ردیف داده باشد');
+    }
+
+    const headers = jsonData[0] as string[];
+    const dataRows = jsonData.slice(1);
+
+    const columnMapping: Record<string, keyof ExcelTimeSeriesData> = {
+      'شناسه مشتری': 'customerIdentifier',
+      'کد ملی': 'customerIdentifier',
+      'نام فروشگاه': 'customerIdentifier',
+      'کد ترمینال': 'customerIdentifier',
+      'تاریخ ثبت': 'recordDate',
+      'تاریخ': 'recordDate',
+      'وضعیت پوز': 'posStatus',
+      'وضعیت': 'posStatus',
+      'سودآوری': 'profitability',
+      'سود': 'profitability',
+      'میانگین حساب': 'averageBalance',
+      'میانگین موجودی': 'averageBalance',
+      'تعداد تراکنش': 'transactionCount',
+      'درآمد کل': 'totalRevenue',
+      'درآمد': 'totalRevenue',
+      'یادداشت': 'notes',
+      'توضیحات': 'notes'
+    };
+
+    const columnIndices: Record<keyof ExcelTimeSeriesData, number> = {} as any;
+    
+    headers.forEach((header, index) => {
+      const normalizedHeader = header?.toString().trim();
+      const mappedField = columnMapping[normalizedHeader];
+      if (mappedField && columnIndices[mappedField] === undefined) {
+        columnIndices[mappedField] = index;
+      }
+    });
+
+    const requiredFields: (keyof ExcelTimeSeriesData)[] = ['customerIdentifier', 'recordDate', 'posStatus'];
+    const missingFields = requiredFields.filter(field => columnIndices[field] === undefined);
+    
+    if (missingFields.length > 0) {
+      const missingPersianFields = missingFields.map(field => {
+        return Object.keys(columnMapping).find(key => columnMapping[key] === field);
+      }).join(', ');
+      throw new Error(`ستون‌های ضروری موجود نیست: ${missingPersianFields}`);
+    }
+
+    const timeSeries: ExcelTimeSeriesData[] = [];
+    
+    (dataRows as any[][]).forEach((row: any[]) => {
+      if (row.every(cell => !cell || cell.toString().trim() === '')) {
+        return;
+      }
+
+      const posStatusValue = row[columnIndices.posStatus]?.toString().trim() || 'active';
+      const normalizedPosStatus = normalizePosStatus(posStatusValue);
+
+      const record: ExcelTimeSeriesData = {
+        customerIdentifier: row[columnIndices.customerIdentifier]?.toString().trim() || '',
+        recordDate: row[columnIndices.recordDate]?.toString().trim() || '',
+        posStatus: normalizedPosStatus,
+        profitability: columnIndices.profitability !== undefined ? 
+          parseMonetaryValue(row[columnIndices.profitability]) : 0,
+        averageBalance: columnIndices.averageBalance !== undefined ? 
+          parseMonetaryValue(row[columnIndices.averageBalance]) : 0,
+        transactionCount: columnIndices.transactionCount !== undefined ? 
+          parseInt(normalizeDigits(row[columnIndices.transactionCount]?.toString() || '0')) || 0 : 0,
+        totalRevenue: columnIndices.totalRevenue !== undefined ? 
+          parseMonetaryValue(row[columnIndices.totalRevenue]) : 0,
+        notes: columnIndices.notes !== undefined ? 
+          row[columnIndices.notes]?.toString().trim() || '' : ''
+      };
+
+      timeSeries.push(record);
+    });
+
+    return timeSeries;
+    
+  } catch (error) {
+    throw new Error('خطا در پردازش فایل Excel: ' + (error as Error).message);
+  }
+}
+
+function normalizePosStatus(status: string): string {
+  const statusLower = status.toLowerCase().trim();
+  const statusMap: Record<string, string> = {
+    'فعال': 'active',
+    'active': 'active',
+    'غیرفعال': 'inactive',
+    'inactive': 'inactive',
+    'کارا': 'efficient',
+    'efficient': 'efficient',
+    'ناکارا': 'inefficient',
+    'inefficient': 'inefficient',
+    'موثر': 'efficient',
+    'غیرموثر': 'inefficient'
+  };
+  return statusMap[statusLower] || 'active';
+}
+
+export function validateTimeSeriesExcelData(data: ExcelTimeSeriesData[]): { 
+  valid: ExcelTimeSeriesData[]; 
+  invalid: { row: number; errors: string[] }[] 
+} {
+  const valid: ExcelTimeSeriesData[] = [];
+  const invalid: { row: number; errors: string[] }[] = [];
+
+  data.forEach((record, index) => {
+    const rowErrors: string[] = [];
+    const rowNumber = index + 2;
+
+    if (!record.customerIdentifier || record.customerIdentifier.trim() === '') {
+      rowErrors.push('شناسه مشتری الزامی است');
+    }
+
+    if (!record.recordDate || record.recordDate.trim() === '') {
+      rowErrors.push('تاریخ ثبت الزامی است');
+    }
+
+    const validStatuses = ['active', 'inactive', 'efficient', 'inefficient'];
+    if (!validStatuses.includes(record.posStatus)) {
+      rowErrors.push('وضعیت پوز باید یکی از مقادیر معتبر باشد');
+    }
+
+    if (rowErrors.length > 0) {
+      invalid.push({ row: rowNumber, errors: rowErrors });
+    } else {
+      valid.push(record);
     }
   });
 

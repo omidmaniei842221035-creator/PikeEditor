@@ -13,12 +13,15 @@ import {
   parseExcelFile, 
   parseExcelBankingUnitsFile,
   parseExcelEmployeesFile,
+  parseExcelTimeSeriesFile,
   validateExcelData,
   validateBankingUnitExcelData,
   validateEmployeeExcelData,
+  validateTimeSeriesExcelData,
   type ExcelCustomerData,
   type ExcelBankingUnitData,
-  type ExcelEmployeeData
+  type ExcelEmployeeData,
+  type ExcelTimeSeriesData
 } from "@/lib/excel-utils";
 import * as XLSX from 'xlsx';
 import { Link } from "wouter";
@@ -34,7 +37,8 @@ import {
   FileSpreadsheet,
   Loader2,
   MapPin,
-  ArrowRight
+  ArrowRight,
+  TrendingUp
 } from "lucide-react";
 
 export default function BulkImportPage() {
@@ -61,10 +65,14 @@ export default function BulkImportPage() {
       </div>
 
       <Tabs defaultValue="customers" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="customers" className="flex items-center gap-2" data-testid="tab-customers">
             <Users className="h-4 w-4" />
             مشتریان
+          </TabsTrigger>
+          <TabsTrigger value="time-series" className="flex items-center gap-2" data-testid="tab-time-series">
+            <TrendingUp className="h-4 w-4" />
+            سری زمانی
           </TabsTrigger>
           <TabsTrigger value="employees" className="flex items-center gap-2" data-testid="tab-employees">
             <UserCog className="h-4 w-4" />
@@ -78,6 +86,10 @@ export default function BulkImportPage() {
 
         <TabsContent value="customers">
           <CustomerImportSection />
+        </TabsContent>
+
+        <TabsContent value="time-series">
+          <TimeSeriesImportSection />
         </TabsContent>
 
         <TabsContent value="employees">
@@ -407,6 +419,205 @@ function CustomerImportSection() {
                   <div><strong>نوع:</strong> {item.businessType || 'نامشخص'}</div>
                   {item.latitude && item.longitude && (
                     <div><strong>موقعیت:</strong> {item.latitude}, {item.longitude}</div>
+                  )}
+                </div>
+              </div>
+            )}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TimeSeriesImportSection() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [parsedData, setParsedData] = useState<ExcelTimeSeriesData[]>([]);
+  const [validationResult, setValidationResult] = useState<{
+    valid: ExcelTimeSeriesData[];
+    invalid: { row: number; errors: string[] }[];
+  } | null>(null);
+  const [previewStep, setPreviewStep] = useState(false);
+  const [customerMapping, setCustomerMapping] = useState<Map<string, string>>(new Map());
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const importMutation = useMutation({
+    mutationFn: async (records: ExcelTimeSeriesData[]) => {
+      const customersRes = await fetch('/api/customers');
+      const customers = await customersRes.json();
+      
+      const mapping = new Map<string, string>();
+      customers.forEach((c: any) => {
+        if (c.nationalId) mapping.set(c.nationalId, c.id);
+        if (c.shopName) mapping.set(c.shopName.toLowerCase(), c.id);
+      });
+      setCustomerMapping(mapping);
+
+      const timeSeriesRecords = records.map((r) => {
+        const customerId = mapping.get(r.customerIdentifier) || 
+                          mapping.get(r.customerIdentifier.toLowerCase());
+        if (!customerId) return null;
+        
+        const date = new Date(r.recordDate);
+        return {
+          customerId,
+          recordDate: date.toISOString(),
+          year: date.getFullYear(),
+          month: date.getMonth() + 1,
+          posStatus: r.posStatus,
+          profitability: r.profitability,
+          averageBalance: r.averageBalance,
+          transactionCount: r.transactionCount || 0,
+          totalRevenue: r.totalRevenue || 0,
+          notes: r.notes || ''
+        };
+      }).filter(Boolean);
+
+      if (timeSeriesRecords.length === 0) {
+        throw new Error('هیچ مشتری منطبقی یافت نشد. لطفا ابتدا مشتریان را وارد کنید.');
+      }
+
+      return apiRequest("POST", "/api/customer-time-series/bulk", { records: timeSeriesRecords });
+    },
+    onSuccess: (result: any) => {
+      toast({
+        title: "موفقیت",
+        description: `${result.count || parsedData.length} رکورد سری زمانی با موفقیت وارد شد`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-time-series'] });
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطا",
+        description: error.message || "خطا در وارد کردن داده‌های سری زمانی",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetForm = () => {
+    setSelectedFile(null);
+    setIsProcessing(false);
+    setProgress(0);
+    setParsedData([]);
+    setValidationResult(null);
+    setPreviewStep(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setValidationResult(null);
+      setPreviewStep(false);
+    }
+  };
+
+  const processExcelFile = async () => {
+    if (!selectedFile) return;
+    
+    setIsProcessing(true);
+    setProgress(20);
+
+    try {
+      setProgress(40);
+      const rawData = await parseExcelTimeSeriesFile(selectedFile);
+      setProgress(60);
+      
+      const result = validateTimeSeriesExcelData(rawData);
+      setProgress(80);
+      
+      setParsedData(result.valid);
+      setValidationResult(result);
+      setPreviewStep(true);
+      setProgress(100);
+      
+      toast({
+        title: "پردازش کامل شد",
+        description: `${result.valid.length} رکورد معتبر و ${result.invalid.length} رکورد نامعتبر`,
+      });
+    } catch (error) {
+      toast({
+        title: "خطا در پردازش فایل",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const headers = ['شناسه مشتری', 'تاریخ ثبت', 'وضعیت پوز', 'سودآوری', 'میانگین حساب', 'تعداد تراکنش', 'درآمد کل', 'یادداشت'];
+    const sampleData = [
+      ['0123456789', '2024-01-15', 'فعال', '5000000', '25000000', '150', '8000000', 'مشتری فعال'],
+      ['0987654321', '2024-02-20', 'کارا', '7500000', '35000000', '220', '12000000', '']
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'سری_زمانی');
+    XLSX.writeFile(wb, 'time_series_template.xlsx');
+  };
+
+  const posStatusLabels: Record<string, string> = {
+    'active': 'فعال',
+    'inactive': 'غیرفعال',
+    'efficient': 'کارا',
+    'inefficient': 'ناکارا'
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
+          ورود داده‌های سری زمانی
+        </CardTitle>
+        <CardDescription>
+          داده‌های تاریخچه‌ای وضعیت پوز، سودآوری و میانگین حساب مشتریان را وارد کنید.
+          این داده‌ها برای تحلیل رفتار مشتری در طول زمان روی نقشه هوشمند استفاده می‌شود.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!previewStep ? (
+          <ImportUploadSection
+            selectedFile={selectedFile}
+            isProcessing={isProcessing}
+            progress={progress}
+            fileInputRef={fileInputRef}
+            onFileSelect={handleFileSelect}
+            onProcess={processExcelFile}
+            onDownloadTemplate={downloadTemplate}
+            templateColumns={['شناسه مشتری', 'تاریخ ثبت', 'وضعیت پوز', 'سودآوری', 'میانگین حساب', 'تعداد تراکنش', 'درآمد کل', 'یادداشت']}
+            requiredColumns={['شناسه مشتری', 'تاریخ ثبت', 'وضعیت پوز']}
+          />
+        ) : (
+          <ImportPreviewSection
+            validationResult={validationResult}
+            isPending={importMutation.isPending}
+            onBack={() => setPreviewStep(false)}
+            onReset={resetForm}
+            onImport={() => importMutation.mutate(parsedData)}
+            entityName="رکورد سری زمانی"
+            renderPreviewItem={(item: ExcelTimeSeriesData, index: number) => (
+              <div key={index} className="bg-muted p-3 rounded border">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                  <div><strong>شناسه:</strong> {item.customerIdentifier}</div>
+                  <div><strong>تاریخ:</strong> {item.recordDate}</div>
+                  <div><strong>وضعیت:</strong> {posStatusLabels[item.posStatus] || item.posStatus}</div>
+                  <div><strong>سودآوری:</strong> {item.profitability?.toLocaleString('fa-IR')} تومان</div>
+                  <div><strong>میانگین حساب:</strong> {item.averageBalance?.toLocaleString('fa-IR')} تومان</div>
+                  {item.transactionCount && (
+                    <div><strong>تعداد تراکنش:</strong> {item.transactionCount}</div>
                   )}
                 </div>
               </div>
