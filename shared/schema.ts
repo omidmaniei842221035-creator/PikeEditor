@@ -104,6 +104,22 @@ export const posMonthlyStats = pgTable("pos_monthly_stats", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Customer Time Series - داده‌های سری زمانی مشتریان
+export const customerTimeSeries = pgTable("customer_time_series", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").references(() => customers.id).notNull(),
+  recordDate: timestamp("record_date").notNull(), // تاریخ ثبت
+  year: integer("year").notNull(),
+  month: integer("month").notNull(), // 1-12
+  posStatus: text("pos_status").notNull().default("active"), // وضعیت پوز: active, inactive, efficient, inefficient
+  profitability: integer("profitability").default(0), // سودآوری (تومان)
+  averageBalance: integer("average_balance").default(0), // میانگین حساب (تومان)
+  transactionCount: integer("transaction_count").default(0), // تعداد تراکنش
+  totalRevenue: integer("total_revenue").default(0), // درآمد کل
+  notes: text("notes"), // یادداشت‌ها
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const visits = pgTable("visits", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   customerId: varchar("customer_id").references(() => customers.id),
@@ -269,6 +285,17 @@ export const insertPosMonthlyStatsSchema = createInsertSchema(posMonthlyStats).o
   createdAt: true,
 });
 
+export const insertCustomerTimeSeriesSchema = createInsertSchema(customerTimeSeries).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  posStatus: z.enum(['active', 'inactive', 'efficient', 'inefficient']).default('active'),
+  recordDate: z.union([z.date(), z.string()]).transform((val) => {
+    if (val instanceof Date) return val;
+    return new Date(val);
+  }),
+});
+
 export const insertVisitSchema = createInsertSchema(visits).omit({
   id: true,
   createdAt: true,
@@ -335,6 +362,9 @@ export type InsertAlert = z.infer<typeof insertAlertSchema>;
 
 export type PosMonthlyStats = typeof posMonthlyStats.$inferSelect;
 export type InsertPosMonthlyStats = z.infer<typeof insertPosMonthlyStatsSchema>;
+
+export type CustomerTimeSeries = typeof customerTimeSeries.$inferSelect;
+export type InsertCustomerTimeSeries = z.infer<typeof insertCustomerTimeSeriesSchema>;
 
 export type Visit = typeof visits.$inferSelect;
 export type InsertVisit = z.infer<typeof insertVisitSchema>;
