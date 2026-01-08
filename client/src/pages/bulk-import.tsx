@@ -452,14 +452,16 @@ function TimeSeriesImportSection() {
       
       const mapping = new Map<string, string>();
       customers.forEach((c: any) => {
-        if (c.nationalId) mapping.set(c.nationalId, c.id);
-        if (c.shopName) mapping.set(c.shopName.toLowerCase(), c.id);
+        if (c.nationalId) mapping.set(c.nationalId.toLowerCase().trim(), c.id);
+        if (c.shopName) mapping.set(c.shopName.toLowerCase().trim(), c.id);
+        if (c.terminalId) mapping.set(c.terminalId.toLowerCase().trim(), c.id);
+        if (c.terminalCode) mapping.set(c.terminalCode.toLowerCase().trim(), c.id);
       });
       setCustomerMapping(mapping);
 
       const timeSeriesRecords = records.map((r) => {
-        const customerId = mapping.get(r.customerIdentifier) || 
-                          mapping.get(r.customerIdentifier.toLowerCase());
+        const identifier = r.customerIdentifier.toLowerCase().trim();
+        const customerId = mapping.get(identifier);
         if (!customerId) return null;
         
         const date = new Date(r.recordDate);

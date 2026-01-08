@@ -56,7 +56,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Delaunay } from "d3-delaunay";
-import type { Customer } from "@shared/schema";
+import type { Customer, CustomerTimeSeries } from "@shared/schema";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, CartesianGrid } from "recharts";
 
 interface ClusterInfo {
   id: number;
@@ -185,6 +186,21 @@ export default function IntelligentMap() {
 
   const { data: branches = [] } = useQuery<any[]>({
     queryKey: ['/api/branches'],
+  });
+
+  const selectedCustomerId = selectedEntity?.type === 'customer' ? selectedEntity?.data?.id : null;
+  
+  const { data: customerTimeSeries = [], isLoading: timeSeriesLoading } = useQuery<CustomerTimeSeries[]>({
+    queryKey: ['/api/customer-time-series/customer', selectedCustomerId],
+    queryFn: async ({ queryKey }) => {
+      const customerId = queryKey[1];
+      if (!customerId) return [];
+      const response = await fetch(`/api/customer-time-series/customer/${customerId}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!selectedCustomerId,
+    staleTime: 30000,
   });
 
   useEffect(() => {
@@ -1887,6 +1903,90 @@ export default function IntelligentMap() {
                         {selectedEntity.data.latitude}, {selectedEntity.data.longitude}
                       </p>
                     </div>
+
+                    {customerTimeSeries.length > 0 && (
+                      <div className="space-y-3">
+                        <Separator />
+                        <div className="flex items-center gap-2 text-sm">
+                          <TrendingUp className="h-4 w-4 text-primary" />
+                          <span className="font-medium">روند سری زمانی</span>
+                          <Badge variant="outline" className="text-xs">
+                            {customerTimeSeries.length} رکورد
+                          </Badge>
+                        </div>
+                        
+                        <div className="h-32 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={customerTimeSeries.map(ts => ({
+                              date: `${ts.year}/${ts.month}`,
+                              profit: (ts.profitability || 0) / 1000000,
+                              balance: (ts.averageBalance || 0) / 1000000
+                            }))}>
+                              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                              <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                              <YAxis tick={{ fontSize: 10 }} />
+                              <Tooltip 
+                                formatter={(value: number, name: string) => [
+                                  `${value.toFixed(1)}M`,
+                                  name === 'profit' ? 'سودآوری' : 'میانگین حساب'
+                                ]}
+                                labelFormatter={(label) => `تاریخ: ${label}`}
+                              />
+                              <Area 
+                                type="monotone" 
+                                dataKey="profit" 
+                                stroke="#10b981" 
+                                fill="#10b981" 
+                                fillOpacity={0.3}
+                                name="سودآوری"
+                              />
+                              <Area 
+                                type="monotone" 
+                                dataKey="balance" 
+                                stroke="#3b82f6" 
+                                fill="#3b82f6" 
+                                fillOpacity={0.2}
+                                name="میانگین حساب"
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {(() => {
+                            const latest = customerTimeSeries[customerTimeSeries.length - 1];
+                            const statusLabels: Record<string, { label: string; color: string }> = {
+                              'active': { label: 'فعال', color: 'text-green-500' },
+                              'inactive': { label: 'غیرفعال', color: 'text-gray-500' },
+                              'efficient': { label: 'کارا', color: 'text-blue-500' },
+                              'inefficient': { label: 'ناکارا', color: 'text-red-500' }
+                            };
+                            const statusInfo = statusLabels[latest?.posStatus || 'active'];
+                            return (
+                              <>
+                                <div className="bg-muted/50 p-2 rounded">
+                                  <p className="text-muted-foreground">آخرین وضعیت</p>
+                                  <p className={`font-medium ${statusInfo.color}`}>{statusInfo.label}</p>
+                                </div>
+                                <div className="bg-muted/50 p-2 rounded">
+                                  <p className="text-muted-foreground">آخرین سود</p>
+                                  <p className="font-medium text-green-600">
+                                    {latest?.profitability ? `${(latest.profitability / 1000000).toFixed(1)}M` : '-'}
+                                  </p>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    )}
+
+                    {timeSeriesLoading && (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                        <span className="text-sm text-muted-foreground">در حال بارگذاری سری زمانی...</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4">
