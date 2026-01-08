@@ -11,6 +11,7 @@ import {
   insertAlertSchema as sqliteInsertAlertSchema,
   insertPosDeviceSchema as sqliteInsertPosDeviceSchema,
   insertPosMonthlyStatsSchema as sqliteInsertPosMonthlyStatsSchema,
+  insertCustomerTimeSeriesSchema as sqliteInsertCustomerTimeSeriesSchema,
   insertVisitSchema as sqliteInsertVisitSchema,
   insertCustomerAccessLogSchema as sqliteInsertCustomerAccessLogSchema,
   insertBankingUnitSchema as sqliteInsertBankingUnitSchema,
@@ -32,6 +33,7 @@ let insertBranchSchema: any = sqliteInsertBranchSchema;
 let insertAlertSchema: any = sqliteInsertAlertSchema;
 let insertPosDeviceSchema: any = sqliteInsertPosDeviceSchema;
 let insertPosMonthlyStatsSchema: any = sqliteInsertPosMonthlyStatsSchema;
+let insertCustomerTimeSeriesSchema: any = sqliteInsertCustomerTimeSeriesSchema;
 let insertVisitSchema: any = sqliteInsertVisitSchema;
 let insertCustomerAccessLogSchema: any = sqliteInsertCustomerAccessLogSchema;
 let insertBankingUnitSchema: any = sqliteInsertBankingUnitSchema;
@@ -164,6 +166,21 @@ if (isElectronMode) {
         revenue INTEGER DEFAULT 0,
         profit INTEGER DEFAULT 0,
         status TEXT NOT NULL DEFAULT 'active',
+        notes TEXT,
+        created_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS customer_time_series (
+        id TEXT PRIMARY KEY,
+        customer_id TEXT REFERENCES customers(id) NOT NULL,
+        record_date INTEGER NOT NULL,
+        year INTEGER NOT NULL,
+        month INTEGER NOT NULL,
+        pos_status TEXT NOT NULL DEFAULT 'active',
+        profitability INTEGER DEFAULT 0,
+        average_balance INTEGER DEFAULT 0,
+        transaction_count INTEGER DEFAULT 0,
+        total_revenue INTEGER DEFAULT 0,
         notes TEXT,
         created_at INTEGER
       );
@@ -376,6 +393,7 @@ async function initPostgres() {
     insertAlertSchema = pgSchema.insertAlertSchema;
     insertPosDeviceSchema = pgSchema.insertPosDeviceSchema;
     insertPosMonthlyStatsSchema = pgSchema.insertPosMonthlyStatsSchema;
+    insertCustomerTimeSeriesSchema = pgSchema.insertCustomerTimeSeriesSchema;
     insertVisitSchema = pgSchema.insertVisitSchema;
     insertCustomerAccessLogSchema = pgSchema.insertCustomerAccessLogSchema;
     insertBankingUnitSchema = pgSchema.insertBankingUnitSchema;
@@ -400,6 +418,7 @@ export {
   insertAlertSchema,
   insertPosDeviceSchema,
   insertPosMonthlyStatsSchema,
+  insertCustomerTimeSeriesSchema,
   insertVisitSchema,
   insertCustomerAccessLogSchema,
   insertBankingUnitSchema,

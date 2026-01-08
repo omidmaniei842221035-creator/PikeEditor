@@ -7,6 +7,7 @@ import {
   type Transaction, type InsertTransaction,
   type Alert, type InsertAlert,
   type PosMonthlyStats, type InsertPosMonthlyStats,
+  type CustomerTimeSeries, type InsertCustomerTimeSeries,
   type Visit, type InsertVisit,
   type CustomerAccessLog, type InsertCustomerAccessLog,
   type BankingUnit, type InsertBankingUnit,
@@ -28,7 +29,7 @@ import { db, schema, isElectronMode, sqlite } from "./db";
 
 // Get tables from the active schema (PostgreSQL or SQLite)
 const {
-  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, visits, customerAccessLogs, bankingUnits, territories,
+  users, branches, employees, customers, posDevices, transactions, alerts, posMonthlyStats, customerTimeSeries, visits, customerAccessLogs, bankingUnits, territories,
   organizations, dataSources, dashboards, dashboardVersions, alertRules, mlModels, mlPredictions, reports,
   networkNodes, networkEdges
 } = schema;
@@ -101,6 +102,17 @@ export interface IStorage {
   updatePosMonthlyStats(id: string, stats: Partial<InsertPosMonthlyStats>): Promise<PosMonthlyStats | undefined>;
   deletePosMonthlyStats(id: string): Promise<boolean>;
   bulkCreatePosMonthlyStats(stats: InsertPosMonthlyStats[]): Promise<PosMonthlyStats[]>;
+
+  // Customer Time Series - داده‌های سری زمانی مشتریان
+  getAllCustomerTimeSeries(): Promise<CustomerTimeSeries[]>;
+  getCustomerTimeSeries(id: string): Promise<CustomerTimeSeries | undefined>;
+  getCustomerTimeSeriesByCustomer(customerId: string): Promise<CustomerTimeSeries[]>;
+  getCustomerTimeSeriesByDateRange(startDate: Date, endDate: Date): Promise<CustomerTimeSeries[]>;
+  createCustomerTimeSeries(data: InsertCustomerTimeSeries): Promise<CustomerTimeSeries>;
+  updateCustomerTimeSeries(id: string, data: Partial<InsertCustomerTimeSeries>): Promise<CustomerTimeSeries | undefined>;
+  deleteCustomerTimeSeries(id: string): Promise<boolean>;
+  bulkCreateCustomerTimeSeries(data: InsertCustomerTimeSeries[]): Promise<CustomerTimeSeries[]>;
+  deleteCustomerTimeSeriesByCustomer(customerId: string): Promise<boolean>;
 
   // Visits
   getAllVisits(): Promise<Visit[]>;
@@ -687,6 +699,60 @@ export class DatabaseStorage implements IStorage {
   async bulkCreatePosMonthlyStats(insertStatsArray: InsertPosMonthlyStats[]): Promise<PosMonthlyStats[]> {
     const createdStats = await db.insert(posMonthlyStats).values(insertStatsArray).returning();
     return createdStats;
+  }
+
+  // Customer Time Series methods - داده‌های سری زمانی مشتریان
+  async getAllCustomerTimeSeries(): Promise<CustomerTimeSeries[]> {
+    return await db.select().from(customerTimeSeries).orderBy(desc(customerTimeSeries.recordDate));
+  }
+
+  async getCustomerTimeSeries(id: string): Promise<CustomerTimeSeries | undefined> {
+    const [record] = await db.select().from(customerTimeSeries).where(eq(customerTimeSeries.id, id));
+    return record;
+  }
+
+  async getCustomerTimeSeriesByCustomer(customerId: string): Promise<CustomerTimeSeries[]> {
+    return await db.select().from(customerTimeSeries)
+      .where(eq(customerTimeSeries.customerId, customerId))
+      .orderBy(desc(customerTimeSeries.recordDate));
+  }
+
+  async getCustomerTimeSeriesByDateRange(startDate: Date, endDate: Date): Promise<CustomerTimeSeries[]> {
+    return await db.select().from(customerTimeSeries).where(
+      and(
+        gte(customerTimeSeries.recordDate, startDate),
+        lte(customerTimeSeries.recordDate, endDate)
+      )
+    ).orderBy(desc(customerTimeSeries.recordDate));
+  }
+
+  async createCustomerTimeSeries(insertData: InsertCustomerTimeSeries): Promise<CustomerTimeSeries> {
+    const [record] = await db.insert(customerTimeSeries).values(insertData).returning();
+    return record;
+  }
+
+  async updateCustomerTimeSeries(id: string, updateData: Partial<InsertCustomerTimeSeries>): Promise<CustomerTimeSeries | undefined> {
+    const [record] = await db.update(customerTimeSeries)
+      .set(updateData)
+      .where(eq(customerTimeSeries.id, id))
+      .returning();
+    return record;
+  }
+
+  async deleteCustomerTimeSeries(id: string): Promise<boolean> {
+    const result = await db.delete(customerTimeSeries).where(eq(customerTimeSeries.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async bulkCreateCustomerTimeSeries(insertDataArray: InsertCustomerTimeSeries[]): Promise<CustomerTimeSeries[]> {
+    if (insertDataArray.length === 0) return [];
+    const createdRecords = await db.insert(customerTimeSeries).values(insertDataArray).returning();
+    return createdRecords;
+  }
+
+  async deleteCustomerTimeSeriesByCustomer(customerId: string): Promise<boolean> {
+    const result = await db.delete(customerTimeSeries).where(eq(customerTimeSeries.customerId, customerId)).returning();
+    return result.length > 0;
   }
 
   // Visit methods

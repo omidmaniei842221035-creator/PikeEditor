@@ -108,6 +108,21 @@ export const posMonthlyStats = sqliteTable("pos_monthly_stats", {
   createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
+export const customerTimeSeries = sqliteTable("customer_time_series", {
+  id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+  customerId: text("customer_id").references(() => customers.id).notNull(),
+  recordDate: integer("record_date", { mode: 'timestamp' }).notNull(),
+  year: integer("year").notNull(),
+  month: integer("month").notNull(),
+  posStatus: text("pos_status").notNull().default("active"),
+  profitability: integer("profitability").default(0),
+  averageBalance: integer("average_balance").default(0),
+  transactionCount: integer("transaction_count").default(0),
+  totalRevenue: integer("total_revenue").default(0),
+  notes: text("notes"),
+  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
 export const visits = sqliteTable("visits", {
   id: text("id").primaryKey().$defaultFn(() => uuidv4()),
   customerId: text("customer_id").references(() => customers.id),
@@ -326,6 +341,14 @@ export const insertPosDeviceSchema = createInsertSchema(posDevices).omit({ id: t
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true });
 export const insertAlertSchema = createInsertSchema(alerts).omit({ id: true, createdAt: true });
 export const insertPosMonthlyStatsSchema = createInsertSchema(posMonthlyStats).omit({ id: true, createdAt: true });
+
+export const insertCustomerTimeSeriesSchema = createInsertSchema(customerTimeSeries).omit({ id: true, createdAt: true }).extend({
+  posStatus: z.enum(['active', 'inactive', 'efficient', 'inefficient']).default('active'),
+  recordDate: z.union([z.date(), z.string()]).transform((val) => {
+    if (val instanceof Date) return val;
+    return new Date(val);
+  }),
+});
 export const insertVisitSchema = createInsertSchema(visits).omit({ id: true, createdAt: true });
 export const insertCustomerAccessLogSchema = createInsertSchema(customerAccessLogs).omit({ id: true, accessTime: true }).extend({
   accessType: z.enum(['view_details', 'add_visit'])
@@ -360,6 +383,7 @@ export type InsertPosDevice = z.infer<typeof insertPosDeviceSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertAlert = z.infer<typeof insertAlertSchema>;
 export type InsertPosMonthlyStats = z.infer<typeof insertPosMonthlyStatsSchema>;
+export type InsertCustomerTimeSeries = z.infer<typeof insertCustomerTimeSeriesSchema>;
 export type InsertVisit = z.infer<typeof insertVisitSchema>;
 export type InsertCustomerAccessLog = z.infer<typeof insertCustomerAccessLogSchema>;
 export type InsertBankingUnit = z.infer<typeof insertBankingUnitSchema>;
@@ -373,6 +397,7 @@ export type PosDevice = typeof posDevices.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type Alert = typeof alerts.$inferSelect;
 export type PosMonthlyStats = typeof posMonthlyStats.$inferSelect;
+export type CustomerTimeSeries = typeof customerTimeSeries.$inferSelect;
 export type Visit = typeof visits.$inferSelect;
 export type BankingUnit = typeof bankingUnits.$inferSelect;
 export type Territory = typeof territories.$inferSelect;

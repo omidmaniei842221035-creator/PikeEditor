@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertCustomerSchema, updateCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema, insertTerritorySchema, insertTransactionSchema } from "./db";
+import { insertCustomerSchema, updateCustomerSchema, insertEmployeeSchema, insertBranchSchema, insertAlertSchema, insertPosDeviceSchema, insertPosMonthlyStatsSchema, insertCustomerTimeSeriesSchema, insertVisitSchema, insertCustomerAccessLogSchema, insertBankingUnitSchema, insertTerritorySchema, insertTransactionSchema } from "./db";
 import { z } from "zod";
 import { grafanaRouter } from "./routes/grafana";
 
@@ -529,6 +529,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "Visit not found" });
     }
     res.json({ success: true });
+  });
+
+  // Customer Time Series routes - داده‌های سری زمانی مشتریان
+  app.get("/api/customer-time-series", async (req, res) => {
+    const data = await storage.getAllCustomerTimeSeries();
+    res.json(data);
+  });
+
+  app.get("/api/customer-time-series/customer/:customerId", async (req, res) => {
+    const data = await storage.getCustomerTimeSeriesByCustomer(req.params.customerId);
+    res.json(data);
+  });
+
+  app.get("/api/customer-time-series/:id", async (req, res) => {
+    const record = await storage.getCustomerTimeSeries(req.params.id);
+    if (!record) {
+      return res.status(404).json({ error: "Time series record not found" });
+    }
+    res.json(record);
+  });
+
+  app.post("/api/customer-time-series", async (req, res) => {
+    try {
+      const data = insertCustomerTimeSeriesSchema.parse(req.body);
+      const record = await storage.createCustomerTimeSeries(data);
+      res.json(record);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid time series data" });
+    }
+  });
+
+  app.post("/api/customer-time-series/bulk", async (req, res) => {
+    try {
+      const { records } = req.body;
+      if (!Array.isArray(records) || records.length === 0) {
+        return res.status(400).json({ error: "Records array is required" });
+      }
+      
+      const validatedRecords = records.map((r: any) => insertCustomerTimeSeriesSchema.parse(r));
+      const created = await storage.bulkCreateCustomerTimeSeries(validatedRecords);
+      res.json({ success: true, count: created.length, records: created });
+    } catch (error) {
+      res.status(400).json({ error: "Invalid time series data" });
+    }
+  });
+
+  app.put("/api/customer-time-series/:id", async (req, res) => {
+    try {
+      const updateData = insertCustomerTimeSeriesSchema.partial().parse(req.body);
+      const record = await storage.updateCustomerTimeSeries(req.params.id, updateData);
+      if (!record) {
+        return res.status(404).json({ error: "Time series record not found" });
+      }
+      res.json(record);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid time series data" });
+    }
+  });
+
+  app.delete("/api/customer-time-series/:id", async (req, res) => {
+    const deleted = await storage.deleteCustomerTimeSeries(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Time series record not found" });
+    }
+    res.json({ success: true });
+  });
+
+  app.delete("/api/customer-time-series/customer/:customerId", async (req, res) => {
+    const deleted = await storage.deleteCustomerTimeSeriesByCustomer(req.params.customerId);
+    res.json({ success: true, deleted });
   });
 
   // Customer Access Logs routes
